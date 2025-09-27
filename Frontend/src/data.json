@@ -1,0 +1,605 @@
+{
+  "room_types": [
+    {
+      "room_type_id": "RT01",
+      "name": "Standard Studio",
+      "description": "A cozy 25 sq.m. studio with a balcony.",
+      "price": 4500.0
+    },
+    {
+      "room_type_id": "RT02",
+      "name": "Deluxe Studio",
+      "description": "A spacious 35 sq.m. studio with a kitchenette and a larger balcony.",
+      "price": 6000.0
+    },
+    {
+      "room_type_id": "RT03",
+      "name": "King Apartment",
+      "description": "A 50 sq.m. apartment with a separate bedroom, living area, and full kitchen.",
+      "price": 8500.0
+    }
+  ],
+  "rooms": [
+    {
+      "room_num": "101",
+      "floor": 1,
+      "room_type_id": "RT01",
+      "status": "occupied"
+    },
+    {
+      "room_num": "102",
+      "floor": 1,
+      "room_type_id": "RT01",
+      "status": "occupied"
+    },
+    {
+      "room_num": "103",
+      "floor": 1,
+      "room_type_id": "RT01",
+      "status": "available"
+    },
+    {
+      "room_num": "104",
+      "floor": 1,
+      "room_type_id": "RT01",
+      "status": "maintenance"
+    },
+    {
+      "room_num": "105",
+      "floor": 1,
+      "room_type_id": "RT01",
+      "status": "available"
+    },
+    {
+      "room_num": "106",
+      "floor": 1,
+      "room_type_id": "RT01",
+      "status": "available"
+    },
+    {
+      "room_num": "107",
+      "floor": 1,
+      "room_type_id": "RT02",
+      "status": "occupied"
+    },
+    {
+      "room_num": "108",
+      "floor": 1,
+      "room_type_id": "RT02",
+      "status": "available"
+    },
+    {
+      "room_num": "109",
+      "floor": 1,
+      "room_type_id": "RT02",
+      "status": "available"
+    },
+    {
+      "room_num": "110",
+      "floor": 1,
+      "room_type_id": "RT02",
+      "status": "available"
+    },
+    {
+      "room_num": "111",
+      "floor": 1,
+      "room_type_id": "RT02",
+      "status": "available"
+    },
+    {
+      "room_num": "112",
+      "floor": 1,
+      "room_type_id": "RT02",
+      "status": "occupied"
+    },
+    {
+      "room_num": "201",
+      "floor": 2,
+      "room_type_id": "RT01",
+      "status": "available"
+    },
+    {
+      "room_num": "202",
+      "floor": 2,
+      "room_type_id": "RT01",
+      "status": "occupied"
+    },
+    {
+      "room_num": "203",
+      "floor": 2,
+      "room_type_id": "RT01",
+      "status": "available"
+    },
+    {
+      "room_num": "204",
+      "floor": 2,
+      "room_type_id": "RT01",
+      "status": "available"
+    },
+    {
+      "room_num": "205",
+      "floor": 2,
+      "room_type_id": "RT01",
+      "status": "occupied"
+    },
+    {
+      "room_num": "206",
+      "floor": 2,
+      "room_type_id": "RT01",
+      "status": "available"
+    },
+    {
+      "room_num": "207",
+      "floor": 2,
+      "room_type_id": "RT02",
+      "status": "available"
+    },
+    {
+      "room_num": "208",
+      "floor": 2,
+      "room_type_id": "RT02",
+      "status": "maintenance"
+    },
+    {
+      "room_num": "209",
+      "floor": 2,
+      "room_type_id": "RT03",
+      "status": "occupied"
+    },
+    {
+      "room_num": "210",
+      "floor": 2,
+      "room_type_id": "RT03",
+      "status": "available"
+    },
+    {
+      "room_num": "211",
+      "floor": 2,
+      "room_type_id": "RT03",
+      "status": "available"
+    },
+    {
+      "room_num": "212",
+      "floor": 2,
+      "room_type_id": "RT03",
+      "status": "available"
+    }
+  ],
+  "tenants": [
+    {
+      "id": "USR-001",
+      "full_name": "Somsak Jaidee",
+      "email": "somsak.j@example.com",
+      "tel": "081-234-5678",
+      "citizen_id": "1-1001-00123-45-6",
+      "emergency_contact": "089-876-5432",
+      "emergency_relationship": "Mother"
+    },
+    {
+      "id": "USR-002",
+      "full_name": "Jane Smith",
+      "email": "jane.s@example.com",
+      "tel": "082-345-6789",
+      "citizen_id": "1-2002-00456-78-9",
+      "emergency_contact": "088-765-4321",
+      "emergency_relationship": "Father"
+    },
+    {
+      "id": "USR-003",
+      "full_name": "Mana Chujai",
+      "email": "mana.c@example.com",
+      "tel": "083-456-7890",
+      "citizen_id": "1-3003-00789-12-3",
+      "emergency_contact": "087-654-3210",
+      "emergency_relationship": "Spouse"
+    }
+  ],
+  "contracts": [
+    {
+      "contract_num": "CTR-2023-001",
+      "tenant_id": "USR-001",
+      "room_num": "101",
+      "start_date": "2023-01-01",
+      "end_date": "2023-12-31",
+      "rent_amount": 4500.0,
+      "deposit": 9000.0,
+      "billing_cycle": "monthly",
+      "status": "active",
+      "contract_link": "/contracts/CTR-2023-001.pdf"
+    },
+    {
+      "contract_num": "CTR-2023-002",
+      "tenant_id": "USR-002",
+      "room_num": "107",
+      "start_date": "2023-03-15",
+      "end_date": "2024-03-14",
+      "rent_amount": 6000.0,
+      "deposit": 12000.0,
+      "billing_cycle": "monthly",
+      "status": "active",
+      "contract_link": "/contracts/CTR-2023-002.pdf"
+    },
+    {
+      "contract_num": "CTR-2022-005",
+      "tenant_id": "USR-003",
+      "room_num": "202",
+      "start_date": "2022-06-01",
+      "end_date": "2023-05-31",
+      "rent_amount": 4500.0,
+      "deposit": 9000.0,
+      "billing_cycle": "monthly",
+      "status": "expired",
+      "contract_link": "/contracts/CTR-2022-005.pdf"
+    }
+  ],
+  "invoices": [
+    {
+      "invoice_id": "INV-05-001",
+      "contract_num": "CTR-2023-001",
+      "tenant_id": "USR-001",
+      "issue_date": "2023-05-01",
+      "due_date": "2023-05-05",
+      "total_amount": 5350.5,
+      "status": "paid",
+      "items": [
+        {
+          "description": "Rent for May 2023",
+          "amount": 4500.0
+        },
+        {
+          "description": "Water Bill",
+          "amount": 150.0
+        },
+        {
+          "description": "Electricity Bill",
+          "amount": 700.5
+        }
+      ]
+    },
+    {
+      "invoice_id": "INV-06-001",
+      "contract_num": "CTR-2023-001",
+      "tenant_id": "USR-001",
+      "issue_date": "2023-06-01",
+      "due_date": "2023-06-05",
+      "total_amount": 5420.0,
+      "status": "pending",
+      "items": [
+        {
+          "description": "Rent for June 2023",
+          "amount": 4500.0
+        },
+        {
+          "description": "Water Bill",
+          "amount": 160.0
+        },
+        {
+          "description": "Electricity Bill",
+          "amount": 760.0
+        }
+      ]
+    },
+    {
+      "invoice_id": "INV-06-002",
+      "contract_num": "CTR-2023-002",
+      "tenant_id": "USR-002",
+      "issue_date": "2023-06-01",
+      "due_date": "2023-06-05",
+      "total_amount": 7100.0,
+      "status": "paid",
+      "items": [
+        {
+          "description": "Rent for June 2023",
+          "amount": 6000.0
+        },
+        {
+          "description": "Water Bill",
+          "amount": 200.0
+        },
+        {
+          "description": "Electricity Bill",
+          "amount": 900.0
+        }
+      ]
+    }
+  ],
+  "payments": [
+    {
+      "payment_id": "PAY-001",
+      "invoice_id": "INV-05-001",
+      "payment_date": "2023-05-03",
+      "amount": 5350.5,
+      "method": "Bank Transfer"
+    },
+    {
+      "payment_id": "PAY-002",
+      "invoice_id": "INV-06-002",
+      "payment_date": "2023-06-02",
+      "amount": 7100.0,
+      "method": "Credit Card"
+    }
+  ],
+  "maintenance_logs": [
+    {
+      "log_id": "ML-001",
+      "room_num": "104",
+      "request_date": "2023-05-20",
+      "completed_date": "2023-05-21",
+      "log_type": "Plumbing",
+      "description": "Leaky faucet in the bathroom sink.",
+      "status": "completed",
+      "technician": "Somchai Service",
+      "cost": 300.0
+    },
+    {
+      "log_id": "ML-002",
+      "room_num": "208",
+      "request_date": "2023-06-02",
+      "completed_date": null,
+      "log_type": "Air-Con Servicing",
+      "description": "Scheduled quarterly AC cleaning.",
+      "status": "in_progress",
+      "technician": "Admin",
+      "cost": 0
+    },
+    {
+      "log_id": "ML-003",
+      "room_num": "101",
+      "request_date": "2023-04-10",
+      "completed_date": "2023-04-10",
+      "log_type": "Electrical",
+      "description": "Replaced burned out light bulb in the kitchen.",
+      "status": "completed",
+      "technician": "Admin",
+      "cost": 50.0
+    }
+  ],
+  "maintenance_schedule": [
+    {
+      "schedule_id": "MS-01",
+      "task_name": "Quarterly Air-Con Servicing",
+      "cycle_interval": "90_days",
+      "last_completed": "2023-06-02",
+      "next_due": "2023-09-02"
+    },
+    {
+      "schedule_id": "MS-02",
+      "task_name": "Annual Fire Extinguisher Check",
+      "cycle_interval": "365_days",
+      "last_completed": "2023-01-15",
+      "next_due": "2024-01-15"
+    }
+  ],
+  "reservations": [
+    {
+      "reservation_num": "RSV-2023-001",
+      "id": "USR-003",
+      "room_type_id": "RT02",
+      "date_time": "2023-05-10T10:30:00"
+    },
+    {
+      "reservation_num": "RSV-2023-002",
+      "id": "USR-002",
+      "room_type_id": "RT01",
+      "date_time": "2023-05-15T14:00:00"
+    },
+    {
+      "reservation_num": "RSV-2023-003",
+      "id": "USR-001",
+      "room_type_id": "RT02",
+      "date_time": "2023-06-01T09:15:00"
+    },
+    {
+      "reservation_num": "RSV-2023-004",
+      "id": "USR-003",
+      "room_type_id": "RT01",
+      "date_time": "2023-06-05T11:45:00"
+    },
+    {
+      "reservation_num": "RSV-2023-005",
+      "id": "USR-002",
+      "room_type_id": "RT02",
+      "date_time": "2023-06-20T16:30:00"
+    }
+  ],
+  "invoices_sum": [
+    {
+      "invoice_id": "INV-05-001",
+      "room": "101",
+      "period": "2023-05",
+      "tenant": "Somsak Jaidee",
+      "total": 5350.5,
+      "due_date": "2023-05-05",
+      "status": "paid"
+    },
+    {
+      "invoice_id": "INV-06-001",
+      "room": "101",
+      "period": "2023-06",
+      "tenant": "Somsak Jaidee",
+      "total": 5420.0,
+      "due_date": "2023-06-05",
+      "status": "pending"
+    },
+    {
+      "invoice_id": "INV-06-002",
+      "room": "107",
+      "period": "2023-06",
+      "tenant": "Jane Smith",
+      "total": 7100.0,
+      "due_date": "2023-06-05",
+      "status": "paid"
+    }
+  ],
+  "room_request": [
+    {
+      "id": 1,
+      "submitted_at": "2025-08-16 17:35",
+      "email": "email@example.com",
+      "phone": "089-123-4567",
+      "occupation": "นักศึกษา",
+      "workplace": "คณะ ICT มหิดล",
+      "id_card": "12345xxxxxxxx",
+      "emergency_contact": "นางสาว เสี่ยวหมิง เจียง",
+      "relation": "น้องสาว",
+      "emergency_phone": "089-113-4567",
+      "request_detail": "อยากได้ห้องชั้น 2 ติดทางขึ้น ไม่โดนแดด"
+    },
+    {
+      "id": 2,
+      "submitted_at": "2025-08-15 10:20",
+      "email": "test.user@example.com",
+      "phone": "081-555-8899",
+      "occupation": "พนักงานบริษัท",
+      "workplace": "บริษัท ABC จำกัด",
+      "id_card": "98765xxxxxxxx",
+      "emergency_contact": "นาย สมชาย ใจดี",
+      "relation": "พี่ชาย",
+      "emergency_phone": "081-222-3344",
+      "request_detail": "ต้องการห้องชั้น 3 วิวดี ใกล้ลิฟต์"
+    },
+    {
+      "id": 3,
+      "submitted_at": "2025-08-14 09:10",
+      "email": "jane.doe@example.com",
+      "phone": "086-777-1234",
+      "occupation": "อาจารย์",
+      "workplace": "มหาวิทยาลัยมหิดล",
+      "id_card": "24680xxxxxxxx",
+      "emergency_contact": "นาง มาลี สวยมาก",
+      "relation": "แม่",
+      "emergency_phone": "086-999-0000",
+      "request_detail": "อยากได้ห้องติดสวน เงียบสงบ"
+    }
+  ],
+  "leases": [
+    {
+      "contract_id": "L-2025-0001",
+      "room_number": "107",
+      "tenant_name": "John Smith",
+      "billing_cycle": "monthly",
+      "rent_amount": 5200,
+      "note": "Original 5000",
+      "start_date": "2025-01-01",
+      "end_date": "2025-02-01",
+      "status": "expired",
+      "contract_link": "/contracts/L-2025-0001.pdf"
+    },
+    {
+      "contract_id": "L-2025-0002",
+      "room_number": "105",
+      "tenant_name": "Michael Brown",
+      "billing_cycle": "monthly",
+      "rent_amount": 5200,
+      "note": "Original 5000",
+      "start_date": "2025-01-01",
+      "end_date": "2025-02-01",
+      "status": "active",
+      "contract_link": "/contracts/L-2025-0002.pdf"
+    },
+    {
+      "contract_id": "L-2025-0003",
+      "room_number": "210",
+      "tenant_name": "David Johnson",
+      "billing_cycle": "yearly",
+      "rent_amount": 5200,
+      "note": "Original 5000",
+      "start_date": "2025-01-01",
+      "end_date": "2025-02-01",
+      "status": "active",
+      "contract_link": "/contracts/L-2025-0003.pdf"
+    },
+    {
+      "contract_id": "L-2025-0004",
+      "room_number": "107",
+      "tenant_name": "Emily Davis",
+      "billing_cycle": "monthly",
+      "rent_amount": 5200,
+      "note": "Original 5000",
+      "start_date": "2025-01-01",
+      "end_date": "2025-02-01",
+      "status": "active",
+      "contract_link": "/contracts/L-2025-0004.pdf"
+    }
+  ],
+  "tenants_management": [
+    {
+      "id": "USR-001",
+      "first_name": "Somsak",
+      "last_name": "Jaidee",
+      "gender": "Male",
+      "email": "somsak.j@example.com",
+      "tel": "0812345678",
+      "room": "107",
+      "status": "Active",
+      "citizen_id": "1-1001-00123-45-6",
+      "emergency_contact": "089-876-5432",
+      "emergency_relationship": "Mother"
+    },
+    {
+      "id": "USR-002",
+      "first_name": "Emily",
+      "last_name": "Johnson",
+      "gender": "Female",
+      "email": "emily.johnson@example.com",
+      "tel": "0823456789",
+      "room": "105",
+      "status": "Active",
+      "citizen_id": "1-2002-00456-78-9",
+      "emergency_contact": "081-234-1111",
+      "emergency_relationship": "Father"
+    },
+    {
+      "id": "USR-003",
+      "first_name": "Michael",
+      "last_name": "Brown",
+      "gender": "Male",
+      "email": "michael.brown@example.com",
+      "tel": "0834567890",
+      "room": "106",
+      "status": "Ended",
+      "citizen_id": "1-3003-00789-12-3",
+      "emergency_contact": "082-345-2222",
+      "emergency_relationship": "Brother"
+    },
+    {
+      "id": "USR-004",
+      "first_name": "Sophia",
+      "last_name": "Williams",
+      "gender": "Female",
+      "email": "sophia.williams@example.com",
+      "tel": "0845678901",
+      "room": "108",
+      "status": "Active",
+      "citizen_id": "1-4004-00987-65-4",
+      "emergency_contact": "083-456-3333",
+      "emergency_relationship": "Sister"
+    },
+    {
+      "id": "USR-005",
+      "first_name": "David",
+      "last_name": "Miller",
+      "gender": "Male",
+      "email": "david.miller@example.com",
+      "tel": "0856789012",
+      "room": "110",
+      "status": "Ended",
+      "citizen_id": "1-5005-00123-98-5",
+      "emergency_contact": "084-567-4444",
+      "emergency_relationship": "Wife"
+    },
+    {
+      "id": "USR-006",
+      "first_name": "Olivia",
+      "last_name": "Davis",
+      "gender": "Female",
+      "email": "olivia.davis@example.com",
+      "tel": "0867890123",
+      "room": "102",
+      "status": "Active",
+      "citizen_id": "1-6006-00456-21-6",
+      "emergency_contact": "085-678-5555",
+      "emergency_relationship": "Husband"
+    }
+  ]
+}

@@ -1,0 +1,48 @@
+{
+  "101": {
+    "roomId": "101",
+    "tenantName": "สมชาย ใจดี",
+    "totalPaid": 4500,
+    "maintCount": 2,
+    "stayDays": 120,
+    "invoices": [
+    { "invoice_id": "INV-101-01", "period": "มกราคม 2025", "amount": 4500, "due_date": "2025-01-31", "status": "paid" },
+    { "invoice_id": "INV-101-02", "period": "กุมภาพันธ์ 2025", "amount": 4500, "due_date": "2025-02-28", "status": "pending" },
+    { "invoice_id": "INV-101-03", "period": "มีนาคม 2025", "amount": 4500, "due_date": "2025-03-31", "status": "overdue" }
+  ],
+    "costs": [
+      { "year": 2025, "monthIndex": 1, "name": "มกราคม", "value": 120, "water": 10, "cost": 9500 },
+      { "year": 2025, "monthIndex": 2, "name": "กุมภาพันธ์", "value": 90, "water": 8, "cost": 8800 },
+      { "year": 2025, "monthIndex": 3, "name": "มีนาคม", "value": 110, "water": 12, "cost": 10200 }
+    ],
+    "requests": [
+    { "request_id": "REQ-103-01", "title": "แอร์ไม่เย็น", "date": "2025-01-15", "status": "completed" },
+    { "request_id": "REQ-103-02", "title": "ก๊อกน้ำรั่ว", "date": "2025-02-10", "status": "in_progress" },
+    { "request_id": "REQ-103-03", "title": "ไฟห้องน้ำเสีย", "date": "2025-03-02", "status": "pending" }
+  ]
+  },
+  "202": {
+    "roomId": "202",
+    "tenantName": "กานดา พิทักษ์",
+    "totalPaid": 8200,
+    "maintCount": 0,
+    "stayDays": 240,
+    "costs": [
+      { "year": 2025, "monthIndex": 1, "name": "มกราคม", "value": 150, "water": 15, "cost": 11200 },
+      { "year": 2025, "monthIndex": 2, "name": "กุมภาพันธ์", "value": 160, "water": 14, "cost": 11800 },
+      { "year": 2025, "monthIndex": 3, "name": "มีนาคม", "value": 140, "water": 16, "cost": 11000 }
+    ]
+  },
+  "303": {
+    "roomId": "303",
+    "tenantName": "อภิสิทธิ์ วงศ์ดี",
+    "totalPaid": 3000,
+    "maintCount": 1,
+    "stayDays": 60,
+    "costs": [
+      { "year": 2025, "monthIndex": 1, "name": "มกราคม", "value": 70, "water": 6, "cost": 7000 },
+      { "year": 2025, "monthIndex": 2, "name": "กุมภาพันธ์", "value": 65, "water": 5, "cost": 6800 },
+      { "year": 2025, "monthIndex": 3, "name": "มีนาคม", "value": 80, "water": 7, "cost": 7200 }
+    ]
+  }
+}

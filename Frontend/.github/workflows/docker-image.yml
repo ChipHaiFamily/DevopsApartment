@@ -1,0 +1,23 @@
+name: Docker Image CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Build the Docker image
+      run: docker build --file Dockerfile -t Kbtr/myapp:latest .
+    - name: login
+      run: docker login -u Kbtr -p dckr_pat_h9P_JmHWntMT5qlAPDks0jQzCkk
+    - name: push docker
+      run: docker push Kbtr/myapp:latest
+    

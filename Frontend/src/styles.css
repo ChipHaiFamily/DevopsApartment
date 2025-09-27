@@ -1,0 +1,990 @@
+/* ================= TOKENS & GLOBAL ================= */
+:root {
+    --brand: #2563EB;
+    --brand-dark: #1E3A8A;
+    --text: #0F172A;
+    /* slate-900 */
+    --muted: #6B7280;
+    /* gray-500 */
+    --soft: #F5F7FB;
+    /* bg soft */
+    --card: #FFFFFF;
+    --radius: 16px;
+    --shadow: 0 12px 28px rgba(15, 23, 42, .08);
+    --shadow-soft: 0 8px 20px rgba(15, 23, 42, .06);
+    --container: 1120px;
+}
+
+* {
+    box-sizing: border-box
+}
+
+html,
+body,
+#root {
+    height: 100%
+}
+
+body {
+    margin: 0;
+    color: var(--text);
+    background: #fff;
+    font-family: "Kanit", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, "Noto Sans Thai", "Noto Sans", sans-serif;
+    line-height: 1.65;
+    letter-spacing: .1px;
+}
+
+body * {
+    font-family: Kanit;
+}
+
+.container {
+    width: min(var(--container), 92%);
+    margin-inline: auto
+}
+
+/* Buttons */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 16px;
+    border-radius: 12px;
+    border: 0;
+    font-weight: 700;
+    cursor: pointer
+}
+
+.btn--ghost {
+    background: #fff;
+    color: #111827;
+    box-shadow: var(--shadow-soft)
+}
+
+.btn--ghost:hover {
+    filter: brightness(.98)
+}
+
+.btn--brand {
+    background: var(--brand);
+    color: #fff;
+    box-shadow: var(--shadow-soft)
+}
+
+.btn--brand:hover {
+    filter: brightness(.96)
+}
+
+/* ================= NAVBAR ================= */
+.navbar {
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    background: #fff;
+    box-shadow: var(--shadow-soft)
+}
+
+.navbar__inner {
+    height: 68px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between
+}
+
+
+
+.navbar__brand {
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--brand)
+}
+
+/* ================= HERO ================= */
+.hero {
+    position: relative;
+    min-height: 380px;
+    display: flex;
+    align-items: center;
+    overflow: hidden
+}
+
+.hero__bg {
+    position: absolute;
+    inset: 0;
+    filter: blur(1px);
+    transform: scale(1.02);
+    background-size: cover;
+    background-position: center;
+}
+
+.hero__content {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    padding: 56px 0;
+    display: block;
+    /* ใช้ block ธรรมดาแทน flex */
+}
+
+.hero__wrap {
+    width: min(550px, 95%);
+    padding: 2rem;
+    /* background-color: rgba(255, 255, 255, 0.85); */
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+  }
+
+.hero__wrap--align {
+    margin-left: 0;
+    text-align: left;
+}
+
+.hero__wrap--right {
+    margin-left: auto;
+    text-align: right;
+  }
+
+.hero__wrap--center {
+    margin-left: auto;
+    margin-right: auto;
+    text-align: center;
+  }
+
+  .hero__wrap--left {
+    margin-right: auto;
+    text-align: left;
+    
+    /* ตัวอย่างการเพิ่ม margin ในรูปแบบต่างๆ */
+    margin-top: 2rem;           /* margin ด้านบน */
+    margin-bottom: 2rem;        /* margin ด้านล่าง */
+    margin-left: 2rem;          /* margin ด้านซ้าย */
+  }
+
+/* จำกัดความกว้างข้อความให้อ่านง่าย */
+.hero .headline {
+    font-size: 36px;
+    line-height: 1.25;
+    margin: 0 0 10px;
+    font-weight: 800;
+    color: #fff;
+    text-shadow: 0 4px 20px rgba(0, 0, 0, .25)
+}
+
+.hero .sub {
+    margin: 0 0 18px;
+    color: #E6EAF2;
+    font-weight: 300
+}
+
+.hero .cta {
+    padding: 12px 18px;
+    border-radius: 12px;
+    background: var(--brand);
+    color: #fff;
+    font-weight: 700;
+    border: 0
+}
+
+
+
+/* ================= STATS ================= */
+.stats-wrap {
+    position: relative;
+    top: -34px;
+    margin-bottom: -8px
+}
+
+.stats {
+    display: grid;
+    gap: 18px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.stat {
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: var(--shadow);
+    padding: 16px 18px;
+    display: flex;
+    align-items: center;
+    gap: 14px
+}
+
+.stat__icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background: #EEF2FF;
+    display: grid;
+    place-items: center;
+    color: var(--brand)
+}
+
+.stat__value {
+    font-size: 22px;
+    font-weight: 800;
+    margin: 0
+}
+
+.stat__label {
+    margin: 2px 0 0;
+    color: #6B7280;
+    font-size: 14px
+}
+
+/* ================= SECTIONS ================= */
+.section {
+    padding: 56px 0
+}
+
+.section--soft {
+    background: var(--soft)
+}
+
+.section__title {
+    font-size: 22px;
+    font-weight: 800;
+    text-align: center;
+    margin: 0 0 6px
+}
+
+.section__sub {
+    color: #64748B;
+    text-align: center;
+    margin: 0 0 28px
+}
+
+/* ================= ROOMS ================= */
+.rooms {
+    display: grid;
+    gap: 18px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+@media (max-width:1024px) {
+    .rooms {
+        grid-template-columns: repeat(2, minmax(0, 1fr))
+    }
+}
+
+@media (max-width:640px) {
+    .rooms {
+        grid-template-columns: 1fr
+    }
+}
+
+.room {
+    background: var(--card);
+    border-radius: 16px;
+    box-shadow: var(--shadow);
+    padding: 14px 14px 18px;
+    transition: transform .15s ease, box-shadow .15s ease;
+}
+
+.room:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 16px 38px rgba(15, 23, 42, .12)
+}
+
+.room__img {
+    height: 180px;
+    border-radius: 12px;
+    background:
+        linear-gradient(45deg, #ececec 25%, transparent 25%),
+        linear-gradient(-45deg, #ececec 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, #ececec 75%),
+        linear-gradient(-45deg, transparent 75%, #ececec 75%);
+    background-size: 24px 24px;
+    background-position: 0 0, 0 12px, 12px -12px, -12px 0;
+    display: grid;
+    place-items: center;
+    color: #9CA3AF;
+    margin-bottom: 12px;
+}
+
+.room__title {
+    margin: 0 0 6px;
+    font-weight: 800
+}
+
+.room__meta {
+    margin: 0;
+    color: #6B7280;
+    font-size: 14px
+}
+
+.room__row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 10px
+}
+
+.room__price {
+    color: var(--brand);
+    font-weight: 800
+}
+
+.room__avail {
+    color: #6B7280;
+    font-size: 13px
+}
+
+/* ================= FACILITIES ================= */
+.fac {
+    background: #0F1524;
+    color: #fff
+}
+
+.fac .section__title {
+    color: #fff
+}
+
+.fac .section__sub {
+    color: #cbd5e1
+}
+
+.fac__grid {
+    display: grid;
+    gap: 16px;
+    margin: 12px 0 22px;
+    grid-template-columns: repeat(4, minmax(0, 1fr))
+}
+
+@media (max-width:1024px) {
+    .fac__grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr))
+    }
+}
+
+@media (max-width:640px) {
+    .fac__grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr))
+    }
+}
+
+.fac__img {
+    height: 120px;
+    border-radius: 12px;
+    background:
+        linear-gradient(45deg, #e5e7eb 25%, transparent 25%),
+        linear-gradient(-45deg, #e5e7eb 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, #e5e7eb 75%),
+        linear-gradient(-45deg, transparent 75%, #e5e7eb 75%);
+    background-size: 22px 22px;
+    background-position: 0 0, 0 11px, 11px -11px, -11px 0;
+}
+
+.fac__list {
+    display: grid;
+    gap: 10px;
+    grid-template-columns: repeat(3, minmax(0, 1fr))
+}
+
+@media (max-width:900px) {
+    .fac__list {
+        grid-template-columns: repeat(2, minmax(0, 1fr))
+    }
+}
+
+@media (max-width:600px) {
+    .fac__list {
+        grid-template-columns: 1fr
+    }
+}
+
+.fac__item {
+    display: flex;
+    align-items: center;
+    gap: 10px
+}
+
+.check {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: #10B981;
+    color: #0B1220;
+    display: grid;
+    place-items: center;
+    font-weight: 900
+}
+
+/* ================= CTA STRIP & FOOTER ================= */
+.cta-strip {
+    background: var(--brand);
+    padding: 26px 0;
+    color: #fff
+}
+
+.cta-strip a {
+    color: #fff;
+    text-decoration: underline
+}
+
+.footer {
+    background: #fff
+}
+
+.footer__inner {
+    border-top: 1px solid #E5E7EB;
+    text-align: center;
+    padding: 18px 0;
+    color: #334155
+}
+
+/* ================= SMALL TWEAKS (Mobile) ================= */
+@media (max-width:540px) {
+    .hero {
+        min-height: 340px
+    }
+
+    .hero .headline {
+        font-size: 28px
+    }
+
+    .stat__value {
+        font-size: 20px
+    }
+}
+
+/* ========================================================================================================================================================= */
+/* ===== Auth Common ===== */
+.auth__wrap{max-width:720px;margin:0 auto;text-align:center}
+.auth__title{font-size:42px;font-weight:800;margin:6px 0 2px}
+.auth__sub{margin:0 0 22px;color:#64748B}
+.link{color:var(--brand);text-decoration:none;font-weight:700}
+.link:hover{text-decoration:underline}
+
+/* Card / Form */
+.card{background:#fff;border-radius:16px;box-shadow:var(--shadow);padding:24px;text-align:left}
+.form .field{margin-bottom:16px}
+.label{display:block;font-weight:700;margin-bottom:6px}
+.req{color:#EF4444;margin-left:4px}
+.input{width:100%;height:44px;padding:10px 12px;border:1px solid #E5E7EB;border-radius:10px;background:#fff;font-size:16px}
+.input:focus{outline:none;border-color:#93C5FD;box-shadow:0 0 0 4px rgba(37,99,235,.15)}
+.input--error{border-color:#FCA5A5;background:#FEF2F2}
+.error{margin-top:6px;background:#FEE2E2;border:1px solid #FCA5A5;color:#991B1B;border-radius:8px;padding:6px 10px;font-size:13px}
+.btn--block{width:100%;height:44px;margin-top:4px}
+.auth__tiny{text-align:center;margin-top:10px}
+
+/* Stepper */
+.stepper{display:flex;justify-content:center;gap:24px;margin:8px 0 18px}
+.step{position:relative;display:flex;align-items:center;gap:10px;color:#94A3B8}
+.step.is-active{color:#111827}
+.step__dot{width:28px;height:28px;border-radius:50%;background:#E5E7EB;display:grid;place-items:center;font-weight:800}
+.step.is-active .step__dot{background:#2563EB;color:#fff}
+.step__title{font-weight:700}
+.step__bar{width:56px;height:4px;background:#CBD5E1;border-radius:999px;margin-left:6px}
+
+/* Actions */
+.actions{display:flex;justify-content:flex-end;gap:10px;margin-top:10px}
+.actions--split{justify-content:space-between}
+
+/* Summary */
+.summary{background:#F8FAFC;border:1px solid #E5E7EB;border-radius:12px;padding:14px;margin-top:6px}
+
+
+
+/* =================================================================================================================================================== */
+
+/* --- Minimal utilities for admin if no Tailwind --- */
+.bg-white { background:#fff; }
+.bg-gray-50 { background:#F9FAFB; }
+.bg-gray-100 { background:#F3F4F6; }
+.bg-red-50 { background:#FEF2F2; }
+.bg-yellow-50 { background:#FFFBEB; }
+.bg-blue-50 { background:#EFF6FF; }
+
+.text-gray-900 { color:#111827; }
+.text-gray-700 { color:#374151; }
+.text-gray-600 { color:#4B5563; }
+.text-gray-500 { color:#6B7280; }
+.text-blue-500 { color:#3B82F6; }
+.text-blue-600 { color:#2563EB; }
+.text-blue-900 { color:#1E3A8A; }
+.text-green-600 { color:#16A34A; }
+.text-red-600 { color:#DC2628; }
+.text-yellow-600 { color:#CA8A04; }
+.text-yellow-800 { color:#854D0E; }
+.text-green-800 { color:#14532D; }
+.text-red-800 { color:#991B1B; }
+
+.rounded-md { border-radius:0.375rem; }
+.rounded-lg { border-radius:0.5rem; }
+.rounded-full { border-radius:9999px; }
+
+.shadow { box-shadow: 0 1px 2px rgba(0,0,0,.06), 0 1px 3px rgba(0,0,0,.1); }
+.hover\:shadow-md:hover { box-shadow: 0 4px 6px rgba(0,0,0,.1); }
+
+.p-1{padding:.25rem}.p-2{padding:.5rem}.p-3{padding:.75rem}.p-4{padding:1rem}.p-5{padding:1.25rem}
+.px-2{padding-left:.5rem;padding-right:.5rem}.px-3{padding-left:.75rem;padding-right:.75rem}
+.px-4{padding-left:1rem;padding-right:1rem}.px-6{padding-left:1.5rem;padding-right:1.5rem}
+.py-2{padding-top:.5rem;padding-bottom:.5rem}.py-3{padding-top:.75rem;padding-bottom:.75rem}
+.py-5{padding-top:1.25rem;padding-bottom:1.25rem}
+.pt-5{padding-top:1.25rem}.pb-4{padding-bottom:1rem}.pb-6{padding-bottom:1.5rem}.pb-12{padding-bottom:3rem}
+
+.grid{display:grid}.grid-cols-1{grid-template-columns:repeat(1,minmax(0,1fr))}
+.grid-cols-4{grid-template-columns:repeat(4,minmax(0,1fr))}
+.gap-3{gap:.75rem}.gap-5{gap:1.25rem}.gap-8{gap:2rem}
+
+.flex{display:flex}.items-center{align-items:center}.justify-between{justify-content:space-between}
+.flex-col{flex-direction:column}.flex-1{flex:1 1 auto}.flex-shrink-0{flex-shrink:0}
+.hidden{display:none}.md\:flex{display:flex}@media (max-width:767px){.md\:flex{display:none}}
+.md\:hidden{display:none}@media (max-width:767px){.md\:hidden{display:block}}
+.md\:ml-0{margin-left:0}@media (min-width:768px){.md\:ml-0{margin-left:0}}
+.md\:ml-6{margin-left:1.5rem}@media (max-width:767px){.md\:ml-6{margin-left:0}}
+
+.h-16{height:4rem}.h-5{height:1.25rem}.h-6{height:1.5rem}.h-8{height:2rem}
+.w-5{width:1.25rem}.w-6{width:1.5rem}.w-8{width:2rem}.w-full{width:100%}.max-w-xs{max-width:20rem}
+.mx-auto{margin-left:auto;margin-right:auto}
+.mt-1{margin-top:.25rem}.mt-2{margin-top:.5rem}.mt-4{margin-top:1rem}.mt-5{margin-top:1.25rem}
+.mb-4{margin-bottom:1rem}.mb-8{margin-bottom:2rem}
+.ml-16{margin-left:4rem}.ml-3{margin-left:.75rem}.mr-2{margin-right:.5rem}.mr-3{margin-right:.75rem}
+
+.border{border-width:1px}.border-gray-200{border-color:#E5E7EB}.border-gray-300{border-color:#D1D5DB}
+.rounded-md{border-radius:.375rem}
+.placeholder-gray-500::placeholder{color:#6B7280}
+.focus\:ring-1:focus{outline:none;box-shadow:0 0 0 1px #2563EB}
+.focus\:ring-blue-500:focus{box-shadow:0 0 0 1px #2563EB}
+.focus\:border-blue-500:focus{border-color:#2563EB}
+.transition-colors{transition:color .15s ease, background-color .15s ease}
+.transition-shadow{transition:box-shadow .15s ease}
+
+
+
+/* =================================================================================================================================================== */
+/* ============= ADMIN DASHBOARD ============= */
+/* Card look & feel */
+.card-soft {
+    border: 0;
+    border-radius: 14px;
+    box-shadow: 0 10px 20px rgba(15,23,42,.06);
+  }
+  
+  /* Stat tile */
+  .stat-icon{
+    width:40px;height:40px;border-radius:12px;
+    display:grid;place-items:center;
+    background:#eef6ff;color:#2563eb;font-size:20px;
+  }
+  
+  /* Room map */
+  .room-grid{
+    grid-template-columns: repeat(6, minmax(0,1fr));
+    gap: 10px;
+  }
+  .room{
+    background:#fff;border-radius:12px;padding:10px;text-align:center;
+    box-shadow: inset 0 0 0 1px #e9ecef;
+  }
+  .room__type{font-size:12px}
+  .room__badge{font-size:11px;font-weight:700}
+  
+  .room--ava{background:#ecfdf5}
+  .room--ava .room__badge{background:#d1fae5;color:#166534}
+  .room--occ{background:#fef2f2}
+  .room--occ .room__badge{background:#fecaca;color:#991b1b}
+  .room--mnt{background:#fffbeb}
+  .room--mnt .room__badge{background:#fde68a;color:#854d0e}
+  
+  .legend{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px}
+  .legend--occ{background:#9ca3af}
+  .legend--ava{background:#34d399}
+  .legend--mnt{background:#fbbf24}
+  
+  /* Soft buttons for quick menu */
+  .btn-soft-blue{
+    background:#eef6ff;color:#2563eb;border-color:#e6f0ff;
+  }
+  .btn-soft-blue:hover{background:#e2efff; color:#1d4ed8}
+  .btn-soft-amber{
+    background:#fffbeb;color:#92400e;border-color:#fde68a;
+  }
+  .btn-soft-amber:hover{background:#fff5cc;color:#7c2d12}
+  
+  /* Bootstrap 5 color helpers ifไม่มี bootstrap-icons ก็ใช้ emoji ได้ */
+  .bg-success-subtle{ background:#e7f8ef!important }
+  .text-success-emphasis{ color:#137a36!important }
+  .bg-warning-subtle{ background:#fff2cc!important }
+  .text-warning-emphasis{ color:#8a5a00!important }
+  .bg-danger-subtle{ background:#fde2e1!important }
+  .text-danger-emphasis{ color:#a1261c!important }
+  
+  /* Responsive tweak */
+  @media (max-width: 992px){
+    .room-grid{ grid-template-columns: repeat(4, minmax(0,1fr)); }
+  }
+  @media (max-width: 576px){
+    .room-grid{ grid-template-columns: repeat(3, minmax(0,1fr)); }
+  }
+
+
+
+
+/* ===================================================================== */
+/* โหมด tenant (มีแท็บขีดเส้นใต้)
+หมด admin (โชว์ข้อความทักทาย)
+โหมด public (ปุ่มเข้าสู่ระบบ/สมัครสมาชิก) */
+/* ============== NAVBAR (ตามดีไซน์) ============== */
+.nv{
+    position:sticky; top:0; z-index:40;
+    background:#fff; border-bottom:1px solid #E5E7EB;
+  }
+  .nv__inner{
+    height:72px; display:flex; align-items:center; justify-content:space-between;
+    gap:16px;
+  }
+  .nv__brand{
+    font-family:"Kanit",system-ui,sans-serif;
+    font-size:28px; font-weight:800; color:#2563EB; text-decoration:none;
+    white-space:nowrap;
+  }
+  
+  /* Right area */
+  .nv__right{display:flex; align-items:center; gap:18px}
+  .nv__greet{font-size:14px; color:#475569}
+  .nv__link{
+    display:inline-flex; align-items:center; gap:8px;
+    background:transparent; border:0; color:#64748B; font-weight:600;
+    cursor:pointer; padding:8px 10px; border-radius:10px;
+  }
+  .nv__link:hover{background:#F8FAFC; color:#0F172A}
+  
+  /* Tabs (โหมด tenant) */
+  .nv__tabs{display:flex; gap:24px; margin-right:6px}
+  .nv__tab{
+    position:relative; padding:10px 0; color:#64748B; text-decoration:none; font-weight:700;
+  }
+  .nv__tab.is-active{color:#2563EB}
+  .nv__tab.is-active::after{
+    content:""; position:absolute; left:0; right:0; bottom:-11px;
+    height:3px; background:#2563EB; border-radius:3px;
+  }
+  
+  /* Buttons (reuse ปุ่มเดิมในไฟล์นี้) */
+  .btn{
+    display:inline-flex; align-items:center; justify-content:center;
+    height:40px; padding:0 16px; border-radius:12px; border:1px solid transparent;
+    font-weight:800; cursor:pointer; text-decoration:none;
+    font-family:"Kanit",system-ui,sans-serif;
+  }
+  .btn--ghost{background:#fff; color:#0F172A; border-color:#E5E7EB}
+  .btn--ghost:hover{background:#F8FAFC}
+  .btn--brand{background:#2563EB; color:#fff; box-shadow:0 8px 20px rgba(37,99,235,.1)}
+  .btn--brand:hover{filter:brightness(.98)}
+  
+  .nv__ico{width:18px; height:18px}
+  .nv__ico--btn{width:16px; height:16px;}
+  
+  /* Responsive */
+  @media (max-width:860px){
+    .nv__brand{font-size:22px}
+    .nv__tabs{gap:16px}
+  }
+  @media (max-width:640px){
+    .nv__inner{height:66px}
+    .nv__right{gap:12px}
+    .btn{height:38px; padding:0 12px}
+    .nv__greet{display:none}
+  }
+
+  /* ========================================================================================================================================================= */
+
+  /* ====== Sidebar (Bootstrap-based) ====== */
+.sb{
+    position: sticky; top: 0;
+    width: 230px; min-height: 100vh;
+    background: #fff; border-right: 1px solid #e5e7eb;
+    font-family: "Kanit", system-ui, sans-serif;
+  }
+  .sb__inner{ padding: 14px 12px; }
+  .sb__brand{
+    font-size: 20px; font-weight: 800; color: #2563EB;
+    padding: 8px 10px; margin-bottom: 10px;
+  }
+  .sb__nav{ display: flex; flex-direction: column; gap: 8px; }
+  
+  /* รายการเมนู */
+  .sb__item{
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 12px; border-radius: 12px; text-decoration: none;
+    color: #334155; font-weight: 700;
+    transition: background .15s ease, color .15s ease, box-shadow .15s ease;
+  }
+  .sb__item:hover{ background: #f8fafc; color: #0f172a; }
+  .sb__item.is-danger{ color: #9b1c1c; }
+  .sb__item.is-danger:hover{ background: #fff5f5; color: #7f1d1d; }
+  
+  /* ไอคอนวงกลม */
+  .sb__icon{
+    width: 34px; height: 34px; border-radius: 10px;
+    display: grid; place-items: center; font-size: 18px;
+    background: #eef2ff; color: #2563eb;
+  }
+  .sb__label{ white-space: nowrap; }
+  
+  /* สถานะ Active */
+  .sb__item.is-active{
+    background: #eff6ff; color: #1d4ed8;
+    box-shadow: inset 0 0 0 1.5px #dbeafe;
+  }
+  .sb__item.is-active .sb__icon{
+    background: #2563eb; color: #fff;
+  }
+  
+  /* ยุบขนาดบนจอเล็ก */
+  @media (max-width: 992px){
+    .sb{ width: 200px; }
+  }
+  @media (max-width: 768px){
+    .sb{ position: fixed; z-index: 50; inset: 0 auto 0 0; transform: translateX(-100%); transition: transform .25s ease; }
+    .sb.is-open{ transform: translateX(0); }
+  }
+
+/* ========================================================================================================================================================= */
+/* ความสูงมาตรฐานของกล่องแผนที่ห้อง (ปรับได้) */
+:root{
+    --roommap-height: 325px;   /* สูงทั้ง card-body ที่จะสกรอล */
+    --roommap-pad:  10px;      /* padding ด้านใน (เผื่อให้เงาสกอลบาร์ไม่ทับ) */
+  }
+  
+  /* ทำให้ส่วนเนื้อหาแผนที่ห้องสกรอลภายใน */
+  .roommap-scroll{
+    max-height: var(--roommap-height);
+    overflow: auto;               /* สกรอลเฉพาะเนื้อหาข้างใน */
+    padding-right: var(--roommap-pad);
+    overscroll-behavior: contain; /* กันการสกรอลทะลุไปข้างนอก */
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  /* ปรับขนาดพื้นที่กริดห้องให้ยังดูพอดีในพื้นที่แคบ */
+  .room-grid{
+    grid-template-columns: repeat(6, minmax(0,1fr));
+    gap: 10px;
+  }
+  
+  /* สกอลบาร์สวยขึ้น (ไม่บังคับ) */
+  .roommap-scroll::-webkit-scrollbar{
+    width: 8px;
+  }
+  .roommap-scroll::-webkit-scrollbar-thumb{
+    background: #cbd5e1;
+    border-radius: 8px;
+  }
+  .roommap-scroll::-webkit-scrollbar-track{
+    background: transparent;
+  }
+  
+  /* Responsive: หน้าจอเล็กลดความสูงลงนิดหน่อย */
+  @media (max-width: 992px){
+    :root{ --roommap-height: 300px; }
+    .room-grid{ grid-template-columns: repeat(4, minmax(0,1fr)); }
+  }
+  @media (max-width: 576px){
+    :root{ --roommap-height: 260px; }
+    .room-grid{ grid-template-columns: repeat(3, minmax(0,1fr)); }
+  }
+
+/* ========================================================================================================================================================= */
+
+/* กล่องการ์ดนุ่มและเงาอ่อน ๆ ให้เหมือนดีไซน์ */
+.qm-card{
+    border: 0;
+    border-radius: 14px;
+    box-shadow: 0 10px 20px rgba(15,23,42,.06);
+    font-family: "Kanit", system-ui, sans-serif;
+  }
+  
+  /* ปุ่มนุ่ม (soft) เต็มความกว้าง จัดกึ่งกลางไอคอน+ข้อความ */
+  .qm-btn{
+    border-radius: 12px;
+    padding: 12px 16px;
+    border: 1px solid transparent;
+  }
+  
+  /* โทนฟ้าอ่อน */
+  .qm-btn-blue{
+    background: #eef6ff;
+    color: #2563eb;
+    border-color: #e6f0ff;
+  }
+  .qm-btn-blue:hover{
+    background: #e2efff;
+    color: #1d4ed8;
+  }
+  
+  /* โทนเหลืองอ่อน */
+  .qm-btn-amber{
+    background: #fffbeb;
+    color: #b45309;            /* ส้ม-ทอง */
+    border-color: #fde68a;
+  }
+  .qm-btn-amber:hover{
+    background: #fff5cc;
+    color: #92400e;
+  }
+
+/* ========================================================================================================================================================= */
+
+/* RoomManagement style */
+/* การ์ดนุ่ม + เงาอ่อน */
+.card-soft{
+  border: 0;
+  border-radius: 14px;
+  box-shadow: 0 10px 20px rgba(15,23,42,.06);
+}
+
+/* ไอคอนใน stat tile */
+.stat-icon{
+  width:42px; height:42px; border-radius:12px; display:grid; place-items:center;
+  font-size:20px;
+}
+
+/* กริดห้อง */
+.room-grid{
+  grid-template-columns: repeat(6, minmax(0,1fr));
+  gap: 12px;
+}
+@media (max-width: 992px){
+  .room-grid{ grid-template-columns: repeat(4, minmax(0,1fr)); }
+}
+@media (max-width: 576px){
+  .room-grid{ grid-template-columns: repeat(3, minmax(0,1fr)); }
+}
+
+/* การ์ดห้อง */
+.room-cell{
+  border: 0;
+  padding: 12px 12px 10px;
+  border-radius: 12px;
+  box-shadow: inset 0 0 0 1px #e5e7eb;
+  background: #fff;
+  transition: transform .05s ease, box-shadow .15s ease;
+}
+.room-cell:hover{
+  transform: translateY(-1px);
+  box-shadow: inset 0 0 0 1px #d1d5db, 0 8px 18px rgba(15,23,42,.04);
+}
+.room-cell .status-badge{ font-size: 11px; font-weight: 800; }
+
+/* สีพื้นตามสถานะ */
+.room-cell.available{ background:#ecfdf5; }
+.room-cell.available .status-badge{ background:#d1fae5; color:#166534; }
+.room-cell.occupied{ background:#fef2f2; }
+.room-cell.occupied .status-badge{ background:#fecaca; color:#991b1b; }
+.room-cell.maintenance{ background:#fffbeb; }
+.room-cell.maintenance .status-badge{ background:#fde68a; color:#854d0e; }
+.room-cell.reserved { 
+  background:#eff6ff;
+}
+.room-cell.reserved .status-badge { 
+  background:#bfdbfe; 
+  color:#1e3a8a; 
+}
+
+/* จุด active (เส้นฟ้าตามภาพ) */
+.active-dot{
+  width: 8px; height: 8px; border-radius: 50%;
+  background:#2563eb; margin-top: 2px;
+}
+
+/* ปรับ input-group ให้ขอบเนียน */
+.input-group .form-control:focus{
+  box-shadow: none;
+  border-color: #cbd5e1;
+}
+/* ======================================================================================================================================================== */
+
+/* ===== Tenant Shell ===== */
+.tenant-topbar{
+  height:64px; display:flex; align-items:center; justify-content:space-between;
+  padding:0 20px; background:#fff; box-shadow:0 1px 0 #e5e7eb; position:sticky; top:0; z-index:20;
+}
+.tenant-topbar .brand{ font-weight:800; color:#2563EB; }
+.tenant-topbar .top-link{ margin-right:12px; color:#334155; text-decoration:none; }
+
+.tenant-body{ display:flex; gap:16px; padding:16px; }
+.tenant-sidebar{
+  width:200px; flex:0 0 200px; background:#fff; border:1px solid #e5e7eb; border-radius:12px;
+  padding:10px; height:calc(100dvh - 96px); position:sticky; top:80px; overflow:auto;
+}
+.side-item{ display:block; padding:12px 14px; border-radius:10px; color:#1f2937; text-decoration:none; }
+.side-item.active, .side-item:hover{ background:#eef2ff; color:#1e3a8a; }
+
+.tenant-content{ flex:1; min-width:0; }
+
+.tenant-hero{
+  height:120px; background-image:linear-gradient(0deg, rgba(37,99,235,.10), rgba(37,99,235,.10)),
+                  repeating-linear-gradient(90deg,#f3f4f6 0 60px,#fff 60px 120px);
+  border-radius:16px; display:flex; flex-direction:column; justify-content:center; padding:20px;
+  margin-bottom:16px;
+}
+.page-title{ margin:0 0 4px; font-weight:800; font-size:28px; }
+
+/* ===== grid helpers ===== */
+.grid-1{ display:grid; grid-template-columns:1fr; gap:12px;}
+.grid-2{ display:grid; grid-template-columns:1fr 1fr; gap:12px;}
+.grid-3{ display:grid; grid-template-columns:repeat(3,1fr); gap:12px;}
+.gap-12{ gap:12px; }
+.mt-12{ margin-top:12px; } .mt-16{ margin-top:16px; } .mb-16{ margin-bottom:16px; } .mb-24 { margin-bottom:24px; }
+.text-center{ text-align:center; } .text-muted{ color:#64748B; }
+
+/* ===== cards / stats ===== */
+.card{ background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:16px; }
+.card-head{ font-weight:700; margin-bottom:8px; }
+.stat .stat-title{ color:#64748b; font-size:14px; }
+.stat .stat-value{ font-weight:800; font-size:26px; }
+.stat .stat-sub{ color:#94a3b8; font-size:12px; }
+
+/* ===== fake bar charts ===== */
+.fake-bars{ display:flex; align-items:flex-end; gap:12px; height:160px; padding:8px 0; }
+.fake-bars .bar{ width:32px; border-radius:6px; background:#d1d5db; }
+
+/* ===== table ===== */
+.table{ width:100%; border-collapse:separate; border-spacing:0 10px; }
+.table thead th{ text-align:left; font-weight:700; color:#475569; }
+.table tbody tr{ background:#fff; }
+.table tbody td, .table thead th{ padding:10px 12px; border-bottom:1px solid #e5e7eb; }
+.table-responsive{ overflow:auto; }
+.badge{ padding:4px 10px; border-radius:999px; font-size:12px; }
+.badge--success{ background:#e7f8ef; color:#0f766e; }
+.badge--danger{ background:#fee2e2; color:#b91c1c; }
+
+/* ===== forms / upload ===== */
+.form-group{ margin-bottom:12px; }
+.form-control{ width:100%; padding:10px 12px; border:1px solid #e5e7eb; border-radius:10px; font:inherit; }
+.upload-box{ border:2px dashed #cbd5e1; border-radius:12px; padding:24px; margin:10px 0; }
+.upload-inner{ text-align:center; color:#64748b }
+.upload-icon{ width:72px; height:72px; margin:0 auto 8px; background:#e5e7eb; border-radius:12px }
+
+/* ===== lease preview ===== */
+.lease-box{ background:#f8fafc; border:1px solid #e5e7eb; border-radius:12px; height:70vh; overflow:auto; display:grid; place-items:center; }
+.lease-page{ width:85%; min-height:900px; background:#fff; border:1px solid #e5e7eb; border-radius:10px; display:grid; place-items:center; color:#94a3b8 }
+
+/* ===== cta strip ===== */
+.cta-strip{ background:#2563EB; color:#fff; border-radius:12px; padding:20px; text-align:center; }
+
+/* ===== buttons ===== */
+.btn{ display:inline-flex; align-items:center; justify-content:center; padding:10px 14px; border-radius:10px; border:0; cursor:pointer; }
+.btn--brand{ background:#2563EB !important; color:#fff !important; }
+.btn--ghost{ background:#fff; color:#111827; box-shadow:0 1px 2px rgba(0,0,0,.04); }
+.px-32{ padding-left:32px; padding-right:32px; }
+
+
+/* ทำ scrollbar แบบบาง ๆ */
+.custom-scroll::-webkit-scrollbar {
+  width: 8px;              /* ความหนา */
+}
+
+.custom-scroll::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.2); /* สี */
+  border-radius: 3px;      /* มุมโค้ง */
+}
+
+.custom-scroll::-webkit-scrollbar-track {
+  background: transparent; /* ฉากหลัง */
+}
+
+
+/* ======================================================================================================================================================================================================================== */

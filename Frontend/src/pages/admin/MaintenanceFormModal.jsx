@@ -1,0 +1,198 @@
+import React, { useState, useEffect } from "react";
+import axios from "axios";
+
+export default function MaintenanceFormModal({ open, onClose, onSuccess, log }) {
+  const isEdit = !!log;
+
+  const [form, setForm] = useState({
+    logId: "",
+    roomNum: "",
+    logType: "",
+    description: "",
+    technician: "",
+    cost: "",
+    requestDate: "",
+    completedDate: "",
+    status: "in_progress",
+  });
+
+  const baseURL = import.meta.env.VITE_API_BASE_URL;
+
+  useEffect(() => {
+    if (isEdit && log) {
+      setForm({
+        logId: log.logId || "",
+        roomNum: log.room?.roomNum || "",
+        logType: log.logType || "",
+        description: log.description || "",
+        technician: log.technician || "",
+        cost: log.cost || "",
+        requestDate: log.requestDate || "",
+        completedDate: log.completedDate || "",
+        status: log.status || "in_progress",
+      });
+    }
+  }, [isEdit, log]);
+
+  if (!open) return null;
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setForm((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubmit = async () => {
+    const payload = {
+      logId: form.logId,
+      room: { roomNum: form.roomNum },
+      logType: form.logType,
+      description: form.description,
+      technician: form.technician,
+      cost: parseFloat(form.cost || 0),
+      requestDate: form.requestDate,
+      completedDate: form.completedDate || null,
+      status: form.status,
+    };
+
+    try {
+      if (isEdit) {
+        await axios.put(`${baseURL}/maintenance-logs/${form.logId}`, payload);
+      } else {
+        await axios.post(`${baseURL}/maintenance-logs`, payload);
+      }
+      if (onSuccess) onSuccess();
+      onClose();
+    } catch (err) {
+      console.error("Error saving maintenance log:", err);
+    }
+  };
+
+  return (
+    <>
+      <div className="modal-backdrop fade show"></div>
+      <div className="modal fade show d-block" tabIndex="-1" role="dialog">
+        <div className="modal-dialog modal-lg modal-dialog-centered">
+          <div className="modal-content" style={{ fontFamily: "Kanit, system-ui" }}>
+            {/* Header */}
+            <div className="modal-header">
+              <h5 className="modal-title fw-bold">
+                {isEdit ? "แก้ไขงานซ่อม" : "สร้างงานซ่อมใหม่"}
+              </h5>
+              <button className="btn-close" onClick={onClose} />
+            </div>
+
+            {/* Body */}
+            <div className="modal-body">
+              <div className="row g-3">
+                {isEdit && (
+                  <div className="col-md-6">
+                    <label className="form-label">รหัสงาน</label>
+                    <input
+                      className="form-control"
+                      name="logId"
+                      value={form.logId}
+                      readOnly
+                    />
+                  </div>
+                )}
+                <div className="col-md-6">
+                  <label className="form-label">ห้อง</label>
+                  <input
+                    className="form-control"
+                    name="roomNum"
+                    value={form.roomNum}
+                    onChange={handleChange}
+                    readOnly={isEdit} 
+                  />
+                </div>
+                <div className="col-md-6">
+                  <label className="form-label">ประเภทงาน</label>
+                  <input
+                    className="form-control"
+                    name="logType"
+                    value={form.logType}
+                    onChange={handleChange}
+                    readOnly={isEdit}
+                  />
+                </div>
+                <div className="col-md-12">
+                  <label className="form-label">รายละเอียด</label>
+                  <textarea
+                    className="form-control"
+                    name="description"
+                    value={form.description}
+                    onChange={handleChange}
+                    readOnly={isEdit}
+                  />
+                </div>
+                <div className="col-md-6">
+                  <label className="form-label">ผู้ดำเนินการ</label>
+                  <input
+                    className="form-control"
+                    name="technician"
+                    value={form.technician}
+                    onChange={handleChange}
+                  />
+                </div>
+                <div className="col-md-6">
+                  <label className="form-label">ค่าใช้จ่าย</label>
+                  <input
+                    className="form-control"
+                    name="cost"
+                    type="number"
+                    value={form.cost}
+                    onChange={handleChange}
+                  />
+                </div>
+                <div className="col-md-6">
+                  <label className="form-label">วันที่แจ้ง</label>
+                  <input
+                    className="form-control"
+                    name="requestDate"
+                    type="date"
+                    value={form.requestDate}
+                    onChange={handleChange}
+                    readOnly={isEdit}
+                  />
+                </div>
+                <div className="col-md-6">
+                  <label className="form-label">วันที่เสร็จ</label>
+                  <input
+                    className="form-control"
+                    name="completedDate"
+                    type="date"
+                    value={form.completedDate}
+                    onChange={handleChange}
+                  />
+                </div>
+                <div className="col-md-6">
+                  <label className="form-label">สถานะ</label>
+                  <select
+                    className="form-select"
+                    name="status"
+                    value={form.status}
+                    onChange={handleChange}
+                  >
+                    <option value="in_progress">กำลังดำเนินการ</option>
+                    <option value="completed">เสร็จแล้ว</option>
+                    <option value="scheduled">วางแผน</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="modal-footer">
+              <button className="btn btn-outline-secondary" onClick={onClose}>
+                ยกเลิก
+              </button>
+              <button className="btn btn-primary" onClick={handleSubmit}>
+                {isEdit ? "บันทึกการแก้ไข" : "สร้าง"}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
