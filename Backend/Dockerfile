@@ -16,6 +16,7 @@ RUN ./gradlew build -x test --continue || true
 COPY . .
 
 # สร้าง jar ไฟล์
+RUN chmod +x gradlew
 RUN ./gradlew clean bootJar -x test
 
 # ========= Stage 2 =========

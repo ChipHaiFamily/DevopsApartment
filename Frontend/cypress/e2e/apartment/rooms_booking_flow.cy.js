@@ -1,158 +1,114 @@
-// cypress/e2e/rooms_booking_flow.cy.js
-const fmt = (d) => d.toISOString().slice(0, 10); // YYYY-MM-DD สำหรับ input[type=date]
+// cypress/e2e/public/room.cy.js
+// Flow การจองหน้า Room.jsx — ใช้ /rooms/undefined (fallback เป็นห้องเล็ก)
 
-/** ปิด modal ถ้ามี */
-const closeModalIfAny = () => {
-  cy.get('body').then(($b) => {
-    const candidates = [
-      '[aria-label="Close"]',
-      '.modal [aria-label="close"]',
-      '.ant-modal-close',
-      '.MuiDialog-root [aria-label="close"]',
-      '.modal .close',
-      'button:contains("ปิด")',
-      'button:contains("ตกลง")',
-      'button:contains("ยืนยัน")',
-      'button:contains("Close")',
-      '.MuiDialog-root button',
-    ];
-    candidates.forEach((sel) => {
-      const $el = $b.find(sel);
-      if ($el.length) cy.get(sel).first().click({ force: true });
-    });
-  });
-};
+const BASE = 'http://localhost:3000';
 
-describe('Rooms booking flow', () => {
+describe('Public → Room booking flow (flex)', () => {
   beforeEach(() => {
     cy.viewport(1440, 900);
+    // ล็อกเวลาให้คงที่ (Bangkok ~ +07:00) เพื่อเทียบ "วันนี้หรืออนาคต"
+    cy.clock(new Date('2025-09-26T09:00:00+07:00').getTime());
+    cy.visit(`${BASE}/rooms/undefined`);
   });
 
-  it('สามารถสลับไปมาระหว่าง /rooms/small, /rooms/medium, /rooms/large', () => {
-    cy.visit('http://localhost:3000/rooms/small');
-    cy.url().should('include', '/rooms/small');
+  it('renders fallback to "ห้องเล็ก" when type is undefined; tabs switch types', () => {
+    // ปุ่มสลับชนิดห้องอยู่ครบ
+    cy.contains('a.btn', 'ห้องเล็ก').should('exist');
+    cy.contains('a.btn', 'ห้องกลาง').should('exist');
+    cy.contains('a.btn', 'ห้องใหญ่').should('exist');
 
-    cy.contains(/ห้องกลาง|กลาง|Medium/i)
-      .click({ force: true })
-      .then(() => cy.url().should('include', '/rooms/medium'), () => {
-        cy.visit('http://localhost:3000/rooms/medium');
-      });
-    cy.url().should('include', '/rooms/medium');
+    // /rooms/undefined ควร fallback เป็น "ห้องเล็ก" (ปุ่ม active)
+    cy.contains('a.btn', 'ห้องเล็ก').should('have.class', 'active');
 
-    cy.contains(/ห้องใหญ่|ใหญ่|Large/i)
-      .click({ force: true })
-      .then(() => cy.url().should('include', '/rooms/large'), () => {
-        cy.visit('http://localhost:3000/rooms/large');
-      });
-    cy.url().should('include', '/rooms/large');
+    // HERO มีหัวเรื่องและราคา (ไม่ล็อกตัวเลข)
+    cy.contains(/ห้องพัก/).should('be.visible'); // เช่น "ห้องพักขนาดเล็ก"
+    cy.contains(/เดือน/).should('be.visible');   // “–/เดือน” บริเวณราคา
+
+    // สลับแท็บแบบยืดหยุ่น
+    cy.contains('a.btn', 'ห้องกลาง').click();
+    cy.url().should('match', /\/rooms\/medium$/);
+    cy.contains('a.btn', 'ห้องกลาง').should('have.class', 'active');
+
+    cy.contains('a.btn', 'ห้องใหญ่').click();
+    cy.url().should('match', /\/rooms\/large$/);
+    cy.contains('a.btn', 'ห้องใหญ่').should('have.class', 'active');
+
+    // กลับมาห้องเล็ก
+    cy.contains('a.btn', 'ห้องเล็ก').click();
+    cy.url().should('match', /\/rooms\/small$/);
+    cy.contains('a.btn', 'ห้องเล็ก').should('have.class', 'active');
   });
 
-  it('ฟอร์ม: เลือกประเภทห้อง + เลือกวันที่เป็นอดีตแล้วเตือนเรื่องวันที่', () => {
-    cy.visit('http://localhost:3000/rooms/small');
-    cy.contains('จองห้องที่คุณต้องการ').should('be.visible');
+  it('opens/closes Terms modal from both links', () => {
+    // จากลิงก์ "ข้อตกลงและเงื่อนไข"
+    cy.contains('button', 'ข้อตกลงและเงื่อนไข').click();
+    cy.contains('.modal .modal-title', 'ข้อตกลงและเงื่อนไขการจอง').should('be.visible');
+    cy.get('.modal .btn-secondary,[data-bs-dismiss="modal"]').first().click();
+    cy.get('.modal.show').should('not.exist');
 
-    // เลือก "ประเภทห้องที่ต้องการ" 
-    cy.get('select').first().select(1); 
-
-    // กรอกเป็น "เมื่อวาน" / test error date
-    const yesterday = new Date();
-    yesterday.setDate(yesterday.getDate() - 1);
-    const yStr = fmt(yesterday);
-
-    cy.get('input[type="date"]')
-      .first()
-      .then(($date) => {
-        if ($date.length) cy.wrap($date).invoke('val', yStr).trigger('change');
-        else {
-          // fallback กรณีเป็น datepicker custom
-          cy.get('input')
-            .filter((i, el) => (el.placeholder || '').match(/dd|วัน|date/i) || el.type === 'text')
-            .first()
-            .clear()
-            .type(yStr);
-        }
-      });
-
-    // ติ๊ก checkbox ให้ครบ เพื่อโฟกัส error ที่ "วันที่"
-    cy.get('input[type="checkbox"]').eq(0).check({ force: true });
-    cy.get('input[type="checkbox"]').eq(1).check({ force: true });
-
-    cy.contains('ส่งคำขอ').click();
-
-    cy.contains('กรอกข้อมูลไม่ครบถ้วน วันที่เข้าอยู่ต้องเป็นวันนี้หรืออนาคต', { timeout: 8000 })
-      .should('be.visible');
+    // จากลิงก์ "นโยบายความเป็นส่วนตัว"
+    cy.contains('button', 'นโยบายความเป็นส่วนตัว').click();
+    cy.contains('.modal .modal-title', 'ข้อตกลงและเงื่อนไขการจอง').should('be.visible');
+    cy.get('.modal .btn-secondary,[data-bs-dismiss="modal"]').first().click();
+    cy.get('.modal.show').should('not.exist');
   });
 
-  it('ฟอร์ม: ไม่ติ๊ก checkbox แล้วส่ง → เตือนให้ยอมรับเงื่อนไขและนโยบาย', () => {
-    cy.visit('http://localhost:3000/rooms/medium');
+  it('shows error modal when submitting empty/invalid fields', () => {
+    // ยกเลิก checkbox ทั้งสองเพื่อให้ติด validation
+    cy.get('input#tos').uncheck({ force: true });
+    cy.get('input#privacy').uncheck({ force: true });
 
-    // เลือกประเภทห้อง + ตั้งวันเป็นวันนี้
-    cy.get('select').first().select(1);
-    const today = fmt(new Date());
-    cy.get('input[type="date"]').first().then(($date) => {
-      if ($date.length) cy.wrap($date).invoke('val', today).trigger('change');
-      else {
-        cy.get('input')
-          .filter((i, el) => (el.placeholder || '').match(/dd|วัน|date/i) || el.type === 'text')
-          .first()
-          .clear()
-          .type(today);
-      }
-    });
+    // ไม่ใส่วันที่ → submit
+    cy.contains('button', 'ส่งคำขอ').click();
 
-    // ไม่ติ๊ก checkbox
-    cy.contains('ส่งคำขอ').click();
+    // Error modal ต้องขึ้น และมีรายการ error อย่างน้อยหนึ่ง
+    cy.contains('.modal .modal-title', 'กรอกข้อมูลไม่ครบถ้วน').should('be.visible');
+    cy.get('.modal .modal-body ul li').its('length').should('be.greaterThan', 0);
 
-    cy.contains('กรอกข้อมูลไม่ครบถ้วน กรุณายอมรับเงื่อนไขและนโยบายความเป็นส่วนตัว', { timeout: 8000 })
-      .should('be.visible');
+    // ปิด error modal
+    cy.get('.modal .btn.btn-primary,[data-bs-dismiss="modal"]').first().click();
+    cy.get('.modal.show').should('not.exist');
   });
 
-  it('เปิดดู "ข้อตกลงและเงื่อนไขการจอง (ตัวอย่าง)" แล้วปิด modal ได้ทุกครั้ง', () => {
-    cy.visit('http://localhost:3000/rooms/large');
+  it('blocks past move-in date (ต้องเป็นวันนี้หรืออนาคต)', () => {
+    // ใส่วันที่ย้อนหลัง (ก่อน 2025-09-26)
+    cy.get('input[type="date"]').clear().type('2025-09-01');
+    // เช็คบ็อกซ์ให้ถูกต้อง (เพื่อให้ trigger เฉพาะ error วันที่)
+    cy.get('input#tos').check({ force: true });
+    cy.get('input#privacy').check({ force: true });
 
-    cy.contains(/ข้อตกลงและเงื่อนไข/i).click({ force: true });
+    cy.contains('button', 'ส่งคำขอ').click();
 
-    // modal
-    cy.get('[role="dialog"], .modal, .ant-modal, .MuiDialog-root', { timeout: 8000 }).should('be.visible');
-    cy.contains(/ข้อตกลงและเงื่อนไข|ตัวอย่าง/i).should('be.visible');
+    // ต้องมี error modal พร้อมข้อความวันที่ (ตรวจแบบยืดหยุ่นด้วย regex)
+    cy.contains('.modal .modal-title', 'กรอกข้อมูลไม่ครบถ้วน').should('be.visible');
+    cy.get('.modal .modal-body').invoke('text').should(t =>
+      expect(t).to.match(/วันที่เข้าอยู่ต้องเป็นวันนี้หรืออนาคต/)
+    );
 
-    // ปิด modal x
-    closeModalIfAny();
-    // check modal closed
-    cy.get('[role="dialog"], .modal, .ant-modal, .MuiDialog-root').should('not.exist');
+    // ปิด
+    cy.get('.modal .btn.btn-primary,[data-bs-dismiss="modal"]').first().click();
+    cy.get('.modal.show').should('not.exist');
   });
 
-  it('เคสสำเร็จ: กรอกครบ + ติ๊กครบ → ส่งคำขอสำเร็จ แล้วปิดทุก modal', () => {
-    cy.visit('http://localhost:3000/rooms/small');
+  it('success flow: valid date today/future + both checkboxes → success modal then redirect "/"', () => {
+    // ไป /rooms/small ให้แน่ใจว่า select ถูก sync (ตอนแรก /rooms/undefined ก็โอเค แต่ไป small ชัวร์)
+    cy.visit(`${BASE}/rooms/small`);
 
-    // เลือกประเภทห้อง
-    cy.get('select').first().select(1);
+    // กรอกวันที่ “วันนี้” (2025-09-26 ตามที่ clock ไว้)
+    cy.get('input[type="date"]').clear().type('2025-09-26');
 
-    // กำหนดวันเป็นวันนี้ / วันหน้าๆ
-    const today = fmt(new Date());
-    cy.get('input[type="date"]').first().then(($date) => {
-      if ($date.length) cy.wrap($date).invoke('val', today).trigger('change');
-      else {
-        cy.get('input')
-          .filter((i, el) => (el.placeholder || '').match(/dd|วัน|date/i) || el.type === 'text')
-          .first()
-          .clear()
-          .type(today);
-      }
-    });
+    // checkbox ทั้งสองต้องติ๊กอยู่ (โค้ดตั้งค่าเริ่มเป็น true) — เผื่อก่อนหน้ามีการเปลี่ยน
+    cy.get('input#tos').check({ force: true });
+    cy.get('input#privacy').check({ force: true });
 
-    // ติ๊ก checkbox ทั้ง 2
-    cy.get('input[type="checkbox"]').eq(0).check({ force: true });
-    cy.get('input[type="checkbox"]').eq(1).check({ force: true });
+    // กดส่ง
+    cy.contains('button', 'ส่งคำขอ').click();
 
-    cy.contains('ส่งคำขอ').click();
+    // Success modal แสดง
+    cy.contains('.modal .modal-title', 'ส่งคำขอเรียบร้อย').should('be.visible');
 
-    cy.contains(
-      'ส่งคำขอเรียบร้อย ระบบได้รับคำขอของคุณแล้ว คุณสามารถตรวจสอบสถานะได้ที่หน้าโปรไฟล์ของคุณ',
-      { timeout: 8000 }
-    ).should('be.visible');
-
-    // 
-    closeModalIfAny();
+    // กด "รับทราบ" แล้วต้องไปหน้า /
+    cy.contains('.modal .btn.btn-primary', 'รับทราบ').click();
+    cy.url().should('eq', `${BASE}/`);
   });
 });
