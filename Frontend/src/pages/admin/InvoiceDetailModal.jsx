@@ -63,6 +63,7 @@ export default function InvoiceDetailModal({ open, onClose, invoice, onEdit }) {
       <div className="modal-backdrop fade show"></div>
       <div
         className="modal fade show d-block"
+        data-testid="invoice-detail-modal"
         tabIndex="-1"
         role="dialog"
         aria-modal="true"

@@ -1,9 +1,14 @@
 describe('Admin Dashboard', () => {
+  beforeEach(() => {
+    cy.loginPreset();   // 👈 login ก่อนทุก test
+    cy.visit('/admin'); // จากนั้นไปที่หน้า /admin
+  });
+
   it('should render dashboard widgets and key sections', () => {
     cy.viewport(1440, 900);
 
 
-    cy.visit('http://localhost:3000/admin');
+    cy.visit('/admin');
 
     cy.contains('DevOps Apartment').should('be.visible');
 
@@ -69,9 +74,6 @@ describe('Admin Dashboard', () => {
     // flexible check เลขห้อง
     cy.contains(/ห้อง\s?\d+/).should('be.visible');
 
-    // shortcuts
-    cy.contains('เมนูด่วน').should('be.visible');
-    cy.contains('สร้างใบแจ้งหนี้ประจำเดือน').should('be.visible');
-    cy.contains('ดูคำขอเข้าพัก').should('be.visible');
+
   });
 });

@@ -2,11 +2,10 @@
 // test: /admin/maintenance (MaintenancePage)
 describe('Maintenance Page', () => {
   beforeEach(() => {
-    cy.viewport(1440, 900);
     // ล็อกเวลาให้ deterministic สำหรับการคำนวณ "เกินกำหนด"
+    cy.loginPreset();   // 👈 login ก่อนทุก test
     cy.clock(new Date('2025-09-26T00:00:00+07:00').getTime()); // mock วันที่ปัจจุบันเป็น 2025-09-26 (วันที่ทำ)
-
-    cy.visit('http://localhost:3000/admin/maintenance');
+    cy.visit('/admin/maintenance');
   });
 
 

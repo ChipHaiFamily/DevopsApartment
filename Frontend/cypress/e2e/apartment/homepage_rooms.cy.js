@@ -1,7 +1,7 @@
 describe('Homepage Room Type Selection', () => {
   it('ควร redirect ไปที่ /rooms/undefined เมื่อเลือกประเภทห้องพัก', () => {
     // viste homepage
-    cy.visit('http://localhost:3000/')
+    cy.visit('/')
 
     // check heading 
     cy.contains('ประเภทห้องพัก').should('be.visible') // heading
