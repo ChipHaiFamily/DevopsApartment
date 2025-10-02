@@ -15,8 +15,6 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class PaymentService {
     private final PaymentRepository repository;
-    private final InvoiceRepository invoiceRepository;
-    private final IdGenerationService idGenerationService;
 
     public List<Payment> findAll() {
         return repository.findAll();

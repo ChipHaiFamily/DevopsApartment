@@ -37,17 +37,13 @@ public class IdGenerationService {
         return String.format("%s-%s-%03d", prefix, ym, num + 1);
     }
 
-    private String generateSimpleId(String prefix, String lastId) {
-        if (lastId == null) return prefix + "-001";
-        int num = Integer.parseInt(lastId.split("-")[1]);
-        return String.format("%s-%03d", prefix, num + 1);
-    }
-
     public String generateUserId() {
         String lastId = userRepository.findTopByOrderByIdDesc()
                 .map(User::getId)
                 .orElse(null);
-        return generateSimpleId("USR", lastId);
+        if (lastId == null) return "USR-001";
+        int num = Integer.parseInt(lastId.split("-")[1]);
+        return String.format("USR-%03d", num + 1);
     }
 
     public String generateReservationId() {

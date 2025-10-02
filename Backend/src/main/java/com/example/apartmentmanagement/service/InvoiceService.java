@@ -11,10 +11,7 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -68,6 +65,7 @@ public class InvoiceService {
         invoice.setTenant(tenant);
 
         // --- Items ---
+        invoice.setItems(Optional.ofNullable(invoice.getItems()).orElseGet(ArrayList::new));
         invoice.getItems().clear();
         for (InvoiceUpdateDTO.ItemDTO itemDto : dto.getItems()) {
             InvoiceItem item = new InvoiceItem();
@@ -78,10 +76,10 @@ public class InvoiceService {
             invoice.getItems().add(item);
         }
 
-        // --- Payments ---
+// --- Payments ---
+        invoice.setPayments(Optional.ofNullable(invoice.getPayments()).orElseGet(ArrayList::new));
         Map<String, Payment> existingPayments = invoice.getPayments().stream()
                 .collect(Collectors.toMap(Payment::getPaymentId, p -> p));
-
         invoice.getPayments().clear();
         for (InvoiceUpdateDTO.PaymentDTO payDto : dto.getPayments()) {
             Payment payment;
@@ -91,7 +89,6 @@ public class InvoiceService {
                 payment = new Payment();
                 payment.setPaymentId(idGenerationService.generatePaymentId());
             }
-
             payment.setInvoice(invoice);
             payment.setPaymentDate(LocalDate.parse(payDto.getPaymentDate()));
             payment.setMethod(payDto.getMethod());

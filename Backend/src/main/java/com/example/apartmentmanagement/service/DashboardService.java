@@ -32,20 +32,20 @@ public class DashboardService {
         Contract contract = contractRepo.findByRoomRoomNumAndStatus(roomNum, "active")
                 .orElseThrow(() -> new ResourceNotFoundException("No active contract"));
 
-        String tenantName = contract.getTenant().getTenantId();
+        String tenantID = contract.getTenant().getTenantId();
 
         long daysStayed = ChronoUnit.DAYS.between(contract.getStartDate(), LocalDate.now());
 
         BigDecimal totalUnpaid = invoiceRepo.findTotalUnpaidByTenant(contract.getTenant().getTenantId());
         if (totalUnpaid == null) totalUnpaid = BigDecimal.ZERO;
 
-        Double totalExpensesDouble = invoiceRepo.findTotalExpensesByTenant(tenantName);
+        Double totalExpensesDouble = invoiceRepo.findTotalExpensesByTenant(tenantID);
         BigDecimal totalExpenses = totalExpensesDouble != null ? BigDecimal.valueOf(totalExpensesDouble) : BigDecimal.ZERO;
 
         long maintenanceCount = maintenanceRepo.countByRoomRoomNumAndStatus(roomNum, "pending");
 
         LocalDate sixMonthsAgo = LocalDate.now().minusMonths(6);
-        List<Invoice> invoices = invoiceRepo.findRecentInvoicesByTenant(tenantName, sixMonthsAgo);
+        List<Invoice> invoices = invoiceRepo.findRecentInvoicesByTenant(tenantID, sixMonthsAgo);
 
         Map<String, ConsumptionDto> monthMap = new LinkedHashMap<>();
 
@@ -79,7 +79,7 @@ public class DashboardService {
         return RoomDashboardDto.builder()
                 .roomNum(room.getRoomNum())
                 .status(room.getStatus())
-                .tenantName(tenantName)
+                .tenantID(tenantID)
                 .daysStayed(daysStayed)
                 .totalUnpaid(totalUnpaid)
                 .maintenanceCount(maintenanceCount)

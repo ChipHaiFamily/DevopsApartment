@@ -14,7 +14,7 @@ import java.util.Optional;
 public class UserService {
 
     private final UserRepository userRepository;
-    private final BCryptPasswordEncoder passwordEncoder; // ต้องมี Bean
+    private final BCryptPasswordEncoder passwordEncoder;
     private final IdGenerationService idGenerationService;
 
     public User updateUser(String id, User updatedUser) {

@@ -12,7 +12,7 @@ import java.util.List;
 public class RoomDashboardDto {
     private String roomNum;
     private String status;
-    private String tenantName;
+    private String tenantID;
     private long daysStayed;
     private BigDecimal totalUnpaid;
     private long maintenanceCount;

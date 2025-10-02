@@ -20,9 +20,7 @@ import java.util.stream.Collectors;
 public class ReportDashboardService {
 
     private final RoomRepository roomRepository;
-    private final ReservationRepository reservationRepository;
     private final ContractRepository contractRepository;
-    private final InvoiceRepository invoiceRepository;
     private final PaymentRepository paymentRepository;
     private final MaintenanceLogRepository maintenanceLogRepository;
 
