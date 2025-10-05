@@ -3,7 +3,8 @@
 // at /admin/settings
 const visitSettings = () => {
   cy.viewport(1440, 900);
-  cy.visit('http://localhost:3000/admin/settings');
+  cy.loginPreset(); // 👈 login ก่อนทุก test
+  cy.visit('admin/settings');
   cy.contains(/ตั้งค่าระบบ/).should('be.visible'); // Page title
   cy.contains(/จัดการ.*กำหนดค่า/).should('be.visible'); // Page subtitle
 };
