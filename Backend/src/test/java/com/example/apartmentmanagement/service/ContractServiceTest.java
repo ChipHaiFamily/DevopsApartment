@@ -71,7 +71,7 @@ class ContractServiceTest {
         roomType.setPrice(BigDecimal.valueOf(1000));
 
         Room room = new Room();
-        room.setRoomNum("R001");
+        room.setRoomNum("301");
         room.setRoomType(roomType);
         room.setStatus("available");
 
@@ -79,7 +79,7 @@ class ContractServiceTest {
         contract.setRoom(room);
 
         when(idGenerationService.generateContractId()).thenReturn(generatedId);
-        when(roomRepository.findById("R001")).thenReturn(Optional.of(room));
+        when(roomRepository.findById("301")).thenReturn(Optional.of(room));
         when(contractRepository.existsById(generatedId)).thenReturn(false);
         when(contractRepository.save(any(Contract.class))).thenAnswer(i -> i.getArguments()[0]);
 

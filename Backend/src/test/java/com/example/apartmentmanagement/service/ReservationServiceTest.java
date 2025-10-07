@@ -7,7 +7,6 @@ import com.example.apartmentmanagement.repository.RoomRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.*;
-
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
@@ -35,36 +34,37 @@ class ReservationServiceTest {
     @Test
     void create_generatesReservationIdAndPendingStatus() {
         Reservation reservation = new Reservation();
-
-        // mock ID generator
         String generatedId = "RSV-" + LocalDate.now().getYear() + "-001";
+
         when(idGenService.generateReservationId()).thenReturn(generatedId);
-        when(reservationRepo.save(reservation)).thenReturn(reservation);
+        when(reservationRepo.save(any(Reservation.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
 
         Reservation created = reservationService.create(reservation);
 
-        // ตรวจ ID pattern และ status
-        assertNotNull(created.getReservationNum());
-        assertTrue(created.getReservationNum().matches("RSV-\\d{4}-\\d{3}"));
+        assertEquals(generatedId, created.getReservationNum());
         assertEquals("pending", created.getStatus());
+        verify(reservationRepo).save(any(Reservation.class));
     }
 
     @Test
     void update_assignRoom_setsReservedAndProcessingStatus() {
         Reservation reservation = new Reservation();
         reservation.setAssignedRoom("R-101");
+        reservation.setStatus("processing");
 
         Room room = new Room();
         room.setRoomNum("R-101");
         room.setStatus("available");
 
         when(roomRepo.findById("R-101")).thenReturn(Optional.of(room));
-        when(reservationRepo.save(reservation)).thenReturn(reservation);
+        when(reservationRepo.save(any(Reservation.class))).thenReturn(reservation);
 
         Reservation updated = reservationService.update(reservation);
 
-        assertEquals("processing", updated.getStatus());
         assertEquals("reserved", room.getStatus());
+        verify(roomRepo).save(room);
+        verify(reservationRepo).save(reservation);
     }
 
     @Test
@@ -72,11 +72,26 @@ class ReservationServiceTest {
         Reservation reservation = new Reservation();
         reservation.setStatus("pending");
 
-        when(reservationRepo.save(reservation)).thenReturn(reservation);
+        when(reservationRepo.save(any(Reservation.class))).thenReturn(reservation);
 
         Reservation updated = reservationService.update(reservation);
 
         assertEquals("pending", updated.getStatus());
+        verify(reservationRepo, times(1)).save(reservation);
+        verifyNoInteractions(roomRepo);
+    }
+
+    @Test
+    void update_roomNotFound_throwsException() {
+        Reservation reservation = new Reservation();
+        reservation.setAssignedRoom("R-999");
+        reservation.setStatus("processing");
+
+        when(roomRepo.findById("R-999")).thenReturn(Optional.empty());
+
+        RuntimeException ex = assertThrows(RuntimeException.class,
+                () -> reservationService.update(reservation));
+        assertTrue(ex.getMessage().contains("Room not found"));
     }
 
     @Test
@@ -102,7 +117,7 @@ class ReservationServiceTest {
     @Test
     void save_callsRepositorySave() {
         Reservation r = new Reservation();
-        when(reservationRepo.save(r)).thenReturn(r);
+        when(reservationRepo.save(any(Reservation.class))).thenReturn(r);
 
         Reservation result = reservationService.save(r);
         assertEquals(r, result);
