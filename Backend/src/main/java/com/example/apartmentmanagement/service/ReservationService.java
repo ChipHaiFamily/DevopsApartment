@@ -32,13 +32,21 @@ public class ReservationService {
     }
 
     public Reservation update(Reservation obj) {
-        if (obj.getAssignedRoom() != null) {
-            String roomNum = obj.getAssignedRoom();
-            Room room = roomRepository.findById(roomNum)
-                    .orElseThrow(() -> new RuntimeException("Room not found: " + roomNum));
-            room.setStatus("reserved");
-            obj.setStatus("processing");
+        String roomNum = obj.getAssignedRoom();
+
+        if (roomNum == null || roomNum.isEmpty()) {
+            return repository.save(obj);
         }
+
+        Room room = roomRepository.findById(roomNum)
+                .orElseThrow(() -> new RuntimeException("Room not found: " + roomNum));
+
+        if ("no_show".equals(obj.getStatus())) {
+            room.setStatus("available");
+        } else if ("processing".equals(obj.getStatus())) {
+            room.setStatus("reserved");
+        }
+        roomRepository.save(room);
         return repository.save(obj);
     }
 
