@@ -1,57 +1,99 @@
-// cypress/e2e/auth/login.cy.js
-// Login.jsx ที่ http://localhost:3000/login
-// อีเมลว่าง/ผิด, รหัสผ่านสั้น, และเข้าสู่ระบบสำเร็จ (mock alert)
-const URL = 'http://localhost:3000/login';
+describe('Login and Admin Navigation Flow', () => {
+  const adminEmail = 'admin@apt.com';
+  const adminPass = 'ict555';
+  const userEmail = 'testlogin@apt.com';
+  const userPass = 'ict555';
 
-//  email 
-const EXISTING_EMAIL = 'jane.s@example.com';   // case-insensitive
-const VALID_PASSWORD = '123456';               // ≥ 6 
+  // Helper: login
+  const login = (email, password) => {
+    cy.visit('/login');
+    cy.get('input[name="email"]').clear().type(email);
+    cy.get('input[name="password"]').clear().type(password);
+    cy.get('button[type="submit"]').click();
+  };
 
-describe('Login page validations & happy path (mock)', () => {
-  beforeEach(() => {
-    cy.viewport(1440, 900); 
-    cy.visit(URL);
-  });
+  // Helper: logout
+  const logout = () => {
+    cy.get('button')
+      .contains('ออกจากระบบ')
+      .should('be.visible')
+      .click({ force: true });
+    cy.url().should('include', '/login');
+  };
 
-  it('invalid email (empty/wrong format) shows "กรุณากรอกอีเมลให้ถูกต้อง"', () => {
-    // csee empty email
-    cy.get('input[name="email"]').clear(); // เคลียร์ช่อง email
-    cy.get('input[name="password"]').clear().type(VALID_PASSWORD); // enter password ให้ผ่าน
-    cy.contains('button', 'เข้าสู่ระบบ').click(); // submit
-    cy.contains('กรุณากรอกอีเมลให้ถูกต้อง').should('be.visible'); // check error
-
-    // case wrong format email  
-    cy.get('input[name="email"]').clear().type('not-an-email'); // format ผิด
-    cy.contains('button', 'เข้าสู่ระบบ').click(); // submit
-    cy.contains('กรุณากรอกอีเมลให้ถูกต้อง').should('be.visible'); // check error
-  });
-
-  it('password shorter than 6 shows "รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร"', () => { // password < 6
-    cy.get('input[name="email"]').clear().type(EXISTING_EMAIL); // email ถูก
-    cy.get('input[name="password"]').clear().type('12345'); // 5 ตัว 
-    cy.contains('button', 'เข้าสู่ระบบ').click(); // submit
-    cy.contains('รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร').should('be.visible'); // check error
-  });
-
-  //====== ไว้ทำทีหลัง ตอนเนย, พลอย ทำ backend เสร็จ======
-  /*
-  it('email exists format correct but NOT found → shows "ไม่พบบัญชีนี้ในระบบ"', () => {
-    cy.get('input[name="email"]').clear().type('noone@example.com'); // format ถูก แต่ไม่มีในระบบ
-    cy.get('input[name="password"]').clear().type(VALID_PASSWORD);
-    cy.contains('button', 'เข้าสู่ระบบ').click();
-    cy.contains('ไม่พบบัญชีนี้ในระบบ').should('be.visible');
-  });
-  */
-
-  it('happy path: existing email + password ≥ 6 → alert "เข้าสู่ระบบสำเร็จ (mock)"', () => {
-    // ดัก alert
-    const expected = 'เข้าสู่ระบบสำเร็จ (mock)';
-    cy.on('window:alert', (msg) => { 
-      expect(msg).to.contain(expected); // check alert message
+  // Helper: ตรวจเมนูใน sidebar
+  const checkMenu = (label, url, headingRegex) => {
+    cy.get('.sb__nav').within(() => {
+      cy.contains('.sb__label', label).should('exist').click({ force: true });
     });
+    cy.url().should('include', url);
+    cy.contains(headingRegex, { timeout: 8000 }).should('be.visible');
+  };
 
-    cy.get('input[name="email"]').clear().type(EXISTING_EMAIL); // email ถูก
-    cy.get('input[name="password"]').clear().type(VALID_PASSWORD); // password ≥ 6
-    cy.contains('button', 'เข้าสู่ระบบ').click(); // submit
+  it('Admin can login, navigate all menus, and logout', () => {
+    login(adminEmail, adminPass);
+
+    // Dashboard
+    cy.url().should('include', '/admin');
+    cy.contains(/แดชบอร์ด|Dashboard/i).should('be.visible');
+
+    // ตรวจเมนูทั้งหมดใน sidebar
+    checkMenu('จัดการห้อง', '/admin/rooms', /จัดการห้อง|Room/i);
+    checkMenu('คำขอเช่า', '/admin/requests', /คำขอ|Request/i);
+    checkMenu('ผู้เช่า', '/admin/tenants', /ผู้เช่า|Tenant/i);
+    checkMenu('สัญญาเช่า', '/admin/leases', /สัญญา|Lease/i);
+    checkMenu('ใบแจ้งหนี้', '/admin/invoices', /ใบแจ้งหนี้|Invoice/i);
+    checkMenu('ซ่อมบำรุง', '/admin/maintenance', /ซ่อมบำรุง|Maintenance/i);
+    checkMenu('รายงาน', '/admin/reports', /รายงาน|Report/i);
+    checkMenu('ตั้งค่า', '/admin/settings', /ตั้งค่า|Setting/i);
+
+    // กลับหน้าแดชบอร์ด
+    checkMenu('แดชบอร์ด', '/admin', /แดชบอร์ด|Dashboard/i);
+
+    // ออกจากระบบ
+    logout();
+  });
+
+  it('User can login and logout successfully', () => {
+    login(userEmail, userPass);
+
+    // ตรวจว่าล็อกอินสำเร็จ (ไม่อยู่ที่ /login)
+    cy.url().should('not.include', '/login');
+    cy.get('button.nv__link').should('contain', 'ออกจากระบบ');
+
+    logout();
+  });
+
+  it('should show error when using invalid email format', () => {
+    cy.visit('/login');
+    cy.get('input[name="email"]').type('invalidemail');
+    cy.get('input[name="password"]').type('123456');
+    cy.get('button[type="submit"]').click();
+
+    // ต้องเห็นข้อความ error ของอีเมล
+    cy.contains(/กรุณากรอกอีเมลให้ถูกต้อง/i).should('be.visible');
+    cy.url().should('include', '/login');
+  });
+
+  it('should show error when using wrong password', () => {
+    cy.visit('/login');
+    cy.get('input[name="email"]').type(adminEmail);
+    cy.get('input[name="password"]').type('wrongpass');
+    cy.get('button[type="submit"]').click();
+
+    // ต้องเห็นข้อความ error ของรหัสผ่านผิด
+    cy.contains(/อีเมลหรือรหัสผ่านไม่ถูกต้อง|เข้าสู่ระบบล้มเหลว/i, { timeout: 6000 })
+      .should('be.visible');
+    cy.url().should('include', '/login');
+  });
+
+  it('should show error when both fields are empty', () => {
+    cy.visit('/login');
+    cy.get('button[type="submit"]').click();
+
+    // ต้องมี error ทั้งสองฟิลด์
+    cy.contains(/กรุณากรอกอีเมลให้ถูกต้อง/i).should('be.visible');
+    cy.contains(/รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร/i).should('be.visible');
+    cy.url().should('include', '/login');
   });
 });

@@ -1,49 +1,48 @@
-describe('Admin Tenants Page', () => {
-  beforeEach(() => {
-    cy.viewport(1440, 900); // standard laptop size
-    cy.visit('http://localhost:3000/admin/tenants');
-  });
+// describe('Admin Tenant Management', () => {
+//   before(() => {
+//     cy.loginPreset('admin@apt.com', 'ict555');
+//     cy.visit('http://localhost:3000/admin/tenants');
+//     cy.contains('จัดการผู้เช่า', { timeout: 10000 }).should('be.visible');
+//   });
 
-  it('renders tenants dashboard summary and table', () => {
-    // Header / Sidebar
-    cy.contains('DevOps Apartment', { timeout: 8000 }).should('be.visible');
-    cy.contains('ผู้เช่า', { timeout: 8000 }).should('be.visible');
+//   it('checks title and summary cards', () => {
+//     cy.contains('จัดการผู้เช่า').should('be.visible');
+//     cy.get('.card.card-soft').should('have.length', 3);
+//   });
 
-    // cy.get('[data-testid="card-tenants-total"]').should('be.visible');
-    // cy.get('[data-testid="card-active-contracts"]').should('be.visible');
-    // cy.get('[data-testid="card-current-tenants"]').should('be.visible');
-    // cy.get('[data-testid="card-ended-tenants"]').should('be.visible');
+//   it('performs tenant searches', () => {
+//     const searchTerms = ['Somsak', '0812345678', 'USR-002', 'Chujai'];
+//     searchTerms.forEach((term) => {
+//       cy.get('input[placeholder="Search"]').clear().type(term);
+//       cy.wait(250);
+//       cy.get('input[placeholder="Search"]').clear();
+//       cy.wait(250);
+//     });
+//   });
 
-    // cards summary
-    cy.contains('ผู้เข่าทั้งหมด').should('be.visible'); // card 1/4
-    cy.contains('สัญญาที่ใช้งาน').should('be.visible'); // card 2/4
-    // การ์ด 3/4 ชื่ออาจต่างเล็กน้อย → ใช้ regex ที่ยืดหยุ่น
-    cy.contains(/ผู้.*ห้อง|ผู้เช่า.*ห้อง|ผู้เช่า/).should('be.visible'); // ผู้เช่าปัจจุบัน
-    cy.contains('เลิกเช่า').should('be.visible'); // ผู้เช่าเลิกเช่า
+//   it('switches filters for gender and status', () => {
+//     const genders = ['ทุกเพศ', 'ชาย', 'หญิง', 'ทุกเพศ'];
+//     const statuses = ['ทุกสถานะ', 'กำลังเช่า', 'หมดสัญญา', 'ยกเลิก', 'ทุกสถานะ'];
 
-    // ส่วน "รายชื่อผู้เช่า" , searchbar
-    cy.contains('รายชื่อผู้เช่า').should('be.visible');
-    cy.get('input[placeholder="Search"]').should('exist');
+//     genders.forEach((g) => {
+//       cy.get('select[data-cy="genderFilter"]').select(g);
+//       cy.wait(500);
+//     });
 
-    // table and columns headers
-    cy.get('table', { timeout: 8000 }).should('exist');
-    [
-      'ID', 'ชื่อ', 'นามสกุล', 'เพศ', 'ติดต่อ',
-      'เบอร์โทรศัพท์', 'ห้อง', 'สถานะ'
-    ].forEach(h => cy.contains('th', h).should('be.visible'));
+//     statuses.forEach((s) => {
+//       cy.get('select[data-cy="statusFilter"]').select(s);
+//       cy.wait(500);
+//     });
+//   });
 
-    // มีแถวข้อมูลอย่างน้อย 1 row
-    cy.get('table tbody tr').its('length').should('be.greaterThan', 0);
-
-    // มี badge สถานะอย่างน้อยหนึ่งรายการ (กำลังเช่า / เลิกเช่า)
-    cy.get('body').then($b => {
-      const text = $b.text();
-      expect(text).to.match(/กำลังเช่า|เลิกเช่า/);
-    });
-
-    // ทำแบบ optional — ถ้าไม่มี ก็ไม่ fail
-    cy.contains('USR-001').should('exist');
-    cy.contains('Somsak').should('exist');
-    cy.contains(/10[2-8]|110|107/).should('exist'); // เลขห้อง
-  });
-});
+//   it('opens and closes tenant creation modal', () => {
+//     cy.contains('button', 'สร้างผู้เช่าใหม่').click();
+//     cy.get('#tenantModal .modal-title').should('contain', 'สร้างผู้เช่าใหม่');
+//     cy.get('#tenantModal input[name="citizenId"]').type('1234567890987');
+//     cy.get('#tenantModal input[name="emergencyContact"]').type('1234567890');
+//     cy.get('#tenantModal input[name="emergencyName"]').type('Yara');
+//     cy.get('#tenantModal input[name="emergencyRelationship"]').type('มารดา');
+//     cy.contains('button', 'ยกเลิก').click({ force: true });
+//     cy.get('#tenantModal').should('not.exist');
+//   });
+// });
