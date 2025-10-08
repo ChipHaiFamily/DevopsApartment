@@ -7,14 +7,73 @@ on:
     branches: [ "main" ]
 
 jobs:
+  # ===========================
+  # Build Backend (Spring Boot)
+  # ===========================
   build-backend:
+    name: Build Backend (Spring Boot)
     runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - run: docker build -f Backend/Dockerfile -t backend:${{ github.run_id }} Backend
 
-  build-frontend:
-    runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - run: docker build -f Frontend/Dockerfile -t frontend:${{ github.run_id }} Frontend
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Cache Gradle dependencies
+      - name: Cache Gradle packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      # Build Backend Docker image
+      - name: Build backend Docker image
+        run: docker build -f Backend/Dockerfile -t backend:${{ github.run_id }} Backend
+
+      # Verify backend build output
+      - name: Verify backend JAR file exists
+        run: |
+          docker run --rm backend:${{ github.run_id }} sh -c "ls /app | grep .jar" || (echo '❌ No JAR file found' && exit 1)
+      
+      # Optional: Check Java version inside container
+      - name: Check Java runtime inside container
+        run: docker run --rm backend:${{ github.run_id }} java -version
+
+
+  # ===========================
+  # Build Frontend (Vite / React)
+  # ===========================
+  build-frontend:
+    name: Build Frontend (Vite)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Cache Node dependencies
+      - name: Cache Node modules
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.npm
+            Frontend/node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('Frontend/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      # Build Frontend Docker image
+      - name: Build frontend Docker image
+        run: docker build -f Frontend/Dockerfile -t frontend:${{ github.run_id }} Frontend
+
+      # Verify frontend build output
+      - name: Verify frontend dist directory
+        run: |
+          docker run --rm frontend:${{ github.run_id }} sh -c "ls /usr/share/nginx/html" || (echo ' Frontend dist not found' && exit 1)
+      
+      # Optional: Check Nginx version
+      - name: Check Nginx runtime inside container
+        run: docker run --rm frontend:${{ github.run_id }} nginx -v
