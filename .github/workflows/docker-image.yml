@@ -74,9 +74,9 @@ jobs:
           echo "Backend started successfully!"
       
             
-            # Optional: Check Java version inside container
-            - name: Check Java runtime inside container
-              run: docker run --rm backend:${{ github.run_id }} java -version
+      # Optional: Check Java version inside container
+      - name: Check Java runtime inside container
+        run: docker run --rm backend:${{ github.run_id }} java -version
 
 
   # ===========================
