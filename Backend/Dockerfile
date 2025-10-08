@@ -9,6 +9,7 @@ COPY gradlew .
 COPY gradle gradle
 COPY build.gradle settings.gradle ./
 
+RUN chmod +x gradlew && ./gradlew clean bootJar -x test
 # ดาวน์โหลด dependencies ล่วงหน้า
 RUN ./gradlew build -x test --continue || true
 
