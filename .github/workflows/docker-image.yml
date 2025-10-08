@@ -64,6 +64,28 @@ jobs:
             -e SPRING_DATASOURCE_USERNAME=postgres \
             -e SPRING_DATASOURCE_PASSWORD=admin \
             backend:${{ github.run_id }}
+      - name: Run backend and test API
+        run: |
+          docker run -d --network host \
+            --name backend-test \
+            -e SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5432/apartment_db \
+            -e SPRING_DATASOURCE_USERNAME=postgres \
+            -e SPRING_DATASOURCE_PASSWORD=admin \
+            backend:${{ github.run_id }}
+      
+          # รอ Spring Boot สตาร์ต
+          echo "Waiting for backend to start..."
+          for i in {1..15}; do
+            if curl -s http://localhost:8080/actuator/health | grep -q "UP"; then
+              echo "Backend is up!"
+              break
+            fi
+            sleep 5
+          done
+      
+          # stop container หลังทดสอบเสร็จ
+          docker stop backend-test
+
       
       # Optional: Check Java version inside container
       - name: Check Java runtime inside container
