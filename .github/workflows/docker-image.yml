@@ -13,7 +13,7 @@ jobs:
   build-backend:
     name: Build Backend (Spring Boot)
     runs-on: ubuntu-latest
-    # DB service
+    # Database service (PostgreSQL)
     services:
       db:
         image: postgres:15
@@ -54,6 +54,16 @@ jobs:
         run: |
           docker run --rm --entrypoint "" backend:${{ github.run_id }} sh -c "ls /app | grep .jar" \
             || (echo 'No JAR file found' && exit 1)
+
+      
+      # รัน Spring Boot container เชื่อมต่อ PostgreSQL ผ่าน localhost
+      - name: Run backend container with PostgreSQL
+        run: |
+          docker run --rm --network host \
+            -e SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5432/apartment_db \
+            -e SPRING_DATASOURCE_USERNAME=postgres \
+            -e SPRING_DATASOURCE_PASSWORD=admin \
+            backend:${{ github.run_id }}
       
       # Optional: Check Java version inside container
       - name: Check Java runtime inside container
