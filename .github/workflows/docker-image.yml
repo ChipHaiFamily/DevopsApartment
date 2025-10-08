@@ -36,7 +36,8 @@ jobs:
       # Verify backend build output
       - name: Verify backend JAR file exists
         run: |
-          docker run --rm backend:${{ github.run_id }} sh -c "ls /app | grep .jar" || (echo '❌ No JAR file found' && exit 1)
+          docker run --rm --entrypoint "" backend:${{ github.run_id }} sh -c "ls /app | grep .jar" \
+            || (echo 'No JAR file found' && exit 1)
       
       # Optional: Check Java version inside container
       - name: Check Java runtime inside container
