@@ -77,7 +77,7 @@ jobs:
           echo "Found DB container: $DB_CONTAINER on network: $NETWORK_NAME"
 
           docker run -d \
-            --name backend_test \
+            --name backendtest \
             --network $NETWORK_NAME \
             -e SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/apartment_db \
             -e SPRING_DATASOURCE_USERNAME=postgres \
@@ -86,12 +86,11 @@ jobs:
 
           echo "Waiting for backend to respond (inside network)..."
           for i in {1..10}; do
-            # ใช้ curl จาก container test ที่อยู่ใน network เดียวกัน
             if docker run --rm --network $NETWORK_NAME curlimages/curl:8.10.1 \
               -sf http://backend_test:8080 > /dev/null; then
               echo " Backend is responding inside network!"
-              docker logs backend_test | tail -n 15
-              docker rm -f backend_test
+              docker logs backendtest | tail -n 15
+              docker rm -f backendtest
               exit 0
             fi
             echo "Waiting ($i/10)..."
@@ -99,8 +98,8 @@ jobs:
           done
 
           echo " Backend did not respond inside network"
-          docker logs backend_test | tail -n 30
-          docker rm -f backend_test
+          docker logs backendtest | tail -n 30
+          docker rm -f backendtest
           exit 1
 
 
