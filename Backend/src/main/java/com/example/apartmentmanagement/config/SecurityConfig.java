@@ -15,8 +15,13 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())   // ปิด CSRF
                 .cors(cors -> {})              // เปิด CORS
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/**").permitAll()   // ใช้ requestMatchers แทน anyRequest
-                );
+                .requestMatchers(
+                    "/actuator/**", // เฉพาะ health/info
+                    "/api/**",      // ถ้ามี REST API
+                    "/", "/**"      // หน้าอื่น
+                ).permitAll()
+                .anyRequest().permitAll()
+            );
 
         return http.build();
     }
