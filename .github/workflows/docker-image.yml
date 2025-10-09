@@ -82,13 +82,14 @@ jobs:
             -e SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/apartment_db \
             -e SPRING_DATASOURCE_USERNAME=postgres \
             -e SPRING_DATASOURCE_PASSWORD=admin \
-            -p 8080:8080 \
             backend:${{ github.run_id }}
 
-          echo "⏳ Waiting for backend HTTP response..."
+          echo "Waiting for backend to respond (inside network)..."
           for i in {1..10}; do
-            if curl -sf http://localhost:8080 > /dev/null; then
-              echo "✅ Backend is responding on port 8080!"
+            # ใช้ curl จาก container test ที่อยู่ใน network เดียวกัน
+            if docker run --rm --network $NETWORK_NAME curlimages/curl:8.10.1 \
+              -sf http://backend_test:8080 > /dev/null; then
+              echo " Backend is responding inside network!"
               docker logs backend_test | tail -n 15
               docker rm -f backend_test
               exit 0
@@ -97,10 +98,11 @@ jobs:
             sleep 5
           done
 
-          echo "❌ Backend did not respond on port 8080 in time"
+          echo " Backend did not respond inside network"
           docker logs backend_test | tail -n 30
           docker rm -f backend_test
           exit 1
+
 
 
 
