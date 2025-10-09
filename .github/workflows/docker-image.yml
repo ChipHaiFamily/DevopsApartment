@@ -55,21 +55,11 @@ jobs:
           docker run --rm --entrypoint "" backend:${{ github.run_id }} sh -c "ls /app | grep .jar" \
             || (echo 'No JAR file found' && exit 1)
 
-      # รอ PostgreSQL ให้พร้อมก่อนรัน backend
-      - name: Wait for PostgreSQL to be ready
-        run: |
-          for i in {1..10}; do
-            if pg_isready -h localhost -p 5432 -U postgres > /dev/null 2>&1; then
-              echo "PostgreSQL is ready!"
-              break
-            fi
-            echo "Waiting for PostgreSQL..."
-            sleep 3
-          done
-            
-      # Optional: Check Java version inside container
+      - name: Confirm image built successfully
+        run: docker images backend:${{ github.run_id }}
+      
       - name: Check Java runtime inside container
-        run: docker run --rm backend:${{ github.run_id }} java -version
+        run: docker run --rm --entrypoint java backend:${{ github.run_id }} -version
 
 
   # ===========================
