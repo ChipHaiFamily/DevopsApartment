@@ -78,7 +78,7 @@ jobs:
           
           docker run --rm \
             --network $NETWORK_NAME \
-            -e SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/apartment_db \
+            -e SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5432/apartment_db \
             -e SPRING_DATASOURCE_USERNAME=postgres \
             -e SPRING_DATASOURCE_PASSWORD=admin \
             backend:${{ github.run_id }} &
