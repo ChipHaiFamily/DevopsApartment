@@ -76,7 +76,6 @@ jobs:
 
           echo "Found DB container: $DB_CONTAINER on network: $NETWORK_NAME"
 
-          # รัน backend container
           docker run -d \
             --name backendtest \
             --network $NETWORK_NAME \
@@ -86,16 +85,13 @@ jobs:
             -p 8080:8080 \
             backend:${{ github.run_id }}
 
-          echo "Waiting for backend HTTP response..."
+          echo " Waiting 10s before health check..."
+          sleep 10
 
-
-          BACKEND_IP=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' backendtest)
-          echo "Backend container IP: $BACKEND_IP"
-
+          echo " Checking backend readiness..."
           for i in {1..15}; do
-            if docker run --rm --network $NETWORK_NAME curlimages/curl:8.10.1 \
-              -sf http://$BACKEND_IP:8080 > /dev/null; then
-              echo "Backend is responding at $BACKEND_IP:8080"
+            if curl -sf http://localhost:8080 > /dev/null; then
+              echo " Backend is responding on port 8080!"
               docker logs backendtest | tail -n 15
               docker rm -f backendtest
               exit 0
@@ -104,14 +100,10 @@ jobs:
             sleep 5
           done
 
-          echo "Backend did not respond at $BACKEND_IP:8080"
+          echo " Backend did not respond on port 8080 in time"
           docker logs backendtest | tail -n 40
           docker rm -f backendtest
           exit 1
-
-
-
-
 
 
             
