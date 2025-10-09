@@ -76,31 +76,39 @@ jobs:
 
           echo "Found DB container: $DB_CONTAINER on network: $NETWORK_NAME"
 
+          # รัน backend container
           docker run -d \
             --name backendtest \
             --network $NETWORK_NAME \
             -e SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/apartment_db \
             -e SPRING_DATASOURCE_USERNAME=postgres \
             -e SPRING_DATASOURCE_PASSWORD=admin \
+            -p 8080:8080 \
             backend:${{ github.run_id }}
 
-          echo "Waiting for backend to respond (inside network)..."
-          for i in {1..10}; do
+          echo "Waiting for backend HTTP response..."
+
+
+          BACKEND_IP=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' backendtest)
+          echo "Backend container IP: $BACKEND_IP"
+
+          for i in {1..15}; do
             if docker run --rm --network $NETWORK_NAME curlimages/curl:8.10.1 \
-              -sf http://backend_test:8080 > /dev/null; then
-              echo " Backend is responding inside network!"
+              -sf http://$BACKEND_IP:8080 > /dev/null; then
+              echo "Backend is responding at $BACKEND_IP:8080"
               docker logs backendtest | tail -n 15
               docker rm -f backendtest
               exit 0
             fi
-            echo "Waiting ($i/10)..."
+            echo "Waiting ($i/15)..."
             sleep 5
           done
 
-          echo " Backend did not respond inside network"
-          docker logs backendtest | tail -n 30
+          echo "Backend did not respond at $BACKEND_IP:8080"
+          docker logs backendtest | tail -n 40
           docker rm -f backendtest
           exit 1
+
 
 
 
