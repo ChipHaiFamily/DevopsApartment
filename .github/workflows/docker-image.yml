@@ -55,33 +55,33 @@ jobs:
           docker run --rm --entrypoint "" backend:${{ github.run_id }} sh -c "ls /app | grep .jar" \
             || (echo 'No JAR file found' && exit 1)
 
+      # รอ PostgreSQL ให้พร้อมก่อนรัน backend
       - name: Wait for PostgreSQL to be ready
         run: |
           for i in {1..10}; do
-            if nc -z localhost 5432; then
+            if pg_isready -h localhost -p 5432 -U postgres > /dev/null 2>&1; then
               echo "PostgreSQL is ready!"
               break
             fi
             echo "Waiting for PostgreSQL..."
             sleep 3
           done
-      
-      # รัน Spring Boot container เชื่อมต่อ PostgreSQL ผ่าน localhost
+
+      # รัน Spring Boot container เชื่อมกับ service `db`
       - name: Run backend container with PostgreSQL (test startup only)
         run: |
-          docker run --rm --network="host" \
-            -e SPRING_CONFIG_LOCATION=classpath:/application.properties \
-            -e SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5432/apartment_db \
+          docker run --rm \
+            --network ${{ job.container.network }} \
+            -e SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/apartment_db \
             -e SPRING_DATASOURCE_USERNAME=postgres \
             -e SPRING_DATASOURCE_PASSWORD=admin \
             backend:${{ github.run_id }} &
-      
-          # รอให้ Spring Boot สตาร์ต (ไม่ต้องรอจนค้าง)
+          
+
           sleep 15
-      
-          # ตรวจสอบว่ามันเปิดพอร์ต 8080 จริงไหม
-          nc -zv localhost 8080 || (echo "Backend did not start correctly" && exit 1)
-      
+
+          curl -s http://localhost:8080/actuator/health | grep -q "UP" \
+            || (echo "Backend did not start correctly" && exit 1)
           echo "Backend started successfully!"
       
             
