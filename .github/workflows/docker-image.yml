@@ -84,11 +84,11 @@ jobs:
             -e SPRING_DATASOURCE_PASSWORD=admin \
             backend:${{ github.run_id }}
 
-          echo "Waiting for backend port 8080 to be ready..."
+          echo " Waiting for backend port 8080 to be ready..."
           for i in {1..10}; do
             if docker exec backend_test sh -c "nc -z localhost 8080"; then
               echo "Backend port 8080 is open!"
-              docker logs backend_test | tail -n 20
+              docker logs backend_test | tail -n 15
               docker rm -f backend_test
               exit 0
             fi
@@ -96,11 +96,11 @@ jobs:
             sleep 5
           done
 
-          echo " Backend port 8080 did not open in time"
-          docker logs backend_test
-          docker ps -a
+          echo "Backend did not open port 8080 in time"
+          docker logs backend_test | tail -n 30
           docker rm -f backend_test
           exit 1
+
 
 
             
