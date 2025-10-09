@@ -83,16 +83,21 @@ jobs:
             -e SPRING_DATASOURCE_PASSWORD=admin \
             backend:${{ github.run_id }} &
       
-          # รอ backend startup
-          sleep 15
-      
-          # ตรวจสอบสถานะ health
-          curl -s http://localhost:8080/actuator/health | grep -q "UP" \
-            || (echo "Backend did not start correctly" && exit 1)
-          echo "Backend started successfully!"
+          
+            echo "⏳ Waiting for backend to become healthy..."
+            for i in {1..10}; do
+              if curl -sf http://localhost:8080/actuator/health | grep -q "UP"; then
+                echo "Backend is UP!"
+                exit 0
+              fi
+              echo "Waiting ($i/10)..."
+              sleep 5
+            done
+        
+            echo " Backend did not respond UP after timeout"
+            docker ps -a
+            exit 1
 
-
-      
             
       # Optional: Check Java version inside container
       - name: Check Java runtime inside container
