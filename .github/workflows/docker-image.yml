@@ -70,18 +70,27 @@ jobs:
       # รัน Spring Boot container เชื่อมกับ service `db`
       - name: Run backend container with PostgreSQL (test startup only)
         run: |
+          DB_CONTAINER=$(docker ps --filter "ancestor=postgres:15" --format "{{.Names}}" | head -n 1)
+          NETWORK=$(docker inspect $DB_CONTAINER --format '{{range .NetworkSettings.Networks}}{{.NetworkID}}{{end}}')
+          NETWORK_NAME=$(docker network ls --filter id=$NETWORK --format "{{.Name}}")
+      
+          echo "Found DB container: $DB_CONTAINER on network: $NETWORK_NAME"
+          
           docker run --rm \
-            --network host \
-            -e SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5432/apartment_db \
+            --network $NETWORK_NAME \
+            -e SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/apartment_db \
             -e SPRING_DATASOURCE_USERNAME=postgres \
             -e SPRING_DATASOURCE_PASSWORD=admin \
             backend:${{ github.run_id }} &
-          
+      
+          # รอ backend startup
           sleep 15
-          
+      
+          # ตรวจสอบสถานะ health
           curl -s http://localhost:8080/actuator/health | grep -q "UP" \
             || (echo "Backend did not start correctly" && exit 1)
           echo "Backend started successfully!"
+
 
       
             
