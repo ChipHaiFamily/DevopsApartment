@@ -34,10 +34,4 @@ public class RoomController {
     public ResponseEntity<ApiResponse<RoomDto>> update(@PathVariable String id, @RequestBody RoomDto dto) {
         return ResponseEntity.ok(new ApiResponse<>(true, "Room updated", service.update(id, dto)));
     }
-
-    @DeleteMapping("/{id}")
-    public ResponseEntity<ApiResponse<Void>> delete(@PathVariable String id) {
-        service.delete(id);
-        return ResponseEntity.ok(new ApiResponse<>(true, "Room deleted", null));
-    }
 }

@@ -48,21 +48,41 @@ class ReservationServiceTest {
     }
 
     @Test
-    void update_assignRoom_setsReservedAndProcessingStatus() {
+    void update_assignRoom_setsReservedWhenProcessing() {
         Reservation reservation = new Reservation();
-        reservation.setAssignedRoom("R-101");
+        reservation.setAssignedRoom("101");
         reservation.setStatus("processing");
 
         Room room = new Room();
-        room.setRoomNum("R-101");
+        room.setRoomNum("101");
         room.setStatus("available");
 
-        when(roomRepo.findById("R-101")).thenReturn(Optional.of(room));
+        when(roomRepo.findById("101")).thenReturn(Optional.of(room));
         when(reservationRepo.save(any(Reservation.class))).thenReturn(reservation);
 
         Reservation updated = reservationService.update(reservation);
 
         assertEquals("reserved", room.getStatus());
+        verify(roomRepo).save(room);
+        verify(reservationRepo).save(reservation);
+    }
+
+    @Test
+    void update_assignRoom_setsAvailableWhenNoShow() {
+        Reservation reservation = new Reservation();
+        reservation.setAssignedRoom("102");
+        reservation.setStatus("no_show");
+
+        Room room = new Room();
+        room.setRoomNum("102");
+        room.setStatus("reserved");
+
+        when(roomRepo.findById("102")).thenReturn(Optional.of(room));
+        when(reservationRepo.save(any(Reservation.class))).thenReturn(reservation);
+
+        Reservation updated = reservationService.update(reservation);
+
+        assertEquals("available", room.getStatus());
         verify(roomRepo).save(room);
         verify(reservationRepo).save(reservation);
     }
@@ -84,10 +104,10 @@ class ReservationServiceTest {
     @Test
     void update_roomNotFound_throwsException() {
         Reservation reservation = new Reservation();
-        reservation.setAssignedRoom("R-999");
+        reservation.setAssignedRoom("999");
         reservation.setStatus("processing");
 
-        when(roomRepo.findById("R-999")).thenReturn(Optional.empty());
+        when(roomRepo.findById("999")).thenReturn(Optional.empty());
 
         RuntimeException ex = assertThrows(RuntimeException.class,
                 () -> reservationService.update(reservation));

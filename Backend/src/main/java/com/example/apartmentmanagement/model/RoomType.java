@@ -3,7 +3,6 @@ package com.example.apartmentmanagement.model;
 import jakarta.persistence.*;
 import lombok.*;
 import java.math.BigDecimal;
-import java.util.List;
 
 @Entity
 @Table(name = "room_types")

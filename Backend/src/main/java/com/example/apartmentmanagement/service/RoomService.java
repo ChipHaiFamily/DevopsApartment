@@ -24,15 +24,14 @@ public class RoomService {
 
     private RoomDto mapToDto(Room r) {
         String tenantFullName = contractRepo
-                .findByRoom_RoomNum(r.getRoomNum()) // ดึงมาหมดแล้วค่อย filter
+                .findByRoom_RoomNum(r.getRoomNum())
                 .stream()
                 .filter(c -> "active".equalsIgnoreCase(c.getStatus()))
                 .findFirst()
                 .map(contract -> {
                     Tenant tenant = contract.getTenant();
                     return (tenant != null && tenant.getUser() != null)
-                            ? tenant.getUser().getFullName()
-                            : null;
+                            ? tenant.getUser().getFullName() : null;
                 })
                 .orElse(null);
 
@@ -73,13 +72,6 @@ public class RoomService {
         room.setStatus(dto.getStatus());
         Room updated = repository.save(room);
         return mapToDto(updated);
-    }
-
-    public void delete(String id) {
-        if (!repository.existsById(id)) {
-            throw new ResourceNotFoundException("Room not found");
-        }
-        repository.deleteById(id);
     }
 
     public int countRooms() {

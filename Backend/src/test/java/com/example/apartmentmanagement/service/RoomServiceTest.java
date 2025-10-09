@@ -1,6 +1,7 @@
 package com.example.apartmentmanagement.service;
 
 import com.example.apartmentmanagement.dto.RoomDto;
+import com.example.apartmentmanagement.exception.ResourceNotFoundException;
 import com.example.apartmentmanagement.model.*;
 import com.example.apartmentmanagement.repository.ContractRepository;
 import com.example.apartmentmanagement.repository.RoomRepository;
@@ -9,6 +10,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.*;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
@@ -96,6 +98,16 @@ class RoomServiceTest {
     }
 
     @Test
+    void countRooms_returnsCorrectCount() {
+        when(roomRepo.count()).thenReturn(3L);
+
+        int result = roomService.countRooms();
+
+        assertEquals(3, result);
+        verify(roomRepo, times(1)).count();
+    }
+
+    @Test
     void getRoomStatuses_returnsDtos() {
         Room r101 = Room.builder().roomNum("101").floor(1).status("occupied").build();
         Room r201 = Room.builder().roomNum("201").floor(2).status("available").build();
@@ -110,4 +122,39 @@ class RoomServiceTest {
         assertEquals("201", list.get(1).getRoomNum());
         assertEquals("available", list.get(1).getStatus());
     }
+
+    @Test
+    void findAll_withActiveContract_returnsTenantName() {
+        User user = User.builder().fullName("John Doe").build();
+        Tenant tenant = Tenant.builder().user(user).build();
+        Contract activeContract = Contract.builder().status("active").tenant(tenant).build();
+
+        Room room = Room.builder().roomNum("301").floor(3).status("occupied").build();
+
+        when(roomRepo.findAll()).thenReturn(List.of(room));
+        when(contractRepo.findByRoom_RoomNum("301")).thenReturn(List.of(activeContract));
+
+        List<RoomDto> list = roomService.findAll();
+        assertEquals("John Doe", list.get(0).getTenantName());
+    }
+
+    @Test
+    void findById_withRoomType_returnsRoomTypeInfo() {
+        RoomType type = RoomType.builder().name("Deluxe").price(BigDecimal.valueOf(1000.0)).build();
+        Room room = Room.builder().roomNum("202").floor(2).status("available").roomType(type).build();
+
+        when(roomRepo.findById("202")).thenReturn(Optional.of(room));
+        when(contractRepo.findByRoom_RoomNum("202")).thenReturn(List.of());
+
+        RoomDto dto = roomService.findById("202");
+        assertEquals("Deluxe", dto.getRoomTypeName());
+        assertEquals(BigDecimal.valueOf(1000.0), dto.getPrice());
+    }
+
+    @Test
+    void findById_notFound_throwsException() {
+        when(roomRepo.findById("999")).thenReturn(Optional.empty());
+        assertThrows(ResourceNotFoundException.class, () -> roomService.findById("999"));
+    }
+
 }
