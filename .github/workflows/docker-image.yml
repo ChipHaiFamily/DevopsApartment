@@ -77,12 +77,12 @@ jobs:
             -e SPRING_DATASOURCE_PASSWORD=admin \
             backend:${{ github.run_id }} &
           
-
           sleep 15
-
+          
           curl -s http://localhost:8080/actuator/health | grep -q "UP" \
             || (echo "Backend did not start correctly" && exit 1)
           echo "Backend started successfully!"
+
       
             
       # Optional: Check Java version inside container
