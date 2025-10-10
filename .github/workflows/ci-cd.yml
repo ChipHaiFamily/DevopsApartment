@@ -12,7 +12,7 @@ jobs:
   # ===========================
   build-backend:
     name: Build Backend (Spring Boot)
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     services:
       db:
         image: postgres:15
