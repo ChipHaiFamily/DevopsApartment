@@ -38,6 +38,40 @@ class ContractServiceTest {
     }
 
     @Test
+    void prePersist_setsStatusToActive_whenStatusIsNull() {
+        Contract contract = Contract.builder()
+                .contractNum("C-001")
+                .startDate(LocalDate.now())
+                .endDate(LocalDate.now().plusMonths(12))
+                .rentAmount(1000)
+                .deposit(500)
+                .billingCycle("monthly")
+                .status(null)
+                .build();
+
+        contract.prePersist();
+
+        assertEquals("active", contract.getStatus());
+    }
+
+    @Test
+    void prePersist_keepsStatus_whenStatusIsNotNull() {
+        Contract contract = Contract.builder()
+                .contractNum("CTR-2025-002")
+                .startDate(LocalDate.now())
+                .endDate(LocalDate.now().plusMonths(12))
+                .rentAmount(1000)
+                .deposit(500)
+                .billingCycle("monthly")
+                .status("terminated")
+                .build();
+
+        contract.prePersist();
+
+        assertEquals("terminated", contract.getStatus());
+    }
+    
+    @Test
     void findAll() {
         Contract c1 = new Contract();
         Contract c2 = new Contract();

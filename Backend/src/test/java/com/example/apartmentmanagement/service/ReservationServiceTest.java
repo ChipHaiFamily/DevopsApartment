@@ -127,9 +127,9 @@ class ReservationServiceTest {
     @Test
     void findById_returnsReservation() {
         Reservation r = new Reservation();
-        when(reservationRepo.findById("RSV-001")).thenReturn(Optional.of(r));
+        when(reservationRepo.findById("RSV-2025-001")).thenReturn(Optional.of(r));
 
-        Optional<Reservation> result = reservationService.findById("RSV-001");
+        Optional<Reservation> result = reservationService.findById("RSV-2025-001");
         assertTrue(result.isPresent());
         assertEquals(r, result.get());
     }
@@ -145,7 +145,43 @@ class ReservationServiceTest {
 
     @Test
     void deleteById_callsRepositoryDelete() {
-        reservationService.deleteById("RSV-001");
-        verify(reservationRepo, times(1)).deleteById("RSV-001");
+        reservationService.deleteById("RSV-2025-001");
+        verify(reservationRepo, times(1)).deleteById("RSV-2025-001");
     }
+
+    @Test
+    void update_withEmptyRoomNum_returnsAsIs() {
+        Reservation reservation = new Reservation();
+        reservation.setAssignedRoom(""); // empty
+        reservation.setStatus("pending");
+
+        when(reservationRepo.save(any(Reservation.class))).thenReturn(reservation);
+
+        Reservation updated = reservationService.update(reservation);
+
+        assertEquals("pending", updated.getStatus());
+        verify(reservationRepo, times(1)).save(reservation);
+        verifyNoInteractions(roomRepo); // roomRepo ไม่ถูกเรียก
+    }
+
+    @Test
+    void update_withProcessingStatus_setsRoomReserved() {
+        Reservation reservation = new Reservation();
+        reservation.setAssignedRoom("103");
+        reservation.setStatus("processing");
+
+        Room room = new Room();
+        room.setRoomNum("103");
+        room.setStatus("available");
+
+        when(roomRepo.findById("103")).thenReturn(Optional.of(room));
+        when(reservationRepo.save(any(Reservation.class))).thenReturn(reservation);
+
+        Reservation updated = reservationService.update(reservation);
+
+        assertEquals("reserved", room.getStatus());
+        verify(roomRepo).save(room);
+        verify(reservationRepo).save(reservation);
+    }
+
 }

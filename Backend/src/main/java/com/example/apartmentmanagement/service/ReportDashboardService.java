@@ -25,11 +25,10 @@ public class ReportDashboardService {
     private final MaintenanceLogRepository maintenanceLogRepository;
 
     public ReportDashboardDto getReportDashboard(String monthStr) {
-        YearMonth month = YearMonth.parse(monthStr); // ex. "2025-06"
+        YearMonth month = YearMonth.parse(monthStr);
         LocalDate startDate = month.atDay(1);
         LocalDate endDate = month.atEndOfMonth();
 
-        // --- Summary ---
         int totalRooms = roomRepository.countAllRooms();
         int occupiedRooms = contractRepository.countActiveContractsDuring(startDate, endDate);
         int occupancyRate = totalRooms == 0 ? 0 : (occupiedRooms * 100 / totalRooms);
@@ -43,10 +42,6 @@ public class ReportDashboardService {
         ).orElse(BigDecimal.ZERO);
 
         BigDecimal netProfit = totalRevenue.subtract(maintenanceCost);
-
-        log.info("Summary for {} → totalRooms={}, occupied={}, revenue={}, maintenance={}, netProfit={}",
-                monthStr, totalRooms, occupiedRooms, totalRevenue, maintenanceCost, netProfit);
-
         ReportDashboardDto.SummaryDto summary = ReportDashboardDto.SummaryDto.builder()
                 .occupancyRate(occupancyRate)
                 .totalRevenue(totalRevenue)
@@ -54,7 +49,6 @@ public class ReportDashboardService {
                 .netProfit(netProfit)
                 .build();
 
-        // --- Monthly Revenue (last 12 months) ---
         List<ReportDashboardDto.MonthlyRevenueDto> monthlyRevenue = new ArrayList<>();
         for (int i = 11; i >= 0; i--) {
             YearMonth ym = month.minusMonths(i);
@@ -70,7 +64,6 @@ public class ReportDashboardService {
                     .build());
         }
 
-        // --- Monthly Occupancy (last 12 months) ---
         List<ReportDashboardDto.MonthlyOccupancyDto> monthlyOccupancy = new ArrayList<>();
         for (int i = 11; i >= 0; i--) {
             YearMonth ym = month.minusMonths(i);
@@ -87,7 +80,6 @@ public class ReportDashboardService {
                     .build());
         }
 
-        // --- Room Efficiency ---
         List<ReportDashboardDto.RoomEfficiencyDto> roomEfficiency =
                 roomRepository.findAllRoomTypeNames().stream().map(rt -> {
                     int total = roomRepository.countByTypeName(rt);
@@ -101,7 +93,6 @@ public class ReportDashboardService {
                             .build();
                 }).collect(Collectors.toList());
 
-        // --- Maintenance Works ---
         List<ReportDashboardDto.MaintenanceWorkDto> maintenanceWorks =
                 maintenanceLogRepository.findMaintenanceSummaryByDateBetween(startDate, endDate)
                         .stream()
@@ -118,7 +109,6 @@ public class ReportDashboardService {
                         })
                         .toList();
 
-        // --- Build DTO ---
         return ReportDashboardDto.builder()
                 .month(monthStr)
                 .summary(summary)

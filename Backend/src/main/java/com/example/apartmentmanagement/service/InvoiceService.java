@@ -64,7 +64,6 @@ public class InvoiceService {
                 .orElseThrow(() -> new ResourceNotFoundException("Tenant not found"));
         invoice.setTenant(tenant);
 
-        // --- Items ---
         invoice.setItems(Optional.ofNullable(invoice.getItems()).orElseGet(ArrayList::new));
         invoice.getItems().clear();
         for (InvoiceUpdateDTO.ItemDTO itemDto : dto.getItems()) {
@@ -76,7 +75,6 @@ public class InvoiceService {
             invoice.getItems().add(item);
         }
 
-// --- Payments ---
         invoice.setPayments(Optional.ofNullable(invoice.getPayments()).orElseGet(ArrayList::new));
         Map<String, Payment> existingPayments = invoice.getPayments().stream()
                 .collect(Collectors.toMap(Payment::getPaymentId, p -> p));
@@ -97,7 +95,6 @@ public class InvoiceService {
             invoice.getPayments().add(payment);
         }
 
-        // --- Update Invoice Status ---
         BigDecimal totalPaid = invoice.getPayments().stream()
                 .map(Payment::getAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
@@ -110,7 +107,7 @@ public class InvoiceService {
             invoice.setStatus("Partial");
         }
 
-        return repository.save(invoice); // cascade save items + payments
+        return repository.save(invoice);
     }
 
     public InvoiceDetailDto toInvoiceDetailDto(Invoice invoice) {

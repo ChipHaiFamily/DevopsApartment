@@ -157,4 +157,16 @@ class RoomServiceTest {
         assertThrows(ResourceNotFoundException.class, () -> roomService.findById("999"));
     }
 
+    @Test
+    void findAll_withContractWithoutTenant_returnsNullTenantName() {
+        Contract contractWithoutTenant = Contract.builder().status("active").tenant(null).build();
+        Room room = Room.builder().roomNum("401").floor(4).status("occupied").build();
+
+        when(roomRepo.findAll()).thenReturn(List.of(room));
+        when(contractRepo.findByRoom_RoomNum("401")).thenReturn(List.of(contractWithoutTenant));
+
+        List<RoomDto> list = roomService.findAll();
+        assertNull(list.get(0).getTenantName());
+    }
+
 }
