@@ -98,6 +98,25 @@ class UserServiceTest {
     }
 
     @Test
+    void updateUser_withBlankPassword_doesNotEncode() {
+        User existing = new User();
+        existing.setId("USR-003");
+        existing.setPasswd("oldPass");
+
+        User updateData = new User();
+        updateData.setPasswd("  ");
+
+        when(userRepository.findById("USR-003")).thenReturn(Optional.of(existing));
+        when(userRepository.save(any(User.class))).thenAnswer(i -> i.getArgument(0));
+
+        User updated = userService.updateUser("USR-003", updateData);
+
+        assertEquals("oldPass", updated.getPasswd());
+        verify(passwordEncoder, never()).encode(anyString());
+    }
+
+
+    @Test
     void login_successfulWhenPasswordMatches() {
         User u = new User();
         u.setEmail("test@mail.com");

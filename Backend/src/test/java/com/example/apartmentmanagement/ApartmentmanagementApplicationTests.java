@@ -6,8 +6,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 @SpringBootTest
 class ApartmentmanagementApplicationTests {
 
-	@Test
-	void contextLoads() {
-	}
-
+    @Test
+    void main_runsWithoutException() {
+        ApartmentManagementApplication.main(new String[]{});
+    }
 }

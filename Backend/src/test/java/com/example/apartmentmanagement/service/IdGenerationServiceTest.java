@@ -49,6 +49,32 @@ class IdGenerationServiceTest {
     }
 
     @Test
+    void generateReservationId_lastIdDifferentYear() {
+        int lastYear = LocalDate.now().getYear() - 1;
+        Reservation last = new Reservation();
+        last.setReservationNum(String.format("RSV-%d-010", lastYear)); // ปีเก่า
+        when(reservationRepository.findTopByOrderByReservationNumDesc()).thenReturn(Optional.of(last));
+
+        String id = idGenerationService.generateReservationId();
+
+        int currentYear = LocalDate.now().getYear();
+        assertEquals(String.format("RSV-%d-001", currentYear), id);
+    }
+
+    @Test
+    void generatePaymentId_lastIdDifferentMonth() {
+        LocalDate now = LocalDate.now();
+        LocalDate lastMonth = now.minusMonths(1);
+
+        Payment last = new Payment();
+        last.setPaymentId(String.format("PAY-%d-%02d-010", lastMonth.getYear(), lastMonth.getMonthValue())); // เดือนก่อนหน้า
+        when(paymentRepository.findTopByOrderByPaymentIdDesc()).thenReturn(Optional.of(last));
+
+        String id = idGenerationService.generatePaymentId();
+        assertEquals(String.format("PAY-%d-%02d-001", now.getYear(), now.getMonthValue()), id);
+    }
+
+    @Test
     void generateUserId_nextId() {
         User lastUser = new User();
         lastUser.setId("USR-005");
