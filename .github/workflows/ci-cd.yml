@@ -2,7 +2,7 @@ name: Docker Image CI/CD (Kubernetes)
 
 on:
   push:
-    branches: [ "main", "CI/CD" ]
+    branches: [ "main", "k8s-CI/CD" ]
   pull_request:
     branches: [ "main" ]
 
