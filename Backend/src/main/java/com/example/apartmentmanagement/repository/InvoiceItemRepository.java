@@ -1,4 +1,3 @@
-// InvoiceItemRepository.java
 package com.example.apartmentmanagement.repository;
 
 import com.example.apartmentmanagement.model.InvoiceItem;

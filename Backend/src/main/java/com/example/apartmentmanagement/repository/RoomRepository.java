@@ -8,8 +8,6 @@ import org.springframework.data.repository.query.Param;
 import java.util.List;
 
 public interface RoomRepository extends JpaRepository<Room, String> {
-    List<Room> findByStatus(String status);
-    List<Room> findByFloor(int floor);
 
     @Query("SELECT COUNT(r) FROM Room r")
     int countAllRooms();

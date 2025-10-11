@@ -19,7 +19,6 @@ public interface ContractRepository extends JpaRepository<Contract, String> {
 
     Optional<Contract> findTopByOrderByContractNumDesc();
 
-    // ดึง contract active ที่ครอบคลุมช่วงเดือน
     @Query("SELECT c FROM Contract c " +
             "WHERE c.status = :status " +
             "AND c.startDate <= :endDate " +
@@ -28,7 +27,6 @@ public interface ContractRepository extends JpaRepository<Contract, String> {
                                             @Param("startDate") LocalDate startDate,
                                             @Param("endDate") LocalDate endDate);
 
-    // นับจำนวน contract active ในช่วงเดือน
     @Query("SELECT COUNT(c) FROM Contract c " +
             "WHERE c.status = 'active' " +
             "AND c.startDate <= :endDate " +
@@ -36,7 +34,6 @@ public interface ContractRepository extends JpaRepository<Contract, String> {
     int countActiveContractsDuring(@Param("startDate") LocalDate startDate,
                                    @Param("endDate") LocalDate endDate);
 
-    // นับจำนวน contract active แยกตาม room type
     @Query("SELECT COUNT(c) FROM Contract c " +
             "WHERE c.status = 'active' " +
             "AND c.startDate <= :endDate " +
