@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "apartment-chart.fullname" . }}-postgres-service
+  labels:
+    app: {{ .Chart.Name }}-postgres
+spec:
+  type: {{ .Values.postgres.service.type }}
+  selector:
+    app: {{ .Chart.Name }}-postgres
+  ports:
+    - port: {{ .Values.postgres.service.port }}
+      targetPort: {{ .Values.postgres.service.targetPort | default .Values.postgres.service.port }}

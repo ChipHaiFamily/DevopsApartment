@@ -1,0 +1,19 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "apartment-chart.fullname" . }}-backend-ingress
+  labels:
+    app: {{ .Chart.Name }}-backend
+spec:
+  ingressClassName: {{ .Values.backend.ingress.className }}
+  rules:
+    - host: {{ .Values.backend.ingress.host }}
+      http:
+        paths:
+          - path: {{ .Values.backend.ingress.path }}
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "apartment-chart.fullname" . }}-backend-service
+                port:
+                  number: {{ .Values.backend.service.port }}
