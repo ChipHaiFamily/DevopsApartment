@@ -70,8 +70,16 @@ jobs:
         run: |
           git config user.name "github-actions"
           git config user.email "actions@github.com"
-          git pull --rebase origin ${{ github.ref_name }}
+      
+          # ป้องกัน error ถ้ามี commit ใหม่ใน branch เดียวกัน
+          git fetch origin ${{ github.ref_name }}
+          git reset --hard origin/${{ github.ref_name }}
+      
+          # stage & commit การเปลี่ยนแปลง
           git add k8s/apartment-chart/values.yaml
           git commit -m "chore(ci): update image tags to ${{ github.sha }} for ArgoCD sync" || echo "No changes to commit"
+      
+          # push กลับเข้า branch เดิม
           git push origin HEAD:${{ github.ref_name }}
+
 
