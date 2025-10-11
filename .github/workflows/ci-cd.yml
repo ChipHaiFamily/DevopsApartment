@@ -12,7 +12,7 @@ jobs:
   # ===========================
   build-backend:
     name: Build Backend (Spring Boot)
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     # defaults:
     #   run:
     #     shell: bash
@@ -23,6 +23,9 @@ jobs:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: admin
           POSTGRES_DB: apartment_db
+          REGISTRY_URL: docker.io
+          REGISTRY_USERNAME: ${{ secrets.REGISTRY_USERNAME }}
+          REGISTRY_PASSWORD: ${{ secrets.REGISTRY_TOKEN }}
         ports:
           - 5432:5432
         options: >-
