@@ -74,7 +74,7 @@ jobs:
 
       #  Push Backend image to registry
       - name: Login to Container Registry
-        run: echo "${{ secrets.REGISTRY_TOKEN }}" | docker login -u "${{ secrets.REGISTRY_USERNAME }}" --password-stdin ${{ secrets.REGISTRY_URL }}
+        run: echo "${{ secrets.REGISTRY_TOKEN }}" | docker login -u "${{ secrets.REGISTRY_USERNAME }}" -p ${{ secrets.REGISTRY_URL }}
 
       - name: Tag & Push backend image
         run: |
