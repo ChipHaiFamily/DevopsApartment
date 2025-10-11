@@ -1,4 +1,3 @@
-// InvoiceRepository.java
 package com.example.apartmentmanagement.repository;
 
 import com.example.apartmentmanagement.model.Invoice;
@@ -14,8 +13,6 @@ import java.util.List;
 import java.util.Optional;
 
 public interface InvoiceRepository extends JpaRepository<Invoice, String> {
-    @Query("SELECT COALESCE(SUM(p.amount), 0) FROM Payment p WHERE p.invoice.invoiceId = :invoiceId")
-    BigDecimal sumByInvoiceId(@Param("invoiceId") String invoiceId);
 
     Optional<Invoice> findTopByOrderByInvoiceIdDesc();
 
@@ -24,7 +21,6 @@ public interface InvoiceRepository extends JpaRepository<Invoice, String> {
     @Query("SELECT SUM(i.totalAmount) FROM Invoice i WHERE i.tenant.tenantId = :tenantId AND i.status = 'unpaid'")
     BigDecimal findTotalUnpaidByTenant(@Param("tenantId") String tenantId);
 
-    Page<Invoice> findByStatus(String status, Pageable pageable);
 
     @Query("SELECT i FROM Invoice i " +
             "WHERE i.tenant.tenantId = :tenantId " +
@@ -36,7 +32,5 @@ public interface InvoiceRepository extends JpaRepository<Invoice, String> {
     @Query("SELECT COALESCE(SUM(i.totalAmount), 0) FROM Invoice i WHERE i.tenant.tenantId = :tenantId")
     Double findTotalExpensesByTenant(@Param("tenantId") String tenantId);
 
-    @Query("SELECT COALESCE(SUM(inv.totalAmount), 0) FROM Invoice inv WHERE inv.issueDate BETWEEN :start AND :end")
-    Double sumRevenueByDateBetween(@Param("start") LocalDate start, @Param("end") LocalDate end);
 
 }
