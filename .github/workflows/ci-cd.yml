@@ -42,6 +42,13 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-gradle-
 
+      - name: Print environment (debug)
+        run: |
+          echo "OS: $env:OS"
+          echo "REGISTRY_URL=$env:REGISTRY_URL"
+          echo "Done"
+
+
       - name: Build backend Docker image
         run: docker build -f Backend/Dockerfile -t backend:${{ github.run_id }} Backend
 
