@@ -11,7 +11,7 @@ image:
   # This sets the pull policy for images.
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
-  tag: ""
+  tag: "d76230a7a9ce91b7caa058efcb272170ede4a0d0"
 
 # This is for the secrets for pulling an image from a private repository more information can be found here: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
 imagePullSecrets: []
@@ -129,8 +129,8 @@ affinity: {}
 backend:
   replicaCount: 2
   image:
-    repository: devopsapartment-backend
-    tag: latest
+    repository: docker.io/kbtr/apartment-backend
+    tag: "d76230a7a9ce91b7caa058efcb272170ede4a0d0"
     pullPolicy: Never
 
   service:
@@ -156,8 +156,8 @@ backend:
 frontend:
   replicaCount: 1
   image:
-    repository: devopsapartment-frontend
-    tag: latest
+    repository: docker.io/kbtr/apartment-frontend
+    tag: "d76230a7a9ce91b7caa058efcb272170ede4a0d0"
     pullPolicy: Never
 
   service:
@@ -184,7 +184,7 @@ postgres:
   replicaCount: 1
   image:
     repository: postgres
-    tag: "15"
+    tag: "d76230a7a9ce91b7caa058efcb272170ede4a0d0"
   service:
     type: ClusterIP
     port: 5432
