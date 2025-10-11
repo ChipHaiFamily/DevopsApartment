@@ -1,0 +1,21 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "apartment-chart.fullname" . }}-frontend-ingress
+  labels:
+    app: {{ .Chart.Name }}-frontend
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: {{ .Values.frontend.ingress.rewriteTarget }}
+spec:
+  ingressClassName: {{ .Values.frontend.ingress.className }}
+  rules:
+    - host: {{ .Values.frontend.ingress.host }}
+      http:
+        paths:
+          - path: {{ .Values.frontend.ingress.path }}
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "apartment-chart.fullname" . }}-frontend-service
+                port:
+                  number: {{ .Values.frontend.service.port }}
