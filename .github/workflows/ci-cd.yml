@@ -13,9 +13,9 @@ jobs:
   build-backend:
     name: Build Backend (Spring Boot)
     runs-on: self-hosted
-    defaults:
-      run:
-        shell: bash
+    # defaults:
+    #   run:
+    #     shell: bash
     services:
       db:
         image: postgres:15
@@ -32,6 +32,10 @@ jobs:
           --health-retries=5
 
     steps:
+      - name: Print environment (debug)
+        run: |
+          echo "=================== START =================="
+          echo "Done"
       - name: Checkout code
         uses: actions/checkout@v4
 
@@ -45,10 +49,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-gradle-
 
-      - name: Print environment (debug)
-        run: |
-          echo "=================== START =================="
-          echo "Done"
+      
 
 
       - name: Build backend Docker image
