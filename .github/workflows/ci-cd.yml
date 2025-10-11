@@ -56,6 +56,12 @@ jobs:
       - name: Check Java runtime inside container
         run: docker run --rm --entrypoint java backend:${{ github.run_id }} -version
 
+      - name: Debug registry variables
+        run: |
+          echo "REGISTRY_URL: ${{ secrets.REGISTRY_URL }}"
+          echo "REGISTRY_USERNAME: ${{ secrets.REGISTRY_USERNAME }}"
+
+
       #  Push Backend image to registry
       - name: Login to Container Registry
         run: echo "${{ secrets.REGISTRY_TOKEN }}" | docker login -u "${{ secrets.REGISTRY_USERNAME }}" --password-stdin ${{ secrets.REGISTRY_URL }}
