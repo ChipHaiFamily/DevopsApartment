@@ -48,8 +48,6 @@ jobs:
       - name: Print environment (debug)
         run: |
           echo "=================== START =================="
-          echo "OS: $env:OS"
-          echo "REGISTRY_URL=$env:REGISTRY_URL"
           echo "Done"
 
 
