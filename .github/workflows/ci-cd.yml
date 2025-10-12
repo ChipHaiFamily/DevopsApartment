@@ -45,7 +45,7 @@ jobs:
         run: |
           until pg_isready -h localhost -U postgres; do sleep 2; done
 
-      - name: Load schema and seed data
+      - name: Load database dump
         run: |
           sudo apt-get install -y postgresql-client
           psql -h localhost -U postgres -d apartment_db -f Backup/apartment_db.sql
@@ -57,8 +57,9 @@ jobs:
         run: |
           chmod +x gradlew
           ./gradlew test
+          
       - name: Upload Test Report (HTML)
-        if: always() # อัปโหลดเสมอ แม้ test จะ fail
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: backend-test-report
