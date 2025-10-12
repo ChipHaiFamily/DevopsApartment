@@ -48,7 +48,7 @@ jobs:
       - name: Load schema and seed data
         run: |
           sudo apt-get install -y postgresql-client
-          psql -h localhost -U postgres -d apartment_db -f db/apartment_db
+          psql -h localhost -U postgres -d apartment_db -f Backup/apartment_db.sql
         env:
           PGPASSWORD: admin
 
