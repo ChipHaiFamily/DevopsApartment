@@ -57,6 +57,12 @@ jobs:
         run: |
           chmod +x gradlew
           ./gradlew test
+      - name: Upload Test Report (HTML)
+        if: always() # อัปโหลดเสมอ แม้ test จะ fail
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-test-report
+          path: Backend/build/reports/tests/test
 
   # ==========================================
   # Push Backend Image (after test passes)
