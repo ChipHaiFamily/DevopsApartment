@@ -12,6 +12,20 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./db/apartment_db.sql:/docker-entrypoint-initdb.d/apartment_db.sql
+    networks:
+      - app-net
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: apartment-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "5050:80"
+    depends_on:
+      - db
     networks:
       - app-net
 

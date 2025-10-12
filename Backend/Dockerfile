@@ -19,6 +19,7 @@ RUN ./gradlew dependencies --no-daemon || true
 COPY src src
 
 # สร้าง jar ไฟล์
+RUN chmod +x gradlew
 RUN ./gradlew clean bootJar -x test --no-daemon
 
 # ========= Stage 2 =========

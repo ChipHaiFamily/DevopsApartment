@@ -1,90 +1,92 @@
+// cypress/e2e/admin/maintenance.cy.js
+
+const openVisibleModal = () =>
+  cy.get('.modal.fade.show,.modal.show,[aria-modal="true"],.modal:visible', { timeout: 8000 }).first();
+
 describe('Maintenance Page', () => {
-    beforeEach(() => {
-      cy.viewport(1440, 900);
-      cy.visit('http://localhost:3000/admin/maintenance');
+  beforeEach(() => {
+    cy.loginPreset();   // login ก่อนทุก test
+    cy.clock(new Date('2025-09-26T00:00:00+07:00').getTime()); // fix current date
+    cy.visit('/admin/maintenance');
+  });
+
+  it('shows header and tabs', () => {
+    cy.contains(/ซ่อมบำรุง|Maintenance/i).should('be.visible'); // header
+    cy.contains(/จัดการงานซ่อม|การบำรุงรักษา|Manage/i).should('be.visible'); // subheader
+
+    // tabs (งานซ่อม, ตารางซ่อมบำรุง)
+    cy.contains(/งานซ่อม/i).should('exist');
+    cy.contains(/ตารางซ่อมบำรุง/i).should('exist');
+  });
+
+  it('tickets tab: renders table and can open/close detail modal', () => {
+    // table header อย่างน้อยต้องมีคำว่า "ห้อง" หรือ "ผู้เช่า"
+    cy.get('table thead').within(() => {
+      cy.contains(/ห้อง|Room/i).should('exist');
+      cy.contains(/สถานะ|Status/i).should('exist');
     });
-  
-    it('renders page summary and base table', () => {
-      cy.contains('DevOps Apartment', { timeout: 8000 }).should('be.visible');
-      cy.contains('ซ่อมบำรุง').should('be.visible');
-  
-      // การ์ดสรุปด้านบน (ชื่ออาจเหมือนหน้า invoices; ใช้ contains แบบยืดหยุ่น)
-      cy.contains(/รายได้รวม|ภาพรวม/i).should('exist');
-      cy.contains(/รอชำระ/).should('exist');
-      cy.contains(/บิลทั้งหมด|ทั้งหมด/).should('exist');
-      cy.contains(/เกินกำหนด/).should('exist');
-  
-      // Tabs
-      cy.get('body').then($b => {
-        expect($b.text()).to.include('งานซ่อม (2)');
-        expect($b.text()).to.include('ตารางซ่อมบำรุง (2)');
-      });
-  
-      // Table และ search
-      cy.get('[data-testid="maintenance-search"], input[placeholder="Search"]').should('exist');
-      cy.get('[data-testid="maintenance-table"], table', { timeout: 8000 }).should('exist');
+
+    // มีอย่างน้อย 1 แถว
+    cy.get('table tbody tr').should('have.length.at.least', 1);
+
+    // เปิด modal รายละเอียดจากปุ่มแว่น
+    cy.get('table tbody tr').first().within(() => {
+      cy.get('button i.bi-search').parents('button').click();
     });
-  
-    it('can search by room 101', () => {
-      const search = '[data-testid="maintenance-search"], input[placeholder="Search"]';
-      cy.get(search).clear().type('101');
-  
-      // อย่างน้อยหนึ่งแถวควรมี "101" อยู่ในคอลัมน์ห้อง
-      cy.get('[data-testid="maintenance-table"] tbody tr:visible, table tbody tr:visible')
-        .should($rows => {
-          const ok = [...$rows].some(r => r.innerText.includes('101'));
-          expect(ok, 'at least one row contains room 101').to.be.true;
-        });
+
+    // ตรวจ modal แสดงผล
+    openVisibleModal().within(() => {
+      cy.contains(/แก้ไขงานซ่อม|Maintenance Form/i).should('exist');
+      cy.contains(/ห้อง|Room/i).should('exist');
+      cy.contains(/ประเภทงาน|Category/i).should('exist');
+      cy.contains(/รายละเอียด|Title/i).should('exist');
     });
-  
-    it('switches tabs and updates table, then opens the detail popup', () => {
-      // ไปแท็บ "ตารางซ่อมบำรุง (2)"
-      cy.get('.cy_maintainance_tab_2').click({ force: true })
-        .then(() => {}) // if testid not present, use fallback
-        .catch(() => {});
-      cy.contains('ตารางซ่อมบำรุง (2)').click({ force: true });
-  
-      // ตารางควรเปลี่ยนและมีหัวคอลัมน์/ข้อมูลตามภาพ 
-      cy.contains(/ครั้งล่าสุด|ครั้งล่าสุด|ครั้งล่าสุด/i).should('exist'); 
-      cy.contains(/ล้างแอร์ทุก 6 เดือน/).should('be.visible'); 
-  
-      // คลิกปุ่มรูปแว่นของแถว "ล้างแอร์ทุก 6 เดือน"
-      cy.contains('tr', 'ล้างแอร์ทุก 6 เดือน').within(() => {
-        // ถ้ามี testid ให้ใช้
-        cy.get('[data-testid="btn-row-view"], button[title], button[aria-label], button')
-          .first()
-          .click();
-      });
-  
-      // ต้องเห็น popup/โมดอลฟอร์ม
-      // หัว popup
-      cy.contains(/แบบฟอร์มรับการซ่อม|แบบฟอร์มการซ่อม|Form/i, { timeout: 8000 }).should('be.visible');
-  
-      cy.contains('ห้อง').should('be.visible');
-      cy.contains('หมวดหมู่').should('be.visible');
-      cy.contains('หัวข้อปัญหา').should('be.visible');
-      cy.contains('รายละเอียด').should('be.visible');
-      cy.contains(/อัปโหลดโดย|Upload/).should('be.visible');
-      cy.contains(/วันที่ปรับปรุง|วันที่ซ่อม/).should('be.visible');
-  
-      cy.contains('ยกเลิก').should('be.visible');
-      cy.contains('Upload').should('be.visible');
-  
-      cy.contains('ยกเลิก').click({ force: true });
+
+    // ปิดด้วยปุ่ม X
+    cy.get('.modal.show .btn-close, .modal.fade.show .btn-close').click({ force: true });
+    cy.get('.modal.show, .modal.fade.show').should('not.exist');
+  });
+
+  it('tickets tab: open create-maintenance modal then cancel', () => {
+    cy.contains('button', /สร้างงานใหม่|สร้างงานซ่อม|New Ticket|Add/i)
+      .should('exist')
+      .click();
+
+    openVisibleModal().as('createModal');
+
+    cy.get('@createModal').within(() => {
+      cy.contains(/สร้างงานซ่อมใหม่|Create Maintenance/i).should('exist');
     });
-  
-    it('can toggle back to "งานซ่อม (2)" tab and see a different table', () => {
-      // ไป "งานซ่อม (2)"
-      cy.get('[data-testid="tab-jobs"]').click({ force: true })
-        .then(() => {})
-        .catch(() => {});
-      cy.contains('งานซ่อม (2)').click({ force: true });
-  
-      // ตารางเปลี่ยน 
-      cy.get('body').then($b => {
-        const text = $b.text();
-        // ในตารางงานซ่อมมักมีคอลัมน์ "สถานะงาน" หรือชื่อที่ต่างจาก schedule
-        expect(text).to.match(/รายการทั้งหมด|งาน|สถานะ|ผู้แจ้ง/);
-      });
+
+    // ปิด modal
+    cy.get('@createModal').within(() => {
+      if (Cypress.$('.btn-close').length) {
+        cy.get('.btn-close').click({ force: true });
+      } else {
+        cy.contains('button', /ยกเลิก|ปิด|Cancel|Close/i).click({ force: true });
+      }
+    });
+
+    cy.get('.modal.show, .modal.fade.show').should('not.exist');
+  });
+
+  it('plan tab: can click skip button on a schedule', () => {
+    cy.contains(/ตารางซ่อมบำรุง|Plan/i).click();
+
+    // verify tab active
+    cy.contains('.nav-link.active', /ตารางซ่อมบำรุง|Plan/i).should('exist');
+
+    // verify table headers
+    cy.get('table thead').within(() => {
+      cy.contains(/งาน|Task/i).should('exist');
+      cy.contains(/ครั้งถัดไป|Scope/i).should('exist');
+      cy.contains(/ความถี่|Frequency/i).should('exist');
+    });
+
+    // อย่างน้อย 1 แถว และกดปุ่ม "ข้ามครั้งนี้"
+    cy.get('table tbody tr').should('have.length.at.least', 1).first().within(() => {
+      cy.contains('button', /ข้ามครั้งนี้|Skip/i).click();
     });
   });
+});
+
