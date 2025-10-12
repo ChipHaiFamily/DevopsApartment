@@ -131,7 +131,7 @@ backend:
   image:
     repository: docker.io/kbtr/apartment-backend
     tag: "d76230a7a9ce91b7caa058efcb272170ede4a0d0"
-    pullPolicy: Never
+    pullPolicy: fNotPresent
 
   service:
     type: ClusterIP
@@ -158,7 +158,7 @@ frontend:
   image:
     repository: docker.io/kbtr/apartment-frontend
     tag: "d76230a7a9ce91b7caa058efcb272170ede4a0d0"
-    pullPolicy: Never
+    pullPolicy: fNotPresent
 
   service:
     type: ClusterIP
@@ -184,7 +184,7 @@ postgres:
   replicaCount: 1
   image:
     repository: postgres
-    tag: "d76230a7a9ce91b7caa058efcb272170ede4a0d0"
+    tag: "15"
   service:
     type: ClusterIP
     port: 5432
