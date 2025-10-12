@@ -33,16 +33,21 @@ jobs:
           key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
           restore-keys: |
             ${{ runner.os }}-gradle-
-
-      # เพิ่ม permission ให้ gradlew
-      - name: Grant execute permission for gradlew
-        run: chmod +x Backend/gradlew
-
+            
       #  Step 3: Run Unit Tests
       - name: Run Unit Tests
         working-directory: Backend
         run: |
+          chmod +x gradlew
           ./gradlew test --no-daemon
+
+      - name: Upload Test Report (HTML)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-test-report
+          path: Backend/build/reports/tests/test
+
 
       #  Step 4: Build Docker Image
       - name: Build backend Docker image
