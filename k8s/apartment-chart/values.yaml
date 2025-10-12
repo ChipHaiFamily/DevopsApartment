@@ -131,7 +131,9 @@ backend:
   image:
     repository: docker.io/kbtr/apartment-backend
     tag: "a559c8be5fe62ef1fd7c6c71e20e6f06e67d0b3a"
-    pullPolicy: Always
+    pullPolicy: IfNotPresent
+  imagePullSecrets:
+    - name: dockerhub-secret
 
   service:
     type: ClusterIP
@@ -158,7 +160,9 @@ frontend:
   image:
     repository: docker.io/kbtr/apartment-frontend
     tag: "a559c8be5fe62ef1fd7c6c71e20e6f06e67d0b3a"
-    pullPolicy: Always
+    pullPolicy: IfNotPresent
+  imagePullSecrets:
+    - name: dockerhub-secret
 
   service:
     type: ClusterIP
