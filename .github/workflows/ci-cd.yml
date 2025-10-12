@@ -66,6 +66,46 @@ jobs:
           path: Backend/build/reports/tests/test
 
   # ==========================================
+  # Push Backend Image (after test passes)
+  # ==========================================
+  build-backend:
+    runs-on: ubuntu-latest
+    needs: build-and-test-backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build backend Docker image
+        run: docker build -f Backend/Dockerfile -t backend:${{ github.run_id }} Backend
+
+      - name: Login to Container Registry
+        run: echo "${{ secrets.REGISTRY_TOKEN }}" | docker login -u "${{ secrets.REGISTRY_USERNAME }}" --password-stdin ${{ secrets.REGISTRY_URL }}
+
+      - name: Push backend image
+        run: |
+          docker tag backend:${{ github.run_id }} ${{ secrets.REGISTRY_URL }}/${{ secrets.REGISTRY_USERNAME }}/apartment-backend:${{ github.sha }}
+          docker push ${{ secrets.REGISTRY_URL }}/${{ secrets.REGISTRY_USERNAME }}/apartment-backend:${{ github.sha }}
+
+  # ==========================================
+  # Build Frontend (Vite / React)
+  # ==========================================
+  build-frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build frontend Docker image
+        run: docker build -f Frontend/Dockerfile -t frontend:${{ github.run_id }} Frontend
+
+      - name: Login to Container Registry
+        run: echo "${{ secrets.REGISTRY_TOKEN }}" | docker login -u "${{ secrets.REGISTRY_USERNAME }}" --password-stdin ${{ secrets.REGISTRY_URL }}
+
+      - name: Push frontend image
+        run: |
+          docker tag frontend:${{ github.run_id }} ${{ secrets.REGISTRY_URL }}/${{ secrets.REGISTRY_USERNAME }}/apartment-frontend:${{ github.sha }}
+          docker push ${{ secrets.REGISTRY_URL }}/${{ secrets.REGISTRY_USERNAME }}/apartment-frontend:${{ github.sha }}
+
+  # ==========================================
   # End-to-End Tests (Cypress)
   # ==========================================
   e2e-tests:
@@ -122,47 +162,6 @@ jobs:
         with:
           name: cypress-report
           path: e2e/cypress/reports
-
-
-  # ==========================================
-  # Push Backend Image (after test passes)
-  # ==========================================
-  build-backend:
-    runs-on: ubuntu-latest
-    needs: build-and-test-backend
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Build backend Docker image
-        run: docker build -f Backend/Dockerfile -t backend:${{ github.run_id }} Backend
-
-      - name: Login to Container Registry
-        run: echo "${{ secrets.REGISTRY_TOKEN }}" | docker login -u "${{ secrets.REGISTRY_USERNAME }}" --password-stdin ${{ secrets.REGISTRY_URL }}
-
-      - name: Push backend image
-        run: |
-          docker tag backend:${{ github.run_id }} ${{ secrets.REGISTRY_URL }}/${{ secrets.REGISTRY_USERNAME }}/apartment-backend:${{ github.sha }}
-          docker push ${{ secrets.REGISTRY_URL }}/${{ secrets.REGISTRY_USERNAME }}/apartment-backend:${{ github.sha }}
-
-  # ==========================================
-  # Build Frontend (Vite / React)
-  # ==========================================
-  build-frontend:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Build frontend Docker image
-        run: docker build -f Frontend/Dockerfile -t frontend:${{ github.run_id }} Frontend
-
-      - name: Login to Container Registry
-        run: echo "${{ secrets.REGISTRY_TOKEN }}" | docker login -u "${{ secrets.REGISTRY_USERNAME }}" --password-stdin ${{ secrets.REGISTRY_URL }}
-
-      - name: Push frontend image
-        run: |
-          docker tag frontend:${{ github.run_id }} ${{ secrets.REGISTRY_URL }}/${{ secrets.REGISTRY_USERNAME }}/apartment-frontend:${{ github.sha }}
-          docker push ${{ secrets.REGISTRY_URL }}/${{ secrets.REGISTRY_USERNAME }}/apartment-frontend:${{ github.sha }}
 
   # ==========================================
   # Update Helm Chart values (GitOps trigger)
