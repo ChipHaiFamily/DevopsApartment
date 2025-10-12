@@ -130,7 +130,7 @@ backend:
   replicaCount: 2
   image:
     repository: docker.io/kbtr/apartment-backend
-    tag: "d76230a7a9ce91b7caa058efcb272170ede4a0d0"
+    tag: "a559c8be5fe62ef1fd7c6c71e20e6f06e67d0b3a"
     pullPolicy: IfNotPresent
 
   service:
@@ -157,7 +157,7 @@ frontend:
   replicaCount: 1
   image:
     repository: docker.io/kbtr/apartment-frontend
-    tag: "d76230a7a9ce91b7caa058efcb272170ede4a0d0"
+    tag: "a559c8be5fe62ef1fd7c6c71e20e6f06e67d0b3a"
     pullPolicy: IfNotPresent
 
   service:
