@@ -112,30 +112,31 @@ jobs:
     runs-on: ubuntu-latest
     needs: [build-frontend, build-backend]
 
-    services:
-      backend:
-        image: ${{ secrets.REGISTRY_URL }}/${{ secrets.REGISTRY_USERNAME }}/apartment-backend:${{ github.sha }}
-        ports:
-          - 8080:8080
-        options: >-
-          --health-cmd="curl -f http://localhost:8080/actuator/health || exit 1"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=10
-
-      frontend:
-        image: ${{ secrets.REGISTRY_URL }}/${{ secrets.REGISTRY_USERNAME }}/apartment-frontend:${{ github.sha }}
-        ports:
-          - 3000:3000
-        options: >-
-          --health-cmd="curl -f http://localhost:3000 || exit 1"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=10
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Login to Container Registry
+        run: echo "${{ secrets.REGISTRY_TOKEN }}" | docker login -u "${{ secrets.REGISTRY_USERNAME }}" --password-stdin ${{ secrets.REGISTRY_URL }}
+
+      - name: Pull latest images
+        run: |
+          docker pull ${{ secrets.REGISTRY_URL }}/${{ secrets.REGISTRY_USERNAME }}/apartment-backend:${{ github.sha }}
+          docker pull ${{ secrets.REGISTRY_URL }}/${{ secrets.REGISTRY_USERNAME }}/apartment-frontend:${{ github.sha }}
+
+      - name: Start containers for E2E test
+        run: |
+          docker network create test-net
+          docker run -d --name backend --network test-net -p 8080:8080 \
+            ${{ secrets.REGISTRY_URL }}/${{ secrets.REGISTRY_USERNAME }}/apartment-backend:${{ github.sha }}
+          docker run -d --name frontend --network test-net -p 3000:3000 \
+            ${{ secrets.REGISTRY_URL }}/${{ secrets.REGISTRY_USERNAME }}/apartment-frontend:${{ github.sha }}
+
+      - name: Wait for services
+        run: |
+          echo "Waiting for frontend and backend..."
+          until curl -f http://localhost:3000; do sleep 5; done
+          until curl -f http://localhost:8080/actuator/health; do sleep 5; done
 
       - name: Install Node.js
         uses: actions/setup-node@v4
@@ -145,12 +146,6 @@ jobs:
       - name: Install Cypress dependencies
         working-directory: e2e
         run: npm ci
-
-      - name: Wait for services
-        run: |
-          echo "Waiting for frontend and backend..."
-          until curl -f http://localhost:3000; do sleep 5; done
-          until curl -f http://localhost:8080/actuator/health; do sleep 5; done
 
       - name: Run Cypress E2E Tests
         working-directory: e2e
@@ -162,6 +157,13 @@ jobs:
         with:
           name: cypress-report
           path: e2e/cypress/reports
+
+      - name: Stop containers
+        if: always()
+        run: |
+          docker stop backend frontend
+          docker rm backend frontend
+          docker network rm test-net
 
   # ==========================================
   # Update Helm Chart values (GitOps trigger)
