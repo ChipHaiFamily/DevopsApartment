@@ -127,21 +127,33 @@ jobs:
   
       - name: Start containers for E2E test
         run: |
+          docker network create test-net || true
+  
           # Backend
-          docker run -d --name backend -p 8080:8080 \
+          docker run -d --name backend --network test-net \
+            -e SPRING_PROFILES_ACTIVE=test \
             ${{ secrets.REGISTRY_URL }}/${{ secrets.REGISTRY_USERNAME }}/apartment-backend:${{ github.sha }}
-          # Frontend (Nginx port 80 → expose 3000)
-          docker run -d --name frontend -p 3000:80 \
+  
+          # Frontend
+          docker run -d --name frontend --network test-net \
+            -p 3000:80 \
             ${{ secrets.REGISTRY_URL }}/${{ secrets.REGISTRY_USERNAME }}/apartment-frontend:${{ github.sha }}
   
-      - name: Wait for services
+      - name: Wait for backend to be ready
         run: |
-          # Backend
-          until curl -f http://localhost:8080/actuator/health; do sleep 5; done
-          
-          # Frontend
-          until curl -f http://localhost:3000; do sleep 5; done
-
+          timeout=0
+          until docker exec backend curl -f http://localhost:8080/actuator/health || [ $timeout -ge 60 ]; do
+            sleep 5
+            timeout=$((timeout+5))
+          done
+  
+      - name: Wait for frontend to be ready
+        run: |
+          timeout=0
+          until curl -f http://localhost:3000 || [ $timeout -ge 60 ]; do
+            sleep 5
+            timeout=$((timeout+5))
+          done
   
       - name: Install Node.js
         uses: actions/setup-node@v4
@@ -168,6 +180,8 @@ jobs:
         run: |
           docker stop backend frontend
           docker rm backend frontend
+          docker network rm test-net || true
+
 
   # ==========================================
   # Update Helm Chart values (GitOps trigger)
