@@ -130,11 +130,11 @@ jobs:
 
           docker run -d --name frontend --network test-net -p 3000:80 \
             ${{ secrets.REGISTRY_URL }}/${{ secrets.REGISTRY_USERNAME }}/apartment-frontend:${{ github.sha }}
-
+                  
       - name: Wait for backend to be ready
         run: |
           for i in {1..12}; do
-            if curl -f http://localhost:8080/actuator/health; then
+            if curl -f http://backend:8080/actuator/health; then
               echo "Backend ready"
               break
             else
@@ -142,11 +142,11 @@ jobs:
               sleep 5
             fi
           done
-
+      
       - name: Wait for frontend to be ready
         run: |
           for i in {1..12}; do
-            if curl -f http://localhost:3000/; then
+            if curl -f http://frontend:80/; then
               echo "Frontend ready"
               break
             else
