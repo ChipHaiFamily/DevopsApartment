@@ -60,7 +60,7 @@ jobs:
   # ==========================================
   # Push Backend Image (after test passes)
   # ==========================================
-  push-backend:
+  build-backend:
     runs-on: ubuntu-latest
     needs: build-and-test-backend
     steps:
