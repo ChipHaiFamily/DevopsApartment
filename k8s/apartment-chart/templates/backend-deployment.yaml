@@ -3,31 +3,29 @@ kind: Deployment
 metadata:
   name: {{ include "apartment-chart.fullname" . }}-backend
   labels:
-    app: {{ .Chart.Name }}-backend
+    app: {{ include "apartment-chart.name" . }}-backend
 spec:
   replicas: {{ .Values.backend.replicaCount }}
   selector:
     matchLabels:
-      app: {{ .Chart.Name }}-backend
+      app: {{ include "apartment-chart.name" . }}-backend
   template:
     metadata:
       labels:
-        app: {{ .Chart.Name }}-backend
+        app: {{ include "apartment-chart.name" . }}-backend
     spec:
-      template:
-        spec:
-          imagePullSecrets:
-            - name: dockerhub-secret
-          containers:
-            - name: backend
-              image: "{{ .Values.backend.image.repository }}:{{ .Values.backend.image.tag }}"
-              imagePullPolicy: {{ .Values.backend.image.pullPolicy }}
-              ports:
-                - containerPort: {{ .Values.backend.service.port }}
-              env:
-                - name: SPRING_DATASOURCE_URL
-                  value: "{{ .Values.backend.env.datasourceUrl }}"
-                - name: SPRING_DATASOURCE_USERNAME
-                  value: "{{ .Values.backend.env.datasourceUser }}"
-                - name: SPRING_DATASOURCE_PASSWORD
-                  value: "{{ .Values.backend.env.datasourcePassword }}"
+      imagePullSecrets:
+        - name: dockerhub-secret
+      containers:
+        - name: backend
+          image: "{{ .Values.backend.image.repository }}:{{ .Values.backend.image.tag }}"
+          imagePullPolicy: {{ .Values.backend.image.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.backend.service.port }}
+          env:
+            - name: SPRING_DATASOURCE_URL
+              value: "{{ .Values.backend.env.datasourceUrl }}"
+            - name: SPRING_DATASOURCE_USERNAME
+              value: "{{ .Values.backend.env.datasourceUser }}"
+            - name: SPRING_DATASOURCE_PASSWORD
+              value: "{{ .Values.backend.env.datasourcePassword }}"
