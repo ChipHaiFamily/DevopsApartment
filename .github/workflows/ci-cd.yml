@@ -105,6 +105,7 @@ jobs:
           docker tag frontend:${{ github.run_id }} ${{ secrets.REGISTRY_URL }}/${{ secrets.REGISTRY_USERNAME }}/apartment-frontend:${{ github.sha }}
           docker push ${{ secrets.REGISTRY_URL }}/${{ secrets.REGISTRY_USERNAME }}/apartment-frontend:${{ github.sha }}
 
+  
   # ==========================================
   # End-to-End Tests (Cypress)
   # ==========================================
@@ -126,24 +127,22 @@ jobs:
   
       - name: Start containers for E2E test
         run: |
-          docker network create test-net
           # Backend
-          docker run -d --name backend --network test-net -p 8080:8080 \
+          docker run -d --name backend -p 8080:8080 \
             ${{ secrets.REGISTRY_URL }}/${{ secrets.REGISTRY_USERNAME }}/apartment-backend:${{ github.sha }}
           # Frontend (Nginx port 80 → expose 3000)
-          docker run -d --name frontend --network test-net -p 3000:80 \
+          docker run -d --name frontend -p 3000:80 \
             ${{ secrets.REGISTRY_URL }}/${{ secrets.REGISTRY_USERNAME }}/apartment-frontend:${{ github.sha }}
   
       - name: Wait for services
         run: |
           echo "Waiting for frontend..."
           timeout=0
-          until curl -f http://frontend:80 || [ $timeout -ge 60 ]; do sleep 5; timeout=$((timeout+5)); done
+          until curl -f http://localhost:3000 || [ $timeout -ge 60 ]; do sleep 5; timeout=$((timeout+5)); done
       
           echo "Waiting for backend..."
           timeout=0
-          until curl -f http://backend:8080/actuator/health || [ $timeout -ge 60 ]; do sleep 5; timeout=$((timeout+5)); done
-
+          until curl -f http://localhost:8080/actuator/health || [ $timeout -ge 60 ]; do sleep 5; timeout=$((timeout+5)); done
   
       - name: Install Node.js
         uses: actions/setup-node@v4
@@ -156,8 +155,7 @@ jobs:
   
       - name: Run Cypress E2E Tests
         working-directory: e2e
-        run: npx cypress run --browser chrome --config baseUrl=http://frontend:80
-
+        run: npx cypress run --browser chrome --config baseUrl=http://localhost:3000
   
       - name: Upload Cypress Report
         if: always()
@@ -171,8 +169,6 @@ jobs:
         run: |
           docker stop backend frontend
           docker rm backend frontend
-          docker network rm test-net
-
 
   # ==========================================
   # Update Helm Chart values (GitOps trigger)
