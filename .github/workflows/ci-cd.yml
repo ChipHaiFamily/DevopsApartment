@@ -130,25 +130,26 @@ jobs:
           docker network create test-net || true
   
           # Backend
-          docker run -d --name backend --network test-net \
+          docker run -d --name backend --network test-net -p 8080:8080 \
             -e SPRING_PROFILES_ACTIVE=test \
             ${{ secrets.REGISTRY_URL }}/${{ secrets.REGISTRY_USERNAME }}/apartment-backend:${{ github.sha }}
   
           # Frontend
-          docker run -d --name frontend --network test-net \
-            -p 3000:80 \
+          docker run -d --name frontend --network test-net -p 3000:80 \
             ${{ secrets.REGISTRY_URL }}/${{ secrets.REGISTRY_USERNAME }}/apartment-frontend:${{ github.sha }}
   
       - name: Wait for backend to be ready
         run: |
+          echo "Waiting for backend..."
           timeout=0
-          until docker exec backend curl -f http://localhost:8080/actuator/health || [ $timeout -ge 60 ]; do
+          until curl -f http://localhost:8080/actuator/health || [ $timeout -ge 60 ]; do
             sleep 5
             timeout=$((timeout+5))
           done
   
       - name: Wait for frontend to be ready
         run: |
+          echo "Waiting for frontend..."
           timeout=0
           until curl -f http://localhost:3000 || [ $timeout -ge 60 ]; do
             sleep 5
@@ -178,9 +179,10 @@ jobs:
       - name: Stop containers
         if: always()
         run: |
-          docker stop backend frontend
-          docker rm backend frontend
+          docker stop backend frontend || true
+          docker rm backend frontend || true
           docker network rm test-net || true
+
 
 
   # ==========================================
