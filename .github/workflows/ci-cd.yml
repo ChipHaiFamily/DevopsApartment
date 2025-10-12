@@ -34,6 +34,10 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-gradle-
 
+      # เพิ่ม permission ให้ gradlew
+      - name: Grant execute permission for gradlew
+        run: chmod +x Backend/gradlew
+
       #  Step 3: Run Unit Tests
       - name: Run Unit Tests
         working-directory: Backend
