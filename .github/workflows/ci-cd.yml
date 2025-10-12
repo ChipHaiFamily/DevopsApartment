@@ -66,7 +66,7 @@ jobs:
           path: Backend/build/reports/tests/test
 
   # ==========================================
-  # Push Backend Image (after test passes)
+  # Push Backend Image
   # ==========================================
   build-backend:
     runs-on: ubuntu-latest
@@ -86,13 +86,12 @@ jobs:
           docker push ${{ secrets.REGISTRY_URL }}/${{ secrets.REGISTRY_USERNAME }}/apartment-backend:${{ github.sha }}
 
   # ==========================================
-  # Build Frontend (Vite / React)
+  # Build Frontend
   # ==========================================
   build-frontend:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Build frontend Docker image
         run: docker build -f Frontend/Dockerfile -t frontend:${{ github.run_id }} Frontend
@@ -105,7 +104,6 @@ jobs:
           docker tag frontend:${{ github.run_id }} ${{ secrets.REGISTRY_URL }}/${{ secrets.REGISTRY_USERNAME }}/apartment-frontend:${{ github.sha }}
           docker push ${{ secrets.REGISTRY_URL }}/${{ secrets.REGISTRY_USERNAME }}/apartment-frontend:${{ github.sha }}
 
-  
   # ==========================================
   # End-to-End Tests (Cypress)
   # ==========================================
@@ -114,8 +112,7 @@ jobs:
     needs: [build-frontend, build-backend]
   
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
   
       - name: Login to Container Registry
         run: echo "${{ secrets.REGISTRY_TOKEN }}" | docker login -u "${{ secrets.REGISTRY_USERNAME }}" --password-stdin ${{ secrets.REGISTRY_URL }}
@@ -134,7 +131,6 @@ jobs:
             -e POSTGRES_USER=postgres \
             -e POSTGRES_PASSWORD=admin \
             -e POSTGRES_DB=apartment_db \
-            -p 5432:5432 \
             postgres:15
       
           # Backend container
@@ -145,10 +141,10 @@ jobs:
             -e SPRING_DATASOURCE_PASSWORD=admin \
             ${{ secrets.REGISTRY_URL }}/${{ secrets.REGISTRY_USERNAME }}/apartment-backend:${{ github.sha }}
       
-          # Frontend container
+          # Frontend container (แก้ตรงนี้)
           docker run -d --name frontend --network test-net -p 3000:80 \
+            -e REACT_APP_BACKEND_URL=http://backend:8080 \
             ${{ secrets.REGISTRY_URL }}/${{ secrets.REGISTRY_USERNAME }}/apartment-frontend:${{ github.sha }}
-
   
       - name: Wait for backend to be ready
         run: |
@@ -163,12 +159,11 @@ jobs:
             fi
           done
 
-  
       - name: Wait for frontend to be ready
         run: |
           for i in {1..12}; do
-            if docker exec frontend curl -f http://localhost; then
-              echo "Frontend ready"
+            if docker exec frontend curl -f http://backend:8080/actuator/health; then
+              echo "Frontend ready (can reach backend)"
               break
             else
               echo "Waiting for frontend..."
@@ -177,7 +172,6 @@ jobs:
             fi
           done
 
-  
       - name: Install Node.js
         uses: actions/setup-node@v4
         with:
@@ -201,8 +195,8 @@ jobs:
       - name: Stop containers
         if: always()
         run: |
-          docker stop backend frontend || true
-          docker rm backend frontend || true
+          docker stop backend frontend db || true
+          docker rm backend frontend db || true
           docker network rm test-net || true
 
   # ==========================================
@@ -213,8 +207,7 @@ jobs:
     needs: e2e-tests
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
@@ -229,15 +222,9 @@ jobs:
           git config user.name "github-actions"
           git config user.email "actions@github.com"
       
-          # ป้องกัน error ถ้ามี commit ใหม่ใน branch เดียวกัน
           git fetch origin ${{ github.ref_name }}
           git reset --hard origin/${{ github.ref_name }}
       
-          # stage & commit การเปลี่ยนแปลง
           git add k8s/apartment-chart/values.yaml
           git commit -m "chore(ci): update image tags to ${{ github.sha }} for ArgoCD sync" || echo "No changes to commit"
-      
-          # push กลับเข้า branch เดิม
           git push origin HEAD:${{ github.ref_name }}
-
-
