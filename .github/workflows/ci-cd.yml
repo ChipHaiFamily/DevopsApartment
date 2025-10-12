@@ -138,11 +138,12 @@ jobs:
         run: |
           echo "Waiting for frontend..."
           timeout=0
-          until curl -f http://localhost:3000 || [ $timeout -ge 60 ]; do sleep 5; timeout=$((timeout+5)); done
-  
+          until curl -f http://frontend:80 || [ $timeout -ge 60 ]; do sleep 5; timeout=$((timeout+5)); done
+      
           echo "Waiting for backend..."
           timeout=0
-          until curl -f http://localhost:8080/actuator/health || [ $timeout -ge 60 ]; do sleep 5; timeout=$((timeout+5)); done
+          until curl -f http://backend:8080/actuator/health || [ $timeout -ge 60 ]; do sleep 5; timeout=$((timeout+5)); done
+
   
       - name: Install Node.js
         uses: actions/setup-node@v4
@@ -155,7 +156,8 @@ jobs:
   
       - name: Run Cypress E2E Tests
         working-directory: e2e
-        run: npx cypress run --browser chrome --config baseUrl=http://localhost:3000
+        run: npx cypress run --browser chrome --config baseUrl=http://frontend:80
+
   
       - name: Upload Cypress Report
         if: always()
