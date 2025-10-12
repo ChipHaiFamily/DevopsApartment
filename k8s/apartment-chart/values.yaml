@@ -131,7 +131,7 @@ backend:
   image:
     repository: docker.io/kbtr/apartment-backend
     tag: "d76230a7a9ce91b7caa058efcb272170ede4a0d0"
-    pullPolicy: fNotPresent
+    pullPolicy: IfNotPresent
 
   service:
     type: ClusterIP
@@ -158,7 +158,7 @@ frontend:
   image:
     repository: docker.io/kbtr/apartment-frontend
     tag: "d76230a7a9ce91b7caa058efcb272170ede4a0d0"
-    pullPolicy: fNotPresent
+    pullPolicy: IfNotPresent
 
   service:
     type: ClusterIP
