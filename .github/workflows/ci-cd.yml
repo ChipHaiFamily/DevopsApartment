@@ -56,7 +56,7 @@ jobs:
         working-directory: Backend
         run: |
           chmod +x gradlew
-          ./gradlew test --no-daemon
+          ./gradlew test
           
       - name: Upload Test Report (HTML)
         if: always()
@@ -66,7 +66,7 @@ jobs:
           path: Backend/build/reports/tests/test
 
   # ==========================================
-  # Build & Push Backend Image
+  # Push Backend Image (after test passes)
   # ==========================================
   build-backend:
     runs-on: ubuntu-latest
@@ -86,12 +86,13 @@ jobs:
           docker push ${{ secrets.REGISTRY_URL }}/${{ secrets.REGISTRY_USERNAME }}/apartment-backend:${{ github.sha }}
 
   # ==========================================
-  # Build & Push Frontend Image
+  # Build Frontend (Vite / React)
   # ==========================================
   build-frontend:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
       - name: Build frontend Docker image
         run: docker build -f Frontend/Dockerfile -t frontend:${{ github.run_id }} Frontend
@@ -105,115 +106,104 @@ jobs:
           docker push ${{ secrets.REGISTRY_URL }}/${{ secrets.REGISTRY_USERNAME }}/apartment-frontend:${{ github.sha }}
 
   # ==========================================
-  # End-to-End Tests (Cypress)
-  # ==========================================
-  e2e-tests:
-    runs-on: ubuntu-latest
-    needs: [build-backend, build-frontend]
-    steps:
-      - uses: actions/checkout@v4
+# End-to-End Tests (Cypress)
+# ==========================================
+e2e-tests:
+  runs-on: ubuntu-latest
+  needs: [build-frontend, build-backend]
 
-      - name: Login to Container Registry
-        run: echo "${{ secrets.REGISTRY_TOKEN }}" | docker login -u "${{ secrets.REGISTRY_USERNAME }}" --password-stdin ${{ secrets.REGISTRY_URL }}
+  steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
 
-      - name: Pull latest images
-        run: |
-          docker pull ${{ secrets.REGISTRY_URL }}/${{ secrets.REGISTRY_USERNAME }}/apartment-backend:${{ github.sha }}
-          docker pull ${{ secrets.REGISTRY_URL }}/${{ secrets.REGISTRY_USERNAME }}/apartment-frontend:${{ github.sha }}
+    - name: Login to Container Registry
+      run: echo "${{ secrets.REGISTRY_TOKEN }}" | docker login -u "${{ secrets.REGISTRY_USERNAME }}" --password-stdin ${{ secrets.REGISTRY_URL }}
 
-      - name: Start containers for E2E test
-        run: |
-          docker network inspect test-net >/dev/null 2>&1 || docker network create test-net
+    - name: Pull latest images
+      run: |
+        docker pull ${{ secrets.REGISTRY_URL }}/${{ secrets.REGISTRY_USERNAME }}/apartment-backend:${{ github.sha }}
+        docker pull ${{ secrets.REGISTRY_URL }}/${{ secrets.REGISTRY_USERNAME }}/apartment-frontend:${{ github.sha }}
 
-          docker run -d --name backend --network test-net -p 8080:8080 \
-            ${{ secrets.REGISTRY_URL }}/${{ secrets.REGISTRY_USERNAME }}/apartment-backend:${{ github.sha }}
+    - name: Start containers for E2E test
+      run: |
+        docker network create test-net
+        # Backend
+        docker run -d --name backend --network test-net -p 8080:8080 \
+          ${{ secrets.REGISTRY_URL }}/${{ secrets.REGISTRY_USERNAME }}/apartment-backend:${{ github.sha }}
+        # Frontend (Nginx port 80 → expose 3000)
+        docker run -d --name frontend --network test-net -p 3000:80 \
+          ${{ secrets.REGISTRY_URL }}/${{ secrets.REGISTRY_USERNAME }}/apartment-frontend:${{ github.sha }}
 
-          docker run -d --name frontend --network test-net -p 3000:80 \
-            ${{ secrets.REGISTRY_URL }}/${{ secrets.REGISTRY_USERNAME }}/apartment-frontend:${{ github.sha }}
-                  
-      - name: Wait for backend to be ready
-        run: |
-          for i in {1..20}; do
-            if docker run --rm --network test-net curlimages/curl:latest \
-              -fs http://backend:8080/actuator/health; then
-              echo "Backend ready"
-              break
-            else
-              echo "Waiting for backend ($i/20)..."
-              sleep 5
-            fi
-          done
+    - name: Wait for services
+      run: |
+        echo "Waiting for frontend..."
+        timeout=0
+        until curl -f http://localhost:3000 || [ $timeout -ge 60 ]; do sleep 5; timeout=$((timeout+5)); done
 
-      
-      - name: Wait for frontend to be ready
-        run: |
-          for i in {1..20}; do
-            if docker run --rm --network test-net curlimages/curl:latest \
-              -fs http://frontend:80; then
-              echo "Frontend ready"
-              break
-            else
-              echo "Waiting for frontend ($i/20)..."
-              sleep 5
-            fi
-          done
+        echo "Waiting for backend..."
+        timeout=0
+        until curl -f http://localhost:8080/actuator/health || [ $timeout -ge 60 ]; do sleep 5; timeout=$((timeout+5)); done
 
+    - name: Install Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: 20
 
-      - name: Install Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
+    - name: Install Cypress dependencies
+      working-directory: e2e
+      run: npm ci
 
-      - name: Install Cypress dependencies
-        working-directory: e2e
-        run: npm ci
+    - name: Run Cypress E2E Tests
+      working-directory: e2e
+      run: npx cypress run --browser chrome --config baseUrl=http://localhost:3000
 
-      - name: Run Cypress E2E Tests
-        working-directory: e2e
-        run: npx cypress run --browser chrome --config baseUrl=http://localhost:3000
+    - name: Upload Cypress Report
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: cypress-report
+        path: e2e/cypress/reports
 
-      - name: Upload Cypress Report
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: cypress-report
-          path: e2e/cypress/reports
+    - name: Stop containers
+      if: always()
+      run: |
+        docker stop backend frontend
+        docker rm backend frontend
+        docker network rm test-net
 
-      - name: Stop containers
-        if: always()
-        run: |
-          docker stop backend frontend || true
-          docker rm backend frontend || true
-          docker network rm test-net || true
 
   # ==========================================
   # Update Helm Chart values (GitOps trigger)
   # ==========================================
   update-helm-values:
     runs-on: ubuntu-latest
-    needs: e2e-tests
+    needs: [build-backend, build-frontend]
+
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Update image tags in values.yaml
         run: |
-          # Backend
-          sed -i "/backend:/,/frontend:/ s|repository:.*|repository: ${{ secrets.REGISTRY_URL }}/${{ secrets.REGISTRY_USERNAME }}/apartment-backend|" k8s/apartment-chart/values.yaml
-          sed -i "/backend:/,/frontend:/ s|tag:.*|tag: \"${{ github.sha }}\"|" k8s/apartment-chart/values.yaml
-          # Frontend
-          sed -i "/frontend:/,/end-of-frontend:/ s|repository:.*|repository: ${{ secrets.REGISTRY_URL }}/${{ secrets.REGISTRY_USERNAME }}/apartment-frontend|" k8s/apartment-chart/values.yaml
-          sed -i "/frontend:/,/end-of-frontend:/ s|tag:.*|tag: \"${{ github.sha }}\"|" k8s/apartment-chart/values.yaml
+          sed -i "s|repository:.*apartment-backend.*|repository: ${{ secrets.REGISTRY_URL }}/${{ secrets.REGISTRY_USERNAME }}/apartment-backend|" k8s/apartment-chart/values.yaml
+          sed -i "s|tag:.*|tag: \"${{ github.sha }}\"|g" k8s/apartment-chart/values.yaml
+          sed -i "s|repository:.*apartment-frontend.*|repository: ${{ secrets.REGISTRY_URL }}/${{ secrets.REGISTRY_USERNAME }}/apartment-frontend|" k8s/apartment-chart/values.yaml
 
       - name: Commit and push updated values.yaml
         run: |
           git config user.name "github-actions"
           git config user.email "actions@github.com"
       
+          # ป้องกัน error ถ้ามี commit ใหม่ใน branch เดียวกัน
           git fetch origin ${{ github.ref_name }}
           git reset --hard origin/${{ github.ref_name }}
       
+          # stage & commit การเปลี่ยนแปลง
           git add k8s/apartment-chart/values.yaml
           git commit -m "chore(ci): update image tags to ${{ github.sha }} for ArgoCD sync" || echo "No changes to commit"
+      
+          # push กลับเข้า branch เดิม
           git push origin HEAD:${{ github.ref_name }}
+
