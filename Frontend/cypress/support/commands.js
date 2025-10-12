@@ -23,3 +23,36 @@
 //
 // -- This will overwrite an existing command --
 // Cypress.Commands.overwrite('visit', (originalFn, url, options) => { ... })
+
+// command สำหรับ login แบบ preset
+Cypress.Commands.add('loginPreset', () => {
+    const username = Cypress.env('USERNAME');
+    const password = Cypress.env('PASSWORD');
+  
+    cy.session([username, password], () => {
+      cy.visit('/login');
+  
+      // กรอกฟอร์ม login
+      cy.get('input[name="email"]').clear().type(username);
+      cy.get('input[name="password"]').clear().type(password);
+      cy.get('button[type="submit"]').click();
+  
+      // ยืนยันว่า login สำเร็จ → redirect /admin
+      cy.url().should('include', '/admin');
+  
+      // ตรวจว่ามี token และ role ใน localStorage
+      cy.window().then((win) => {
+        const token = win.localStorage.getItem('token');
+        const role = win.localStorage.getItem('role');
+        expect(token).to.be.a('string').and.not.be.empty;
+        expect(role).to.eq('ADMIN'); // ถ้า role เก็บเป็น 'ADMIN'
+      });
+    }, {
+      validate() {
+        cy.window().then((win) => {
+          expect(win.localStorage.getItem('token')).to.be.a('string');
+          expect(win.localStorage.getItem('role')).to.eq('ADMIN');
+        });
+      }
+    });
+  });

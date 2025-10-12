@@ -1,85 +1,110 @@
-describe('Admin Request Page', () => {
-    it('should display request list', () => {
-      // เข้า URL
-      cy.visit('http://localhost:3000/admin/requests')
-  
-      // ตรวจสอบว่าหน้าโหลดเสร็จแล้วมี title หรือ heading ที่เกี่ยวข้อง
-      cy.contains('คำขอเช่า').should('be.visible')
-  
-      // ตรวจสอบว่ามีตารางหรือ list ของคำขอ
-      cy.get('table').should('exist') // ถ้าใช้ <table>
-      
-      // หรือถ้าเป็น <div> แบบ list แทน
-      cy.get('div').contains('รายการทั้งหมด').should('be.visible')
-  
-      // ตรวจสอบว่ามี row แสดงข้อมูลคำขอ
-      cy.get('tr').should('have.length.greaterThan', 1) // header + rows
-  
-      // ตรวจสอบ field ที่สำคัญ เช่น อีเมล / เบอร์
-      cy.contains('email@example.com').should('be.visible')
-      cy.contains('089-123-4567').should('be.visible')
-    })
-  })
+describe('Admin Requests Page', () => {
+  beforeEach(() => {
+    cy.loginPreset();
+    cy.visit('/admin/requests');
+  });
 
+  it('checks table structure and first 3 rows modals', () => {
+    // ตรวจว่าตารางโหลด
+    cy.contains('คำขอจองห้องเช่า').should('be.visible');
+    cy.get('table tbody tr').should('have.length.at.least', 3);
 
-  describe('Admin Requests flow', () => {
-    it('opens first request detail from the list and verifies UI & approve rule', () => {
-      // ไปหน้ารายการคำขอ
-      cy.visit('http://localhost:3000/admin/requests');
-  
-      // เห็นหัวข้อ/section สำคัญ
-      cy.contains('คำขอเช่า').should('be.visible');
-      cy.contains('รายการทั้งหมด').should('be.visible');
-  
-      // ต้องเห็นอย่างน้อย 1 แถว
-      cy.get('.cy_request_table tr').its('length').should('be.greaterThan', 0);
-  
-      // คลิกปุ่มแว่นของรายการแถวแรก
-      cy.get('.cy_request_table tr .btn').first().should('exist').and('be.enabled')
-      .then($btn => {cy.log($btn)})
-      .click({ force: true });
-      cy.wait(500); // รอโหลดส
-      // ต้อง redirect ไปหน้า detail ของคำขอแรก
-      cy.url().should('match', /\/admin\/requests\/1$/);
-  
-      // ===== ตรวจรายละเอียดหน้า detail =====
-      // กล่องรายละเอียดผู้เช่า ด้านซ้าย
-      cy.get('[data-testid="tenant-detail"]').should('be.visible');
-      cy.get('[data-testid="tenant-detail"]').within(() => {
-        cy.contains('อีเมล').should('be.visible');
-        cy.contains('เบอร์').should('be.visible');
-        cy.contains('อาชีพ').should('be.visible');
+    // เปิด modal ทีละแถว 3 แถวแรก
+    for (let i = 0; i < 3; i++) {
+      cy.get('table tbody tr').eq(i).within(() => {
+        cy.get('button i.bi-search').parents('button').click();
       });
-  
-      // เห็นปุ่ม "ปฏิเสธ" และ "อนุมัติ"
-      cy.get('[data-testid="btn-reject"]').should('be.visible').and('be.enabled');
-      cy.get('[data-testid="btn-approve"]').should('be.visible');
-  
-      // (rule) ยังไม่ได้เลือกห้อง → ปุ่มอนุมัติควร "disabled"
-      cy.get('[data-testid="btn-approve"]').should('be.disabled');
-  
-      // ฝั่งขวา: ตาราง/ตัวเลือกห้องต้องมีให้เลือก
-      // (รองรับ 2 แบบ: select หรือปุ่มกริด)
-      cy.get('body').then($body => {
-        if ($body.find('[data-testid="room-select"]').length) {
-          // กรณีเป็น <select>
-          cy.get('[data-testid="room-select"]').select(1); // เลือก option index 1
-        } else {
-          // กรณีเป็นปุ่มห้องแบบกริด
-          cy.get('[data-testid="room-item"]').first().click();
-        }
+      cy.get('.modal.show').should('be.visible');
+      cy.get('.modal.show .btn-close, .modal.show button:contains("ปิด")')
+        .first()
+        .click({ force: true });
+      cy.get('.modal.show').should('not.exist');
+    }
+  });
+
+  it('searches RSV-2023-021 and sees Somsak Jaidee', () => {
+    cy.get('input[placeholder="Search"]').type('RSV-2023-021');
+    cy.contains('td', 'RSV-2023-021').should('exist').parents('tr')
+      .within(() => {
+        cy.contains(/Somsak Jaidee/i).should('exist');
       });
+  });
+
+  it('searches RSV-2025-001 and sees Jane Smith', () => {
+    cy.get('input[placeholder="Search"]').type('RSV-2025-001');
+    cy.contains('td', 'RSV-2025-001').should('exist').parents('tr')
+      .within(() => {
+        cy.contains(/Jane Smith/i).should('exist');
+      });
+  });
+
+  it('searches RSV-2025-002	 and sees Jane Smith', () => {
+    cy.get('input[placeholder="Search"]').type('RSV-2025-002');
+    cy.contains('td', 'RSV-2025-002').should('exist').parents('tr')
+      .within(() => {
+        cy.contains(/Mana Chujai/i).should('exist');
+      });
+    // ล้างช่องค้นหา
+    cy.get('input[placeholder="Search"]').clear().should('have.value', '');
+  });
+
   
-      // เลือกห้องแล้ว → ปุ่มอนุมัติควร "enabled"
-      cy.get('[data-testid="btn-approve"]').should('be.enabled');
-  
-      // กดอนุมัติ (ถ้ามี API ก็ใส่ intercept เพื่อยืนยันเรียกถูก)
-      // cy.intercept('POST', '/api/requests/*/approve').as('approve');
-      cy.get('[data-testid="btn-approve"]').click();
-      // cy.wait('@approve').its('response.statusCode').should('be.oneOf', [200, 204]);
-  
-      // toast สำเร็จ/redirect
-      // ตัวอย่างตรวจ toast:
-      // cy.contains('อนุมัติสำเร็จ').should('be.visible');
+
+  it('searches RSV-2025-001 and sees Jane Smith', () => {
+    cy.get('input[placeholder="Search"]').clear().type('RSV-2025-001');
+    cy.contains('td', 'RSV-2025-001', { timeout: 8000 }).should('exist').parents('tr')
+      .within(() => {
+        cy.contains(/Jane Smith/i).should('exist');
+      });
+
+    cy.get('input[placeholder="Search"]').clear().should('have.value', '');
+  });
+
+  it('searches RSV-2025-002 and sees Mana Chujai', () => {
+    cy.get('input[placeholder="Search"]').clear().type('RSV-2025-002');
+    cy.contains('td', 'RSV-2025-002', { timeout: 8000 }).should('exist').parents('tr')
+      .within(() => {
+        cy.contains(/Mana Chujai/i).should('exist');
+      });
+
+    cy.get('input[placeholder="Search"]').clear().should('have.value', '');
+  });
+
+  it('tests filter: status dropdown switching', () => {
+    // หา dropdown ของสถานะ (label: ทุกสถานะ)
+    cy.get('select').contains('ทุกสถานะ').should('exist');
+    cy.get('select').then($sels => {
+      const statusSel = $sels.last(); // ส่วนใหญ่ select สุดท้ายเป็นสถานะ
+      const options = ['รออนุมัติ', 'อนุมัติ', 'ปฏิเสธ', 'ทำสัญญาแล้ว', 'ไม่มาทำสัญญา'];
+
+      options.forEach(opt => {
+        cy.wrap(statusSel).select(opt, { force: true });
+        cy.wait(500);
+        cy.get('table tbody tr:visible').should('exist');
+      });
+
+      // กลับมาเลือก "ทุกสถานะ"
+      cy.wrap(statusSel).select('ทุกสถานะ', { force: true });
     });
   });
+
+  it('tests filter: room type dropdown switching', () => {
+    // หา dropdown ของประเภทห้อง (label: ทุกประเภท)
+    cy.get('select').contains('ทุกประเภท').should('exist');
+    cy.get('select').then($sels => {
+      const roomSel = $sels.first(); // ส่วนใหญ่ select ตัวแรกเป็นประเภทห้อง
+      const roomTypes = ['Standard Studio', 'Deluxe Studio', 'Superior Studio'];
+
+      roomTypes.forEach(opt => {
+        cy.wrap(roomSel).select(opt, { force: true });
+        cy.wait(500);
+        cy.get('table tbody tr:visible').should('exist');
+      });
+
+      // กลับมาเลือก "ทุกประเภท"
+      cy.wrap(roomSel).select('ทุกประเภท', { force: true });
+    });
+  });
+
+
+});
