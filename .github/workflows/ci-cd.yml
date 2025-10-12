@@ -128,15 +128,27 @@ jobs:
       - name: Start containers for E2E test
         run: |
           docker network create test-net || true
-  
-          # Backend
+      
+          # Database container
+          docker run -d --name db --network test-net \
+            -e POSTGRES_USER=postgres \
+            -e POSTGRES_PASSWORD=admin \
+            -e POSTGRES_DB=apartment_db \
+            -p 5432:5432 \
+            postgres:15
+      
+          # Backend container
           docker run -d --name backend --network test-net -p 8080:8080 \
             -e SPRING_PROFILES_ACTIVE=test \
+            -e SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/apartment_db \
+            -e SPRING_DATASOURCE_USERNAME=postgres \
+            -e SPRING_DATASOURCE_PASSWORD=admin \
             ${{ secrets.REGISTRY_URL }}/${{ secrets.REGISTRY_USERNAME }}/apartment-backend:${{ github.sha }}
-  
-          # Frontend
+      
+          # Frontend container
           docker run -d --name frontend --network test-net -p 3000:80 \
             ${{ secrets.REGISTRY_URL }}/${{ secrets.REGISTRY_USERNAME }}/apartment-frontend:${{ github.sha }}
+
   
       - name: Wait for backend to be ready
         run: |
@@ -150,18 +162,21 @@ jobs:
               sleep 5
             fi
           done
+
   
       - name: Wait for frontend to be ready
         run: |
           for i in {1..12}; do
-            if curl -f http://localhost:3000; then
+            if docker exec frontend curl -f http://localhost; then
               echo "Frontend ready"
               break
             else
               echo "Waiting for frontend..."
+              docker logs frontend --tail 20
               sleep 5
             fi
           done
+
   
       - name: Install Node.js
         uses: actions/setup-node@v4
