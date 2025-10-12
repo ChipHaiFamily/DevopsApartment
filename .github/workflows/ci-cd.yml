@@ -56,7 +56,7 @@ jobs:
         working-directory: Backend
         run: |
           chmod +x gradlew
-          ./gradlew test
+          ./gradlew test --no-daemon
           
       - name: Upload Test Report (HTML)
         if: always()
@@ -66,7 +66,7 @@ jobs:
           path: Backend/build/reports/tests/test
 
   # ==========================================
-  # Push Backend Image
+  # Build & Push Backend Image
   # ==========================================
   build-backend:
     runs-on: ubuntu-latest
@@ -86,7 +86,7 @@ jobs:
           docker push ${{ secrets.REGISTRY_URL }}/${{ secrets.REGISTRY_USERNAME }}/apartment-backend:${{ github.sha }}
 
   # ==========================================
-  # Build Frontend
+  # Build & Push Frontend Image
   # ==========================================
   build-frontend:
     runs-on: ubuntu-latest
@@ -109,52 +109,36 @@ jobs:
   # ==========================================
   e2e-tests:
     runs-on: ubuntu-latest
-    needs: [build-frontend, build-backend]
-  
+    needs: [build-backend, build-frontend]
     steps:
       - uses: actions/checkout@v4
-  
+
       - name: Login to Container Registry
         run: echo "${{ secrets.REGISTRY_TOKEN }}" | docker login -u "${{ secrets.REGISTRY_USERNAME }}" --password-stdin ${{ secrets.REGISTRY_URL }}
-  
+
       - name: Pull latest images
         run: |
           docker pull ${{ secrets.REGISTRY_URL }}/${{ secrets.REGISTRY_USERNAME }}/apartment-backend:${{ github.sha }}
           docker pull ${{ secrets.REGISTRY_URL }}/${{ secrets.REGISTRY_USERNAME }}/apartment-frontend:${{ github.sha }}
-  
+
       - name: Start containers for E2E test
         run: |
-          docker network create test-net || true
-      
-          # Database container
-          docker run -d --name db --network test-net \
-            -e POSTGRES_USER=postgres \
-            -e POSTGRES_PASSWORD=admin \
-            -e POSTGRES_DB=apartment_db \
-            postgres:15
-      
-          # Backend container
+          docker network inspect test-net >/dev/null 2>&1 || docker network create test-net
+
           docker run -d --name backend --network test-net -p 8080:8080 \
-            -e SPRING_PROFILES_ACTIVE=test \
-            -e SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/apartment_db \
-            -e SPRING_DATASOURCE_USERNAME=postgres \
-            -e SPRING_DATASOURCE_PASSWORD=admin \
             ${{ secrets.REGISTRY_URL }}/${{ secrets.REGISTRY_USERNAME }}/apartment-backend:${{ github.sha }}
-      
-          # Frontend container (แก้ตรงนี้)
+
           docker run -d --name frontend --network test-net -p 3000:80 \
-            -e REACT_APP_BACKEND_URL=http://backend:8080 \
             ${{ secrets.REGISTRY_URL }}/${{ secrets.REGISTRY_USERNAME }}/apartment-frontend:${{ github.sha }}
-  
+
       - name: Wait for backend to be ready
         run: |
           for i in {1..12}; do
-            if docker exec backend curl -f http://localhost:8080/actuator/health; then
+            if curl -f http://localhost:8080/actuator/health; then
               echo "Backend ready"
               break
             else
               echo "Waiting for backend..."
-              docker logs backend --tail 20
               sleep 5
             fi
           done
@@ -162,12 +146,11 @@ jobs:
       - name: Wait for frontend to be ready
         run: |
           for i in {1..12}; do
-            if docker exec frontend curl -f http://backend:8080/actuator/health; then
-              echo "Frontend ready (can reach backend)"
+            if curl -f http://localhost:3000/; then
+              echo "Frontend ready"
               break
             else
               echo "Waiting for frontend..."
-              docker logs frontend --tail 20
               sleep 5
             fi
           done
@@ -176,27 +159,27 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-  
+
       - name: Install Cypress dependencies
         working-directory: e2e
         run: npm ci
-  
+
       - name: Run Cypress E2E Tests
         working-directory: e2e
         run: npx cypress run --browser chrome --config baseUrl=http://localhost:3000
-  
+
       - name: Upload Cypress Report
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: cypress-report
           path: e2e/cypress/reports
-  
+
       - name: Stop containers
         if: always()
         run: |
-          docker stop backend frontend db || true
-          docker rm backend frontend db || true
+          docker stop backend frontend || true
+          docker rm backend frontend || true
           docker network rm test-net || true
 
   # ==========================================
@@ -205,7 +188,6 @@ jobs:
   update-helm-values:
     runs-on: ubuntu-latest
     needs: e2e-tests
-
     steps:
       - uses: actions/checkout@v4
         with:
@@ -213,9 +195,12 @@ jobs:
 
       - name: Update image tags in values.yaml
         run: |
-          sed -i "s|repository:.*apartment-backend.*|repository: ${{ secrets.REGISTRY_URL }}/${{ secrets.REGISTRY_USERNAME }}/apartment-backend|" k8s/apartment-chart/values.yaml
-          sed -i "s|tag:.*|tag: \"${{ github.sha }}\"|g" k8s/apartment-chart/values.yaml
-          sed -i "s|repository:.*apartment-frontend.*|repository: ${{ secrets.REGISTRY_URL }}/${{ secrets.REGISTRY_USERNAME }}/apartment-frontend|" k8s/apartment-chart/values.yaml
+          # Backend
+          sed -i "/backend:/,/frontend:/ s|repository:.*|repository: ${{ secrets.REGISTRY_URL }}/${{ secrets.REGISTRY_USERNAME }}/apartment-backend|" k8s/apartment-chart/values.yaml
+          sed -i "/backend:/,/frontend:/ s|tag:.*|tag: \"${{ github.sha }}\"|" k8s/apartment-chart/values.yaml
+          # Frontend
+          sed -i "/frontend:/,/end-of-frontend:/ s|repository:.*|repository: ${{ secrets.REGISTRY_URL }}/${{ secrets.REGISTRY_USERNAME }}/apartment-frontend|" k8s/apartment-chart/values.yaml
+          sed -i "/frontend:/,/end-of-frontend:/ s|tag:.*|tag: \"${{ github.sha }}\"|" k8s/apartment-chart/values.yaml
 
       - name: Commit and push updated values.yaml
         run: |
