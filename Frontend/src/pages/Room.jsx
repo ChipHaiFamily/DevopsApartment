@@ -22,6 +22,13 @@ const ROOM_TYPES = {
       "ห้องมอบพร้อมเตียงควีนไซส์ ห้องน้ำส่วนตัวสุดสะดวก มุมครัวไว้เตรียมของโปรด, ห้องนั่งเล่นชิล ๆ, มุมอ่านหนังสือให้ไอเดียแล่นกระฉูด และระเบียงพร้อมราวตากผ้า (แก้ด้วย)",
     featuresLeft: ["เตียงควีนไซส์", "ห้องน้ำส่วนตัว", "ตู้เสื้อผ้า", "โซฟา"],
     featuresRight: ["อ่างล้างจาน", "โต๊ะอ่านหนังสือ", "ระเบียง"],
+    bg_banner:
+      "https://images.unsplash.com/photo-1737737196308-e5b848160b78?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=1171",
+    detail_image: [
+      "https://images.unsplash.com/photo-1740300408749-1e70c505cc9d?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=1176",
+      "https://images.unsplash.com/photo-1737737210863-387afd35344e?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=1170",
+      "https://images.unsplash.com/photo-1737737229523-3966bdf132de?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=1170",
+    ],
   },
   medium: {
     key: "medium",
@@ -38,6 +45,13 @@ const ROOM_TYPES = {
       "จัดฟังก์ชันแยกสัดส่วน โซนนั่งเล่นกว้าง โต๊ะทำงาน 2 ที่นั่ง ครัวขนาดย่อม ตู้เก็บของเยอะ และระเบียงกว้าง",
     featuresLeft: ["เตียงควีนไซส์ 2 ห้อง", "ห้องน้ำส่วนตัว", "โซฟา + โต๊ะกลาง"],
     featuresRight: ["โต๊ะทำงาน 2 ชุด", "ครัวขนาดย่อม", "ระเบียงกว้าง"],
+    bg_banner:
+      "https://plus.unsplash.com/premium_photo-1674676471417-07f613528a94?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=1145",
+    detail_image: [
+      "https://plus.unsplash.com/premium_photo-1674676470323-4aa46ef69086?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=1170",
+      "https://plus.unsplash.com/premium_photo-1674676471837-259d368a1d6e?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=1170",
+      "https://plus.unsplash.com/premium_photo-1674676471724-516ba89e86ee?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=1170",
+    ],
   },
   large: {
     key: "large",
@@ -57,6 +71,13 @@ const ROOM_TYPES = {
       "ห้องน้ำ 2 ห้อง",
     ],
     featuresRight: ["ครัวแยก", "โต๊ะกินข้าว 4 ที่นั่ง", "ระเบียง 2 ฝั่ง"],
+    bg_banner:
+      "https://plus.unsplash.com/premium_photo-1663126298656-33616be83c32?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=1170",
+    detail_image: [
+      "https://plus.unsplash.com/premium_photo-1676823547757-f00b51e17eff?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=1171",
+      "https://plus.unsplash.com/premium_photo-1676823553207-758c7a66e9bb?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=1170",
+      "https://plus.unsplash.com/premium_photo-1676823552800-3f23a64b5f35?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=1950",
+    ],
   },
 };
 
@@ -219,15 +240,19 @@ export default function Room() {
           <div
             className="rounded-3 mb-4 p-4"
             style={{
-              background:
-                "linear-gradient(0deg, rgba(15,23,42,.12), rgba(15,23,42,.12)), repeating-conic-gradient(#f3f4f6 0% 25%, #e5e7eb 0% 50%) 50%/40px 40px",
+              backgroundImage: `linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), url(${info.bg_banner})`,
+              backgroundSize: "cover",
+              backgroundPosition: "center",
+              backgroundRepeat: "no-repeat",
             }}
           >
-            <div className="text-dark-50 small fw-semibold mb-2">
+            <div className="text-white-50 small fw-semibold mb-2">
               {info.price.toLocaleString("th-TH")}.–/เดือน
             </div>
-            <h1 className="display-5 fw-bolder mb-3">{info.title}</h1>
-            <div className="d-flex flex-wrap gap-4 fs-5">
+            <h1 className="display-5 fw-bolder text-white mb-3">
+              {info.title}
+            </h1>
+            <div className="d-flex flex-wrap gap-4 fs-5 text-white">
               {info.bullets.map((b) => (
                 <div key={b.text} className="d-flex align-items-center">
                   <i className={`me-2 bi ${b.icon}`} />
@@ -277,14 +302,16 @@ export default function Room() {
 
             {/* ฝั่งขวา: ช่องรูป (mock) 3 ช่องเรียงลงเหมือนตัวอย่าง */}
             <div className="col-lg-4">
-              {[0, 1, 2].map((i) => (
+              {info.detail_image.map((img, i) => (
                 <div
                   key={i}
                   className="rounded-3 mb-3"
                   style={{
                     height: i === 0 ? 240 : 180,
-                    background:
-                      "repeating-conic-gradient(#f3f4f6 0% 25%, #e5e7eb 0% 50%) 50%/26px 26px",
+                    backgroundImage: `url(${img})`,
+                    backgroundSize: "cover",
+                    backgroundPosition: "center",
+                    backgroundRepeat: "no-repeat",
                   }}
                 />
               ))}
