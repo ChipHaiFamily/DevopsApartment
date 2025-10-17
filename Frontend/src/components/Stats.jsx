@@ -17,12 +17,12 @@ export default function Stats() {
     },
     {
       label: "ห้องว่าง",
-      value: 12,
+      value: 18,
       icon: "M4 7h16v10H4V7zm2 2v6h12V9H6zM3 5h18V3H3v2z"
     },
     {
       label: "ผู้เช่าปัจจุบัน",
-      value: 19,
+      value: 6,
       icon: "M12 12a5 5 0 100-10 5 5 0 000 10zm-9 9a9 9 0 1118 0H3z"
     },
   ];

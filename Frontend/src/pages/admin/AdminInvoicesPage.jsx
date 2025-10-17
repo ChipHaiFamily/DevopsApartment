@@ -37,12 +37,12 @@ export default function AdminInvoicesPage() {
     0
   );
   const pendingAmount = invoices
-    .filter((i) => i.status === "pending")
+    .filter((i) => i.status !== "Paid")
     .reduce((sum, i) => sum + Number(i.totalAmount || 0), 0);
   const totalInvoices = invoices.length;
   const overdue = invoices.filter((i) => {
     const due = new Date(i.dueDate);
-    return i.status !== "paid" && due < new Date();
+    return i.status !== "Paid" && due < new Date();
   }).length;
 
   const getLatestContract = (contracts) => {
