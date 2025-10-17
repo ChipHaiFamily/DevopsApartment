@@ -56,36 +56,25 @@ jobs:
         run: |
           until pg_isready -h localhost -U postgres; do sleep 2; done
 
-      - name: Load database dump (optional)
+      - name: Load database dump
         run: |
-          sudo apt-get update && sudo apt-get install -y postgresql-client
+          sudo apt-get install -y postgresql-client
           psql -h localhost -U postgres -d apartment_db -f Backup/apartment_db.sql
         env:
           PGPASSWORD: admin
 
-      - name: Build & Test (Gradle)
-        env:
-          SPRING_PROFILES_ACTIVE: test
-          SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/apartment_db
-          SPRING_DATASOURCE_USERNAME: postgres
-          SPRING_DATASOURCE_PASSWORD: admin
+      - name: Run backend tests
+        working-directory: Backend
         run: |
           chmod +x gradlew
-          ./gradlew clean test --info --stacktrace
-
-      - name: Upload Test Report
+          ./gradlew test
+          
+      - name: Upload Test Report (HTML)
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: backend-test-report
           path: Backend/build/reports/tests/test
-
-      - name: Upload JaCoCo Report (if available)
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: jacoco-report
-          path: Backend/build/reports/jacoco/test/html
 
   # ==========================================
   # 🌍 E2E Test (docker-compose + Cypress)
