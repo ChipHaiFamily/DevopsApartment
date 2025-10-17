@@ -99,8 +99,9 @@ jobs:
           cache: 'npm'
           cache-dependency-path: Frontend/package-lock.json
 
-      - name: Install Cypress deps
+      - name: Install dependencies and build frontend
         run: |
+          cd frontend
           npm ci
           npx cypress install
 
