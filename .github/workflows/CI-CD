@@ -2,7 +2,7 @@ name: CI - Docker Image CI/CD (ArgoCD GitOps)
 
 on:
   push:
-    branches: [main, k8s-CI/CD]
+    branches: [main, cicd]
   pull_request:
     branches: [main]
 
