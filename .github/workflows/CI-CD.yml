@@ -93,8 +93,10 @@ jobs:
 
       - name: Install Cypress deps (repo root)
         run: |
-          npm ci --prefix Frontend
-          npx cypress install --prefix Frontend
+          cd Frontend
+          npm ci
+          npx cypress install
+          cd ..
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
