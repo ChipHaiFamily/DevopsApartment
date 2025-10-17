@@ -84,14 +84,14 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Node.js 20 (for Cypress CLI at repo root)
+      - name: Set up Node.js 20
         uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: 'npm'
           cache-dependency-path: Frontend/package-lock.json
 
-      - name: Install Cypress deps (repo root)
+      - name: Install Cypress deps
         run: |
           cd Frontend
           npm ci
@@ -106,6 +106,7 @@ jobs:
           docker compose -f "${COMPOSE_FILE}" up -d --build
           docker ps
 
+      # ✅ Wait for PostgreSQL container instead of backend
       - name: Wait for PostgreSQL
         run: |
           until docker exec apartment-db pg_isready -U postgres; do
@@ -139,7 +140,7 @@ jobs:
           done
           echo "Frontend not up in time"; docker ps; exit 1
 
-      - name: Run Cypress E2E (using root cypress.config.js)
+      - name: Run Cypress E2E
         env:
           CYPRESS_baseUrl: ${{ env.BASE_URL }}
           CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
