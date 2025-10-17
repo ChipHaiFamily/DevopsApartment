@@ -101,6 +101,13 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
+      - name: Wait for PostgreSQL
+        run: |
+          until docker exec apartment-db pg_isready -U postgres; do
+            echo "Waiting for PostgreSQL..."
+            sleep 2
+          done
+
       - name: docker compose up (build & run)
         run: |
           docker compose -f "${COMPOSE_FILE}" up -d --build
