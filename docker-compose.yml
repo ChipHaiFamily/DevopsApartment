@@ -15,6 +15,12 @@ services:
       - ./Backup/apartment_db.sql:/docker-entrypoint-initdb.d/apartment_db.sql
     networks:
       - app-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d apartment_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
   pgadmin:
     image: dpage/pgadmin4:latest
