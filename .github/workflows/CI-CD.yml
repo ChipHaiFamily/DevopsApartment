@@ -59,7 +59,7 @@ jobs:
       - name: Load database dump
         run: |
           sudo apt-get install -y postgresql-client
-          psql -h localhost -U postgres -d apartment_db -f Backup/apartment_db.sql
+          psql -h localhost -U postgres -d apartment_db -f ../Backup/apartment_db.sql
         env:
           PGPASSWORD: admin
 
