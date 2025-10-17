@@ -12,7 +12,7 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./db/apartment_db.sql:/docker-entrypoint-initdb.d/apartment_db.sql
+      - ./Backup/apartment_db.sql:/docker-entrypoint-initdb.d/apartment_db.sql
     networks:
       - app-net
 
