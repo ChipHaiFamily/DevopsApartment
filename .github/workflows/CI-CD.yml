@@ -123,6 +123,11 @@ jobs:
             echo "PostgreSQL not ready yet ($i/60), retrying..."
             sleep 5
           done
+
+      - name: Show backend logs (for debugging)
+        if: failure()
+        run: docker logs apartment-backend --tail 50 || true
+
   
       - name: Wait for backend to be healthy
         run: |
