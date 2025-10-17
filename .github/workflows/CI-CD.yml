@@ -2,9 +2,9 @@ name: CI - Docker Image CI/CD (ArgoCD GitOps)
 
 on:
   push:
-    branches: [main, cicd]
+    branches: [ "main", "cicd" ]
   pull_request:
-    branches: [main]
+    branches: [ "main" ]
 
 permissions:
   contents: read
