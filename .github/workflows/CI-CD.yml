@@ -83,40 +83,46 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
-      - name: Set up Node.js 20
+  
+      - name: Set up Node.js 20 (for Cypress CLI at repo root)
         uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: 'npm'
           cache-dependency-path: Frontend/package-lock.json
-
+  
       - name: Install Cypress deps
         run: |
           cd Frontend
           npm ci
           npx cypress install
           cd ..
-
+  
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-
-      - name: docker compose up (build & run)
+  
+      - name: Docker Compose up (build & run)
+        run: docker compose -f "${COMPOSE_FILE}" up -d --build
+  
+      - name: Wait for PostgreSQL container running
         run: |
-          docker compose -f "${COMPOSE_FILE}" up -d --build
-          docker ps
-
-      # ✅ Wait for PostgreSQL container instead of backend
-      - name: Wait for PostgreSQL
-        run: |
-          until docker exec apartment-db pg_isready -U postgres; do
-            echo "Waiting for PostgreSQL..."
+          echo "Waiting for apartment-db container to start..."
+          until [ "$(docker inspect -f '{{.State.Running}}' apartment-db 2>/dev/null)" = "true" ]; do
             sleep 2
           done
-
+          echo "apartment-db is running ✅"
+  
+      - name: Wait for PostgreSQL ready
+        run: |
+          echo "Waiting for PostgreSQL to be ready..."
+          until docker exec apartment-db pg_isready -U postgres > /dev/null 2>&1; do
+            sleep 2
+          done
+          echo "PostgreSQL ready ✅"
+  
       - name: Show backend logs
         run: docker logs apartment-backend || true
-
+  
       - name: Wait for backend to be healthy
         run: |
           for i in {1..60}; do
@@ -130,7 +136,7 @@ jobs:
           echo "Backend not healthy in time ❌"
           docker logs apartment-backend
           exit 1
-
+  
       - name: Wait for frontend to be up
         run: |
           for i in {1..60}; do
@@ -138,15 +144,17 @@ jobs:
             echo "Waiting for frontend... ($i/60)"
             sleep 2
           done
-          echo "Frontend not up in time"; docker ps; exit 1
-
+          echo "Frontend not up in time ❌"
+          docker ps
+          exit 1
+  
       - name: Run Cypress E2E
         env:
           CYPRESS_baseUrl: ${{ env.BASE_URL }}
           CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
         run: |
           npx cypress run --headless ${CYPRESS_RECORD_KEY:+--record --key $CYPRESS_RECORD_KEY}
-
+  
       - name: Upload Cypress artifacts
         if: always()
         uses: actions/upload-artifact@v4
@@ -155,10 +163,11 @@ jobs:
           path: |
             cypress/videos
             cypress/screenshots
-
+  
       - name: Teardown containers
         if: always()
         run: docker compose -f "${{ env.COMPOSE_FILE }}" down -v
+
 
   # ==========================================
   # 🐳 Docker Push (Frontend)
