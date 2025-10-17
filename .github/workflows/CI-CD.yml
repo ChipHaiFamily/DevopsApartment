@@ -72,19 +72,19 @@ jobs:
   # 🌍 E2E Test (docker-compose + Cypress)
   # ==========================================
   e2e:
-    name: E2E via docker-compose + Cypress (root)
+    name: E2E via docker-compose + Cypress
     runs-on: ubuntu-latest
+    needs: [backend]
     env:
       COMPOSE_FILE: docker-compose.yml
       BASE_URL: http://localhost:5173
       HEALTH_URL_BACKEND: http://localhost:8080/actuator/health
       HEALTH_URL_FRONTEND: http://localhost:5173
-    needs: [backend]
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
   
-      - name: Set up Node.js 20 (for Cypress CLI at repo root)
+      - name: Set up Node.js 20
         uses: actions/setup-node@v4
         with:
           node-version: 20
@@ -101,27 +101,28 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
   
-      - name: Docker Compose up (build & run)
-        run: docker compose -f "${COMPOSE_FILE}" up -d --build
+      - name: Docker Compose up
+        run: |
+          docker compose -f "${COMPOSE_FILE}" up -d --build
+          docker ps
   
-      - name: Wait for PostgreSQL container running
+      - name: Wait for apartment-db container
         run: |
           echo "Waiting for apartment-db container to start..."
-          until [ "$(docker inspect -f '{{.State.Running}}' apartment-db 2>/dev/null)" = "true" ]; do
+          until [ "$(docker inspect -f '{{.State.Running}}' apartment-db)" == "true" ]; do
             sleep 2
           done
           echo "apartment-db is running ✅"
   
-      - name: Wait for PostgreSQL ready
+      - name: Wait for PostgreSQL to be ready
         run: |
           echo "Waiting for PostgreSQL to be ready..."
-          until docker exec apartment-db pg_isready -U postgres > /dev/null 2>&1; do
-            sleep 2
+          for i in {1..60}; do
+            docker logs apartment-db --tail 20
+            docker exec apartment-db pg_isready -U postgres && break
+            echo "PostgreSQL not ready yet ($i/60), retrying..."
+            sleep 5
           done
-          echo "PostgreSQL ready ✅"
-  
-      - name: Show backend logs
-        run: docker logs apartment-backend || true
   
       - name: Wait for backend to be healthy
         run: |
@@ -134,7 +135,7 @@ jobs:
             sleep 2
           done
           echo "Backend not healthy in time ❌"
-          docker logs apartment-backend
+          docker logs apartment-backend --tail 50
           exit 1
   
       - name: Wait for frontend to be up
@@ -167,7 +168,6 @@ jobs:
       - name: Teardown containers
         if: always()
         run: docker compose -f "${{ env.COMPOSE_FILE }}" down -v
-
 
   # ==========================================
   # 🐳 Docker Push (Frontend)
