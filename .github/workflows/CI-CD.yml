@@ -101,7 +101,7 @@ jobs:
 
       - name: Install dependencies and build frontend
         run: |
-          cd frontend
+          cd Frontend
           npm ci
           npx cypress install
 
