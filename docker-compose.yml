@@ -15,11 +15,19 @@ services:
       - ./db/apartment_db.sql:/docker-entrypoint-initdb.d/apartment_db.sql
     networks:
       - app-net
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 5s
-      retries: 10
-      timeout: 5s
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: apartment-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "5050:80"
+    depends_on:
+      - db
+    networks:
+      - app-net
 
   backend:
     build: ./Backend
@@ -31,8 +39,7 @@ services:
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: admin
     depends_on:
-      db:
-        condition: service_healthy
+      - db
     networks:
       - app-net
 
