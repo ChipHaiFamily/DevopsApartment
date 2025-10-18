@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   # ==========================================
-  # 🧪 Backend: Build & Test (Gradle + Postgres)
+  # Backend: Build & Test (Gradle + Postgres)
   # ==========================================
   backend:
     name: Backend (Gradle tests with Postgres)
@@ -69,7 +69,7 @@ jobs:
           path: Backend/build/reports/tests/test
 
   # ==========================================
-  # 🌍 E2E Test (docker-compose + Cypress)
+  # E2E Test (docker-compose + Cypress)
   # ==========================================
   e2e:
     name: E2E via docker-compose + Cypress
@@ -112,7 +112,7 @@ jobs:
           until [ "$(docker inspect -f '{{.State.Running}}' apartment-db)" == "true" ]; do
             sleep 2
           done
-          echo "apartment-db is running ✅"
+          echo "apartment-db is running"
   
       - name: Wait for PostgreSQL to be ready
         run: |
@@ -133,13 +133,13 @@ jobs:
         run: |
           for i in {1..60}; do
             if curl -fsS http://localhost:8080/actuator/health | grep -q '"status":"UP"'; then
-              echo "Backend healthy ✅"
+              echo "Backend healthy"
               exit 0
             fi
             echo "Waiting for backend... ($i/60)"
             sleep 2
           done
-          echo "Backend not healthy in time ❌"
+          echo "Backend not healthy in time "
           docker logs apartment-backend --tail 50
           exit 1
   
@@ -150,7 +150,7 @@ jobs:
             echo "Waiting for frontend... ($i/60)"
             sleep 2
           done
-          echo "Frontend not up in time ❌"
+          echo "Frontend not up in time "
           docker logs apartment-frontend --tail 50
           exit 1
   
@@ -159,7 +159,20 @@ jobs:
           CYPRESS_baseUrl: ${{ env.BASE_URL }}
           CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
         run: |
+          echo "Current working directory before cd:"
+          pwd
+          echo "Listing files:"
+          ls -al
+      
+          cd Frontend
+      
+          echo "Current working directory after cd:"
+          pwd
+          echo "Listing files in Frontend:"
+          ls -al
+      
           npx cypress run --headless ${CYPRESS_RECORD_KEY:+--record --key $CYPRESS_RECORD_KEY}
+
   
       - name: Upload Cypress artifacts
         if: always()
@@ -175,7 +188,7 @@ jobs:
         run: docker compose -f "${{ env.COMPOSE_FILE }}" down -v
 
   # ==========================================
-  # 🐳 Docker Push (Frontend)
+  # Docker Push (Frontend)
   # ==========================================
   docker-push-frontend:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -212,7 +225,7 @@ jobs:
           tags: ${{ env.IMAGE_NAME }}:${{ env.TAG_LATEST }}
 
   # ==========================================
-  # 🐳 Docker Push (Backend)
+  # Docker Push (Backend)
   # ==========================================
   docker-push-backend:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -249,7 +262,7 @@ jobs:
           tags: ${{ env.IMAGE_NAME }}:${{ env.TAG_LATEST }}
 
   # ==========================================
-  # 🔁 Update Helm values (GitOps for ArgoCD)
+  # Update Helm values (GitOps for ArgoCD)
   # ==========================================
   update-helm-values:
     name: Update Helm Chart Values
@@ -275,7 +288,7 @@ jobs:
           git push origin HEAD:${{ github.ref_name }}
 
   # ==========================================
-  # 🧾 CI Summary
+  # CI Summary
   # ==========================================
   summary:
     name: CI/CD Summary
