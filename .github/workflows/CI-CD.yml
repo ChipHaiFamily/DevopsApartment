@@ -77,9 +77,9 @@ jobs:
     needs: [backend]
     env:
       COMPOSE_FILE: docker-compose.yml
-      BASE_URL: http://localhost:5173
+      BASE_URL: http://localhost:3000
       HEALTH_URL_BACKEND: http://localhost:8080/actuator/health
-      HEALTH_URL_FRONTEND: http://localhost:5173
+      HEALTH_URL_FRONTEND: http://localhost:3000
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
