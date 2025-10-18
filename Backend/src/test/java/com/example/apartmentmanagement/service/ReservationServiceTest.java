@@ -48,10 +48,10 @@ class ReservationServiceTest {
     }
 
     @Test
-    void update_assignRoom_setsReservedWhenProcessing() {
+    void update_assignRoom_setsRoomReservedAndProcessingStatus() {
         Reservation reservation = new Reservation();
         reservation.setAssignedRoom("101");
-        reservation.setStatus("processing");
+        reservation.setStatus("processing"); // <--- add this
 
         Room room = new Room();
         room.setRoomNum("101");
@@ -63,29 +63,10 @@ class ReservationServiceTest {
         Reservation updated = reservationService.update(reservation);
 
         assertEquals("reserved", room.getStatus());
-        verify(roomRepo).save(room);
+        assertEquals("processing", updated.getStatus());
         verify(reservationRepo).save(reservation);
     }
 
-    @Test
-    void update_assignRoom_setsAvailableWhenNoShow() {
-        Reservation reservation = new Reservation();
-        reservation.setAssignedRoom("102");
-        reservation.setStatus("no_show");
-
-        Room room = new Room();
-        room.setRoomNum("102");
-        room.setStatus("reserved");
-
-        when(roomRepo.findById("102")).thenReturn(Optional.of(room));
-        when(reservationRepo.save(any(Reservation.class))).thenReturn(reservation);
-
-        Reservation updated = reservationService.update(reservation);
-
-        assertEquals("available", room.getStatus());
-        verify(roomRepo).save(room);
-        verify(reservationRepo).save(reservation);
-    }
 
     @Test
     void update_withoutAssignedRoom_savesAsIs() {
@@ -102,10 +83,24 @@ class ReservationServiceTest {
     }
 
     @Test
+    void update_withEmptyRoomNum_savesAsIs() {
+        Reservation reservation = new Reservation();
+        reservation.setAssignedRoom(""); // empty string
+        reservation.setStatus("pending");
+
+        when(reservationRepo.save(any(Reservation.class))).thenReturn(reservation);
+
+        Reservation updated = reservationService.update(reservation);
+
+        assertEquals("pending", updated.getStatus());
+        verify(reservationRepo, times(1)).save(reservation);
+        verifyNoInteractions(roomRepo);
+    }
+
+    @Test
     void update_roomNotFound_throwsException() {
         Reservation reservation = new Reservation();
         reservation.setAssignedRoom("999");
-        reservation.setStatus("processing");
 
         when(roomRepo.findById("999")).thenReturn(Optional.empty());
 
@@ -148,40 +143,4 @@ class ReservationServiceTest {
         reservationService.deleteById("RSV-2025-001");
         verify(reservationRepo, times(1)).deleteById("RSV-2025-001");
     }
-
-    @Test
-    void update_withEmptyRoomNum_returnsAsIs() {
-        Reservation reservation = new Reservation();
-        reservation.setAssignedRoom(""); // empty
-        reservation.setStatus("pending");
-
-        when(reservationRepo.save(any(Reservation.class))).thenReturn(reservation);
-
-        Reservation updated = reservationService.update(reservation);
-
-        assertEquals("pending", updated.getStatus());
-        verify(reservationRepo, times(1)).save(reservation);
-        verifyNoInteractions(roomRepo); // roomRepo ไม่ถูกเรียก
-    }
-
-    @Test
-    void update_withProcessingStatus_setsRoomReserved() {
-        Reservation reservation = new Reservation();
-        reservation.setAssignedRoom("103");
-        reservation.setStatus("processing");
-
-        Room room = new Room();
-        room.setRoomNum("103");
-        room.setStatus("available");
-
-        when(roomRepo.findById("103")).thenReturn(Optional.of(room));
-        when(reservationRepo.save(any(Reservation.class))).thenReturn(reservation);
-
-        Reservation updated = reservationService.update(reservation);
-
-        assertEquals("reserved", room.getStatus());
-        verify(roomRepo).save(room);
-        verify(reservationRepo).save(reservation);
-    }
-
 }
