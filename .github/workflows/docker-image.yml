@@ -7,28 +7,71 @@ on:
     branches: [ "main" ]
 
 jobs:
+   # ==========================================
+  #  Backend: Build & Test (Gradle + Postgres)
+  # ==========================================
+  backend:
+    name: Backend (Gradle tests with Postgres)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: Backend
+    services:
+      postgres:
+        image: postgres:15
+        ports:
+          - 5432:5432
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: admin
+          POSTGRES_DB: apartment_db
+        options: >-
+          --health-cmd="pg_isready -U postgres -d apartment_db"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=10
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Cache Gradle dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: ${{ runner.os }}-gradle
+
+      - name: Wait for PostgreSQL
+        run: |
+          until pg_isready -h localhost -U postgres; do sleep 2; done
+
+      - name: Run backend tests
+        run: |
+          chmod +x gradlew
+          ./gradlew test
+
+      - name: Upload Test Report (HTML)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-test-report
+          path: Backend/build/reports/tests/test
+          
   # ===========================
   # Build Backend (Spring Boot)
   # ===========================
   build-backend:
     name: Build Backend (Spring Boot)
     runs-on: ubuntu-latest
-    # Database service (PostgreSQL)
-    services:
-      db:
-        image: postgres:15
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: admin
-          POSTGRES_DB: apartment_db
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd="pg_isready -U postgres"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=5
-
+    needs: [backend]
 
     steps:
       - name: Checkout code
