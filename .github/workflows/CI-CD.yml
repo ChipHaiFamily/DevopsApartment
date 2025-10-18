@@ -151,7 +151,7 @@ jobs:
             sleep 2
           done
           echo "Frontend not up in time ❌"
-          docker ps
+          docker logs apartment-frontend --tail 50
           exit 1
   
       - name: Run Cypress E2E
