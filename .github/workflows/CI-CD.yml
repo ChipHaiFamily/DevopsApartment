@@ -1,4 +1,4 @@
-name: CI - Docker Image CI/CD (ArgoCD GitOps)
+name: CI
 
 on:
   push:
@@ -74,7 +74,7 @@ jobs:
   e2e:
     name: E2E via docker-compose + Cypress
     runs-on: ubuntu-latest
-    needs: [backend]
+    needs: backend
     env:
       COMPOSE_FILE: docker-compose.yml
       BASE_URL: http://localhost:3000
@@ -192,7 +192,7 @@ jobs:
   # ==========================================
   build-backend:
     runs-on: ubuntu-latest
-    needs: backend
+    needs: [backend,e2e]
     steps:
       - uses: actions/checkout@v4
 
