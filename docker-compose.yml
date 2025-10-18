@@ -12,9 +12,15 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./db/apartment_db.sql:/docker-entrypoint-initdb.d/apartment_db.sql
+      - ./Backup/apartment_db.sql:/docker-entrypoint-initdb.d/apartment_db.sql
     networks:
       - app-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d apartment_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
   pgadmin:
     image: dpage/pgadmin4:latest
@@ -23,9 +29,10 @@ services:
       PGADMIN_DEFAULT_EMAIL: admin@admin.com
       PGADMIN_DEFAULT_PASSWORD: admin
     ports:
-      - "5050:80"
+          - "5050:80"
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     networks:
       - app-net
 
@@ -39,19 +46,29 @@ services:
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: admin
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     networks:
       - app-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 20s
 
   frontend:
     build: ./Frontend
     container_name: apartment-frontend
+    environment:
+      BACKEND_HOST: backend
     ports:
       - "3000:80"
     depends_on:
       - backend
     networks:
       - app-net
+
 
 volumes:
   postgres_data:
