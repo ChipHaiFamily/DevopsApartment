@@ -57,17 +57,17 @@ services:
       retries: 6
       start_period: 20s
 
-    frontend:
-      build: ./Frontend
-      container_name: apartment-frontend
-      environment:
-        BACKEND_HOST: backend
-      ports:
-        - "3000:80"
-      depends_on:
-        - backend
-      networks:
-        - app-net
+  frontend:
+    build: ./Frontend
+    container_name: apartment-frontend
+    environment:
+      BACKEND_HOST: backend
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    networks:
+      - app-net
 
 
 volumes:
