@@ -1,5 +1,5 @@
-# ใช้ JDK 17
-FROM openjdk:17-jdk-slim AS builder
+# ใช้ Eclipse Temurin JDK 17 สำหรับการ Build
+FROM eclipse-temurin:17-jdk-alpine AS builder
 
 # ตั้ง working directory
 WORKDIR /app
@@ -19,11 +19,11 @@ RUN ./gradlew dependencies --no-daemon || true
 COPY src src
 
 # สร้าง jar ไฟล์
-RUN chmod +x gradlew
 RUN ./gradlew clean bootJar -x test --no-daemon
 
 # ========= Stage 2 =========
-FROM openjdk:17-jdk-slim
+# ใช้ Eclipse Temurin JRE 17 สำหรับ Runtime
+FROM eclipse-temurin:17-jre-alpine
 WORKDIR /app
 
 # Copy jar ที่ build เสร็จแล้วมา
