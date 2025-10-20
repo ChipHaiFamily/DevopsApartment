@@ -3,7 +3,7 @@ import axios from "axios";
 
 export default function MaintenanceFormModal({ open, onClose, onSuccess, log }) {
   const isEdit = !!log;
-  const [errors, setErrors] = useState({}); // ✅ เก็บข้อความ error
+  const [errors, setErrors] = useState({}); // เก็บข้อความ error
 
   const [form, setForm] = useState({
     logId: "",
@@ -12,7 +12,7 @@ export default function MaintenanceFormModal({ open, onClose, onSuccess, log }) 
     description: "",
     technician: "",
     cost: "",
-    requestDate: new Date().toISOString().split("T")[0], // ✅ วันที่แจ้ง = วันนี้
+    requestDate: new Date().toISOString().split("T")[0], // วันที่แจ้ง = วันนี้
     completedDate: "",
     status: "in_progress",
   });
@@ -37,7 +37,7 @@ export default function MaintenanceFormModal({ open, onClose, onSuccess, log }) 
 
   if (!open) return null;
 
-  // ✅ Validation Function
+  //  Validation Function
   const validateForm = () => {
     const newErrors = {};
 
@@ -77,7 +77,7 @@ export default function MaintenanceFormModal({ open, onClose, onSuccess, log }) 
   };
 
   const handleSubmit = async () => {
-    if (!validateForm()) return; // ✅ หยุดถ้าฟอร์มไม่ผ่าน validation
+    if (!validateForm()) return; // หยุดถ้าฟอร์มไม่ผ่าน validation
 
     const payload = {
       logId: form.logId,
