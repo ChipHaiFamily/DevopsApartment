@@ -9,7 +9,8 @@ export default function InvoiceFormModal({
   mode = "create", // create | update
 }) {
   const [tenants, setTenants] = useState([]);
-  const [deletedPaymentIds, setDeletedPaymentIds] = useState([]); // track แถวที่ลบ
+  const [deletedPaymentIds, setDeletedPaymentIds] = useState([]);
+  const [errors, setErrors] = useState({}); // ✅ เก็บข้อความ error ของแต่ละช่อง
 
   useEffect(() => {
     axios
@@ -22,7 +23,7 @@ export default function InvoiceFormModal({
 
   const [form, setForm] = useState({
     invoiceId: "",
-    issueDate: new Date().toISOString().slice(0, 10),
+    issueDate: new Date().toISOString().slice(0, 10), // ✅ วันที่ออกบิล = วันนี้
     dueDate: "",
     status: "pending",
     totalAmount: 0,
@@ -31,7 +32,6 @@ export default function InvoiceFormModal({
     payments: [],
   });
 
-  // preload data เวลา update เท่านั้น
   useEffect(() => {
     if (mode === "update" && invoice) {
       setForm({
@@ -52,24 +52,49 @@ export default function InvoiceFormModal({
             }))
           : [],
       });
-      setDeletedPaymentIds([]); // เริ่มใหม่ทุกครั้ง
-    } else if (mode === "create") {
-      setForm({
-        invoiceId: "",
-        issueDate: new Date().toISOString().slice(0, 10),
-        dueDate: "",
-        status: "pending",
-        totalAmount: 0,
-        tenantId: "",
-        items: [],
-        payments: [],
-      });
       setDeletedPaymentIds([]);
     }
   }, [mode, invoice]);
 
   if (!open) return null;
 
+  // ============================ Validation ============================
+  const validateForm = () => {
+    const newErrors = {};
+
+    // วันที่กำหนดชำระ
+    if (!form.dueDate) {
+      newErrors.dueDate = "กรุณากรอกวันกำหนดชำระ ก่อนกดบันทึกข้อมูล";
+    } else if (new Date(form.dueDate) <= new Date(form.issueDate)) {
+      newErrors.dueDate = "วันกำหนดชำระ ต้องอยู่หลังวันเริ่มต้น";
+    }
+
+    // ผู้เช่า
+    if (!form.tenantId) {
+      newErrors.tenantId = "กรุณาเลือกผู้เช่า ก่อนกดบันทึกข้อมูล";
+    }
+
+    // รายละเอียดค่าใช้จ่าย
+    if (!form.items || form.items.length === 0) {
+      newErrors.items = "กรุณาเพิ่ม รายละเอียดค่าใช้จ่าย อย่างน้อย 1 รายการก่อนกดบันทึก";
+    } else {
+      form.items.forEach((item, index) => {
+        if (!item.description?.trim()) {
+          newErrors[`item_desc_${index}`] = "กรุณากรอก คำอธิบายค่าใช้จ่าย";
+        }
+        if (item.amount === "" || item.amount === null) {
+          newErrors[`item_amount_${index}`] = "กรุณากรอกจำนวนเงิน";
+        } else if (isNaN(item.amount)) {
+          newErrors[`item_amount_${index}`] = "กรุณากรอกจำนวนเงินเป็นตัวเลข";
+        }
+      });
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  // ============================ Event Handlers ============================
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
@@ -95,137 +120,36 @@ export default function InvoiceFormModal({
     }));
   };
 
-  const handlePaymentChange = (index, field, value) => {
-    const newPayments = [...form.payments];
-    newPayments[index][field] = field === "amount" ? Number(value || 0) : value;
-    setForm((prev) => ({ ...prev, payments: newPayments }));
-  };
+  const handleSubmit = () => {
+    if (!validateForm()) return; // หยุดถ้ามี error
 
-  const handleAddPayment = () => {
-    setForm((prev) => ({
-      ...prev,
-      payments: [
-        ...prev.payments,
-        { paymentId: null, id: null, paymentDate: "", method: "", amount: 0 },
-      ],
-    }));
-  };
-
-  const handleRemovePayment = (index) => {
-    setForm((prev) => {
-      const target = prev.payments[index];
-      if (target?.paymentId || target?.id) {
-        // เก็บ id ที่ถูกลบไว้ ส่งให้ backend ลบจริง
-        setDeletedPaymentIds((list) => [
-          ...list,
-          target.paymentId ?? target.id,
-        ]);
-      }
-      return {
-        ...prev,
-        payments: prev.payments.filter((_, i) => i !== index),
-      };
-    });
-  };
-
-  const buildPayload = (form, mode, deletedPaymentIds) => {
-    const total = (form.items || []).reduce(
+    const total = form.items.reduce(
       (sum, item) => sum + Number(item.amount || 0),
       0
     );
 
-    const items = (form.items || []).map((it) => {
-      const base = {
-        description: it.description,
-        amount: Number(it.amount || 0),
-      };
-      const existingId = it.itemId ?? it.id;
-      if (existingId) base.itemId = existingId;
-      return base;
-    });
-
-    let payments = [];
-    if (mode === "update") {
-      payments = (form.payments || []).map((p) => ({
-        paymentId: p.paymentId ?? p.id ?? null,
-        id: p.paymentId ?? p.id ?? null,
-        paymentDate: (p.paymentDate || new Date().toISOString().slice(0, 10)).trim(),
-        method: (p.method || "").trim(),
-        amount: Number(p.amount || 0),
-      }));
-    }
-
     const payload = {
-      invoiceId: form.invoiceId || undefined, // create จะไม่มี
+      invoiceId: form.invoiceId || undefined,
       issueDate: form.issueDate,
       dueDate: form.dueDate,
-      totalAmount: total, // คิดจาก items
-      tenant: {
-        tenantId: form.tenantId, // ใช้แบบ object เสมอ
-      },
-      items,
+      totalAmount: total,
+      tenant: { tenantId: form.tenantId },
+      items: form.items.map((it) => ({
+        description: it.description,
+        amount: Number(it.amount || 0),
+      })),
     };
 
     if (mode === "update") {
       payload.status = form.status;
-      payload.payments = payments; // ชุดที่เหลือหลังแก้/เพิ่ม
-      payload.deletedPaymentIds = deletedPaymentIds; // id ที่ถูกลบออก
+      payload.payments = form.payments;
+      payload.deletedPaymentIds = deletedPaymentIds;
     }
 
-    return payload;
+    onSubmit(payload);
   };
 
-  const handleSubmit = () => {
-    // debug form ก่อน build
-    console.log(
-      "[InvoiceFormModal] form (raw) =",
-      JSON.parse(JSON.stringify(form))
-    );
-
-    if (mode === "create") {
-      const payload = buildPayload(form, "create", []);
-      console.log(
-        "[InvoiceFormModal] CREATE payload =",
-        JSON.stringify(payload, null, 2)
-      );
-      onSubmit(payload);
-      return;
-    }
-
-    if (mode === "update") {
-      for (const p of form.payments) {
-        if (!p.paymentDate || !p.method || !(p.amount > 0)) {
-          alert(
-            "กรุณากรอกข้อมูลรายการชำระเงินให้ครบ (วันที่ / วิธี / จำนวนเงิน > 0)"
-          );
-          return;
-        }
-      }
-      const payload = buildPayload(form, "update", deletedPaymentIds);
-      // console.log(
-      //   "[InvoiceFormModal] UPDATE payload =",
-      //   JSON.stringify(payload, null, 2)
-      // );
-      // console.table(
-      //   (payload.items || []).map((x) => ({
-      //     itemId: x.itemId ?? null,
-      //     description: x.description,
-      //     amount: x.amount,
-      //   }))
-      // );
-      // console.table(
-      //   (payload.payments || []).map((x) => ({
-      //     id: x.id ?? null,
-      //     paymentId: x.paymentId ?? null,
-      //     paymentDate: x.paymentDate,
-      //     method: x.method,
-      //     amount: x.amount,
-      //   }))
-      // );
-      onSubmit(payload);
-    }
-  };
-
+  // ============================ JSX ============================
   return (
     <>
       <div className="modal-backdrop fade show"></div>
@@ -251,7 +175,7 @@ export default function InvoiceFormModal({
             {/* Body */}
             <div className="modal-body">
               <div className="row g-3 mb-3">
-                {/* เลขที่บิล & สถานะ: เฉพาะ update */}
+                {/* เลขที่บิล & สถานะ */}
                 {mode === "update" && (
                   <>
                     <div className="col-md-6">
@@ -280,6 +204,7 @@ export default function InvoiceFormModal({
                   </>
                 )}
 
+                {/* วันที่ออกบิล */}
                 <div className="col-md-6">
                   <label className="form-label">วันที่ออกบิล</label>
                   <input
@@ -287,9 +212,11 @@ export default function InvoiceFormModal({
                     className="form-control"
                     name="issueDate"
                     value={form.issueDate}
-                    onChange={handleChange}
+                    readOnly //  ห้ามเปลี่ยน
                   />
                 </div>
+
+                {/* กำหนดชำระ */}
                 <div className="col-md-6">
                   <label className="form-label">กำหนดชำระ</label>
                   <input
@@ -298,9 +225,14 @@ export default function InvoiceFormModal({
                     name="dueDate"
                     value={form.dueDate}
                     onChange={handleChange}
+                    onBlur={validateForm}
                   />
+                  {errors.dueDate && (
+                    <small className="text-danger">{errors.dueDate}</small>
+                  )}
                 </div>
 
+                {/* ผู้เช่า */}
                 <div className="col-md-12">
                   <label className="form-label">ผู้เช่า</label>
                   <select
@@ -308,6 +240,7 @@ export default function InvoiceFormModal({
                     name="tenantId"
                     value={form.tenantId}
                     onChange={handleChange}
+                    onBlur={validateForm}
                   >
                     <option value="">-- เลือกผู้เช่า --</option>
                     {tenants.map((t) => (
@@ -317,11 +250,16 @@ export default function InvoiceFormModal({
                       </option>
                     ))}
                   </select>
+                  {errors.tenantId && (
+                    <small className="text-danger">{errors.tenantId}</small>
+                  )}
                 </div>
               </div>
 
-              {/* Items */}
+              {/* รายละเอียดค่าใช้จ่าย */}
               <h6 className="fw-bold mt-3">รายละเอียดค่าใช้จ่าย</h6>
+              {errors.items && <p className="text-danger">{errors.items}</p>}
+
               {form.items.map((item, index) => (
                 <div className="row g-2 mb-2" key={index}>
                   <div className="col-md-7">
@@ -332,7 +270,13 @@ export default function InvoiceFormModal({
                       onChange={(e) =>
                         handleItemChange(index, "description", e.target.value)
                       }
+                      onBlur={validateForm}
                     />
+                    {errors[`item_desc_${index}`] && (
+                      <small className="text-danger">
+                        {errors[`item_desc_${index}`]}
+                      </small>
+                    )}
                   </div>
                   <div className="col-md-3">
                     <input
@@ -344,10 +288,16 @@ export default function InvoiceFormModal({
                         handleItemChange(
                           index,
                           "amount",
-                          Number(e.target.value)
+                          e.target.value
                         )
                       }
+                      onBlur={validateForm}
                     />
+                    {errors[`item_amount_${index}`] && (
+                      <small className="text-danger">
+                        {errors[`item_amount_${index}`]}
+                      </small>
+                    )}
                   </div>
                   <div className="col-md-2">
                     <button
@@ -360,6 +310,7 @@ export default function InvoiceFormModal({
                   </div>
                 </div>
               ))}
+
               <button
                 type="button"
                 className="btn btn-outline-primary mt-2"
@@ -367,75 +318,6 @@ export default function InvoiceFormModal({
               >
                 + เพิ่มรายการ
               </button>
-
-              {/* Payments: เฉพาะ update */}
-              {mode === "update" && (
-                <>
-                  <h6 className="fw-bold mt-4">การชำระเงิน</h6>
-                  {form.payments.map((p, index) => (
-                    <div
-                      className="row g-2 mb-2"
-                      key={p.paymentId ?? p.id ?? `new-${index}`}
-                    >
-                      <div className="col-md-4">
-                        <input
-                          type="date"
-                          className="form-control"
-                          value={p.paymentDate}
-                          onChange={(e) =>
-                            handlePaymentChange(
-                              index,
-                              "paymentDate",
-                              e.target.value
-                            )
-                          }
-                        />
-                      </div>
-                      <div className="col-md-4">
-                        <input
-                          className="form-control"
-                          placeholder="วิธีชำระ (เช่น โอน, เงินสด)"
-                          value={p.method}
-                          onChange={(e) =>
-                            handlePaymentChange(index, "method", e.target.value)
-                          }
-                        />
-                      </div>
-                      <div className="col-md-3">
-                        <input
-                          type="number"
-                          className="form-control text-end"
-                          placeholder="จำนวนเงิน"
-                          value={p.amount}
-                          onChange={(e) =>
-                            handlePaymentChange(
-                              index,
-                              "amount",
-                              Number(e.target.value)
-                            )
-                          }
-                        />
-                      </div>
-                      <div className="col-md-1">
-                        <button
-                          type="button"
-                          className="btn btn-outline-danger w-100"
-                          onClick={() => handleRemovePayment(index)}
-                        >
-                          ลบ
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                  <button
-                    type="button"
-                    className="btn btn-outline-primary mt-2"
-                    onClick={handleAddPayment}
-                  >
-                    + เพิ่มการชำระเงิน
-                  </button>
-                </>
-              )}
             </div>
 
             {/* Footer */}
