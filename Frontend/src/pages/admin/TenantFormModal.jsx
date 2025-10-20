@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-
 import axios from "axios";
 import Select from "react-select";
 
@@ -7,6 +6,7 @@ export default function TenantFormModal({ open, onClose, onSuccess }) {
   const [users, setUsers] = useState([]);
   const [tenants, setTenants] = useState([]);
   const [availableUsers, setAvailableUsers] = useState([]);
+  const [errors, setErrors] = useState({}); // เก็บ error ของแต่ละช่อง
 
   const [form, setForm] = useState({
     tenantId: "",
@@ -18,6 +18,7 @@ export default function TenantFormModal({ open, onClose, onSuccess }) {
 
   const baseURL = import.meta.env.VITE_API_BASE_URL;
 
+  // ===================== Fetch Users/Tenants =====================
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -44,6 +45,45 @@ export default function TenantFormModal({ open, onClose, onSuccess }) {
 
   if (!open) return null;
 
+  // ===================== Validation Function =====================
+  const validateCitizenId = (id) => {
+    if (!id) return "กรุณากรอกเลขบัตรประชาชน 13 หลัก";
+    if (!/^\d{13}$/.test(id))
+      return "เลขบัตรไม่ถูกต้อง หรืออาจไม่มีอยู่จริง กรุณากรอกเลขบัตรที่ถูกต้อง";
+
+    //  ตรวจสอบโครงสร้างตามหลักคณิตศาสตร์ (Check Digit) // บัตรประชาชนไทย 13 หลัก
+    let sum = 0;
+    for (let i = 0; i < 12; i++) sum += parseInt(id.charAt(i)) * (13 - i);
+    const checkDigit = (11 - (sum % 11)) % 10;
+    if (checkDigit !== parseInt(id.charAt(12)))
+      return "เลขบัตรไม่ถูกต้อง หรืออาจไม่มีอยู่จริง กรุณากรอกเลขบัตรที่ถูกต้อง";
+    return "";
+  };
+
+  const validatePhone = (phone) => {
+    if (!phone) return "กรุณากรอกหมายเลขโทรศัพ 10 หลัก";
+    if (!/^\d{10}$/.test(phone))
+      return "เบอร์โทรศัพไม่ถูกต้อง กรุณากรอกเลข จำนวน 10 หลัก";
+    return "";
+  };
+
+  const validateNotEmpty = (value) => {
+    if (!value.trim()) return "กรุณากรอกข้อมูลให้ครบถ้วน";
+    return "";
+  };
+
+  const validateForm = () => {
+    const newErrors = {
+      citizenId: validateCitizenId(form.citizenId),
+      emergencyContact: validatePhone(form.emergencyContact),
+      emergencyName: validateNotEmpty(form.emergencyName),
+      emergencyRelationship: validateNotEmpty(form.emergencyRelationship),
+    };
+    setErrors(newErrors);
+    return Object.values(newErrors).every((v) => v === "");
+  };
+
+  // ===================== Handlers =====================
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
@@ -54,6 +94,8 @@ export default function TenantFormModal({ open, onClose, onSuccess }) {
   };
 
   const handleSubmit = async () => {
+    if (!validateForm()) return;
+
     const payload = {
       tenantId: form.tenantId,
       citizenId: form.citizenId,
@@ -73,12 +115,17 @@ export default function TenantFormModal({ open, onClose, onSuccess }) {
     }
   };
 
-  // options สำหรับ react-select
   const userOptions = availableUsers.map((u) => ({
     value: u.id,
     label: `${u.fullName} (${u.email})`,
   }));
 
+  const isFormValid = validateCitizenId(form.citizenId) === "" &&
+    validatePhone(form.emergencyContact) === "" &&
+    validateNotEmpty(form.emergencyName) === "" &&
+    validateNotEmpty(form.emergencyRelationship) === "";
+
+  // ===================== JSX =====================
   return (
     <>
       <div className="modal-backdrop fade show"></div>
@@ -113,6 +160,7 @@ export default function TenantFormModal({ open, onClose, onSuccess }) {
                   />
                 </div>
 
+                {/* Citizen ID */}
                 <div className="col-md-6">
                   <label className="form-label">รหัสบัตรประชาชน</label>
                   <input
@@ -120,8 +168,14 @@ export default function TenantFormModal({ open, onClose, onSuccess }) {
                     name="citizenId"
                     value={form.citizenId}
                     onChange={handleChange}
+                    onBlur={validateForm}
                   />
+                  {errors.citizenId && (
+                    <small className="text-danger">{errors.citizenId}</small>
+                  )}
                 </div>
+
+                {/* Emergency Contact */}
                 <div className="col-md-6">
                   <label className="form-label">เบอร์ฉุกเฉิน</label>
                   <input
@@ -129,8 +183,14 @@ export default function TenantFormModal({ open, onClose, onSuccess }) {
                     name="emergencyContact"
                     value={form.emergencyContact}
                     onChange={handleChange}
+                    onBlur={validateForm}
                   />
+                  {errors.emergencyContact && (
+                    <small className="text-danger">{errors.emergencyContact}</small>
+                  )}
                 </div>
+
+                {/* Emergency Name */}
                 <div className="col-md-6">
                   <label className="form-label">ชื่อผู้ติดต่อฉุกเฉิน</label>
                   <input
@@ -138,8 +198,14 @@ export default function TenantFormModal({ open, onClose, onSuccess }) {
                     name="emergencyName"
                     value={form.emergencyName}
                     onChange={handleChange}
+                    onBlur={validateForm}
                   />
+                  {errors.emergencyName && (
+                    <small className="text-danger">{errors.emergencyName}</small>
+                  )}
                 </div>
+
+                {/* Relationship */}
                 <div className="col-md-6">
                   <label className="form-label">ความสัมพันธ์</label>
                   <input
@@ -147,7 +213,11 @@ export default function TenantFormModal({ open, onClose, onSuccess }) {
                     name="emergencyRelationship"
                     value={form.emergencyRelationship}
                     onChange={handleChange}
+                    onBlur={validateForm}
                   />
+                  {errors.emergencyRelationship && (
+                    <small className="text-danger">{errors.emergencyRelationship}</small>
+                  )}
                 </div>
               </div>
             </div>
@@ -157,7 +227,11 @@ export default function TenantFormModal({ open, onClose, onSuccess }) {
               <button className="btn btn-outline-secondary" onClick={onClose}>
                 ยกเลิก
               </button>
-              <button className="btn btn-primary" onClick={handleSubmit}>
+              <button
+                className="btn btn-primary"
+                onClick={handleSubmit}
+                disabled={!isFormValid} // disable ปุ่มเมื่อกรอกไม่ครบ/ผิด
+              >
                 บันทึก
               </button>
             </div>

@@ -1,5 +1,5 @@
 # ใช้ Eclipse Temurin JDK 17 สำหรับการ Build
-FROM eclipse-temurin:17-jdk-alpine AS builder
+FROM eclipse-temurin:17-jdk AS builder 
 
 # ตั้ง working directory
 WORKDIR /app
@@ -23,7 +23,7 @@ RUN ./gradlew clean bootJar -x test --no-daemon
 
 # ========= Stage 2 =========
 # ใช้ Eclipse Temurin JRE 17 สำหรับ Runtime
-FROM eclipse-temurin:17-jre-alpine
+FROM eclipse-temurin:17-jre
 WORKDIR /app
 
 # Copy jar ที่ build เสร็จแล้วมา
