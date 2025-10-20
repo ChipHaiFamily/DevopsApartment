@@ -6,26 +6,26 @@ import Login from "./pages/Login.jsx";
 import Register from "./pages/Register.jsx";
 import AdminLayout from "./layouts/AdminLayout.jsx";
 import TenantLayout from "./layouts/TenantLayout.jsx";
-import DashboardBS from "./pages/admin/DashboardBS.jsx";
-import RoomsManage from "./pages/admin/RoomsManage.jsx";
 
-import AdminInvoicesPage from "./pages/admin/AdminInvoicesPage.jsx";
-import AdminLeasesPage from "./pages/admin/AdminLeasesPage.jsx";
-import AdminTenantsPage from "./pages/admin/AdminTenantsPage.jsx";
-import AdminReportsPage from "./pages/admin/AdminReportsPage.jsx";
+import DashboardBS from "./pages/admin/DashboardBS.jsx";
+import RoomsManage from "./pages/admin/RoomManagement/RoomsManage.jsx";
+import AdminInvoicesPage from "./pages/admin/Invoices/AdminInvoicesPage.jsx";
+import AdminLeasesPage from "./pages/admin/Contracts/AdminLeasesPage.jsx";
+import AdminTenantsPage from "./pages/admin/Tenants/AdminTenantsPage.jsx";
+import AdminReportsPage from "./pages/admin/Reports/AdminReportsPage.jsx";
+import MaintenancePage from "./pages/admin/Maintenance/MaintenancePage.jsx";
+import RequestPage from "./pages/admin/Reservation/RequestPage.jsx";
+import RequestDetailPage from "./pages/admin/Reservation/RequestDetailPage.jsx";
+
+import RoomDetailBS from "./pages/admin/RoomDetailBS";
 
 import "./styles.css";
 import "bootstrap/dist/css/bootstrap.min.css";
-
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
-import MaintenancePage from "./pages/admin/MaintenancePage.jsx";
-import SettingPage from "./pages/admin/SettingsPage.jsx";
-import RequestPage from "./pages/admin/RequestPage.jsx";
-import RequestDetailPage from "./pages/admin/RequestDetailPage.jsx";
-import Room from "./pages/Room.jsx";
 
-import RoomDetailBS from "./pages/admin/RoomDetailBS";
+import SettingPage from "./pages/admin/SettingsPage.jsx";
+import Room from "./pages/Room.jsx";
 
 import TenantOverviewPage from "./pages/tenant/TenantOverviewPage.jsx";
 import TenantInvoicePage from "./pages/tenant/TenantInvoicePage.jsx";
