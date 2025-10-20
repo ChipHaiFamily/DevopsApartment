@@ -3,18 +3,19 @@ import { NavLink } from 'react-router-dom';
 
 /** เมนู + ไอคอน (bootstrap-icons) */
 const MENU = [
-  { key: 'dashboard',   label: 'แดชบอร์ด',   to: '/admin',            icon: 'bi-house' },
-  { key: 'rooms',       label: 'จัดการห้อง', to: '/admin/rooms',       icon: 'bi-building' },
-  { key: 'requests',     label: 'คำขอเช่า', to: '/admin/requests',     icon: 'bi-tags' },
-  { key: 'tenants',     label: 'ผู้เช่า',     to: '/admin/tenants',     icon: 'bi-people' },
-  { key: 'leases',      label: 'สัญญาเช่า',   to: '/admin/leases',      icon: 'bi-file-text' },
-  { key: 'invoices',    label: 'ใบแจ้งหนี้', to: '/admin/invoices',    icon: 'bi-receipt' },
-  { key: 'maintenance', label: 'ซ่อมบำรุง',   to: '/admin/maintenance', icon: 'bi-wrench' },
-  { key: 'reports',     label: 'รายงาน',      to: '/admin/reports',     icon: 'bi-bar-chart' },
-  // { key: 'banners',     label: 'แบนเนอร์',    to: '/admin/banners',     icon: 'bi-image' },
-  { key: 'settings',    label: 'ตั้งค่า',      to: '/admin/settings',    icon: 'bi-gear' },
-//   { key: 'logout',      label: 'ออกจากระบบ',  to: '/logout',            icon: 'bi-box-arrow-right', danger: true },
+  { key: 'dashboard',   label: 'แดชบอร์ด',   to: '/admin',              icon: 'bi-house' },
+  { key: 'rooms',       label: 'จัดการห้อง', to: '/admin/rooms',         icon: 'bi-building' },
+  { key: 'requests',    label: 'คำขอเช่า',       to: '/admin/requests',       icon: 'bi-envelope' },
+  { key: 'tenants',     label: 'ผู้เช่า',     to: '/admin/tenants',       icon: 'bi-people' },
+  { key: 'leases',      label: 'สัญญาเช่า',   to: '/admin/leases',        icon: 'bi-file-text' },
+  { key: 'invoices',    label: 'ใบแจ้งหนี้', to: '/admin/invoices',      icon: 'bi-receipt' },
+  { key: 'payments',    label: 'การชำระเงิน', to: '/admin/payments',      icon: 'bi-cash-stack' },
+  { key: 'utilities',   label: 'น้ำ-ไฟ',      to: '/admin/utilities',     icon: 'bi-lightning-charge' },
+  { key: 'maintenance', label: 'ซ่อมบำรุง',   to: '/admin/maintenance',   icon: 'bi-wrench' },
+  { key: 'inventory',   label: 'คลัง',        to: '/admin/inventory',     icon: 'bi-box-seam' },
+  { key: 'reports',     label: 'รายงาน',      to: '/admin/reports',       icon: 'bi-bar-chart' },
 ];
+
 
 export default function SidebarMenu() {
   return (
