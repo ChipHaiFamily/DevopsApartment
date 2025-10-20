@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import StatCardBS from "../../components/admin/StatCardBS";
-import TableBS from "../../components/admin/TableBS";
+import StatCardBS from "../../../components/admin/StatCardBS";
+import TableBS from "../../../components/admin/TableBS";
 import LeaseFormModal from "./LeaseFormModal";
 
 export default function AdminLeasesPage() {

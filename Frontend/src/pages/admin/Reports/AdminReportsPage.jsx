@@ -2,9 +2,9 @@ import React, { useState, useEffect } from "react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import axios from "axios";
-import StatCardBS from "../../components/admin/StatCardBS";
-import ProgressBarBS from "../../components/admin/ProgressBarBS";
-import MaintenanceListBS from "../../components/admin/MaintenanceListBS";
+import StatCardBS from "../../../components/admin/StatCardBS";
+import ProgressBarBS from "../../../components/admin/ProgressBarBS";
+import MaintenanceListBS from "../../../components/admin/MaintenanceListBS";
 
 const baseURL = import.meta.env.VITE_API_BASE_URL;
 

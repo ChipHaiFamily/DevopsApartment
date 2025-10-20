@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 // import data from "../../data.json";
-import StatCardBS from "../../components/admin/StatCardBS";
-import TableBS from "../../components/admin/TableBS";
+import StatCardBS from "../../../components/admin/StatCardBS";
+import TableBS from "../../../components/admin/TableBS";
 import InvoiceDetailModal from "./InvoiceDetailModal";
 import InvoiceFormModal from "./InvoiceFormModal";
 
