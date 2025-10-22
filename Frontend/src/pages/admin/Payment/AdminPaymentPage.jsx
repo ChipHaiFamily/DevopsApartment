@@ -3,12 +3,14 @@ import StatCardBS from "../../../components/admin/StatCardBS";
 import TableBS from "../../../components/admin/TableBS";
 import api from "../../../api/axiosConfig";
 import PaymentFormModal from "./PaymentFormModal";
+import InterestSettingModal from "./InterestSettingModal";
 
 export default function AdminPaymentPage() {
   const [payments, setPayments] = useState([]);
   const [rooms, setRooms] = useState([]);
   const [loading, setLoading] = useState(true);
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
+  const [interestModalOpen, setInterestModalOpen] = useState(false);
 
   // เมื่อบันทึกใน modal เสร็จ
   const handlePaymentSubmit = async (payload) => {
@@ -164,6 +166,13 @@ export default function AdminPaymentPage() {
         </div>
         <div>
           <button
+            type="button"
+            className="btn btn-light text-primary me-2"
+            onClick={() => setInterestModalOpen(true)}
+          >
+            ตั้งค่าดอกเบี้ย
+          </button>
+          <button
             className="btn btn-primary"
             onClick={() => setPaymentModalOpen(true)}
           >
@@ -220,11 +229,15 @@ export default function AdminPaymentPage() {
         </div>
       </div>
 
-      
       <PaymentFormModal
         open={paymentModalOpen}
         onClose={() => setPaymentModalOpen(false)}
         onSubmit={handlePaymentSubmit}
+      />
+
+      <InterestSettingModal
+        open={interestModalOpen}
+        onClose={() => setInterestModalOpen(false)}
       />
     </div>
   );
