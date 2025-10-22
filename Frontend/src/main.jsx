@@ -16,6 +16,7 @@ import AdminReportsPage from "./pages/admin/Reports/AdminReportsPage.jsx";
 import MaintenancePage from "./pages/admin/Maintenance/MaintenancePage.jsx";
 import RequestPage from "./pages/admin/Reservation/RequestPage.jsx";
 import RequestDetailPage from "./pages/admin/Reservation/RequestDetailPage.jsx";
+import AdminPaymentPage from "./pages/admin/Payment/AdminPaymentPage.jsx";
 
 import RoomDetailBS from "./pages/admin/RoomDetailBS";
 
@@ -71,6 +72,7 @@ const router = createBrowserRouter([
       { path: "leases", element: <AdminLeasesPage /> },
       { path: "tenants", element: <AdminTenantsPage /> },
       { path: "reports", element: <AdminReportsPage /> },
+      { path: "payments", element: <AdminPaymentPage />},
     ],
   },
 ]);
