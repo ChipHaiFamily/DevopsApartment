@@ -1,16 +1,10 @@
 import React, { useMemo, useState, useEffect } from "react";
-import axios from "axios";
-// import data from "../../data.json";
-import StatCardBS from "../../components/admin/StatCardBS";
+import api from "../../../api/axiosConfig";
+import StatCardBS from "../../../components/admin/StatCardBS";
+import CreateRoomModal from "./CreateRoomModal";
+import RoomTypeManage from "./RoomTypeManage";
 
 /** Utils หา tenant ปัจจุบันของห้องจากสัญญา */
-function getCurrentTenant(roomNum, contracts, tenants) {
-  const active = contracts.find(
-    (c) => c.room_num === roomNum && c.status === "active"
-  );
-  if (!active) return null;
-  return tenants.find((t) => t.id === active.tenant_id) || null;
-}
 
 const STATUS_LABEL = {
   available: "ว่าง",
@@ -22,28 +16,40 @@ const STATUS_LABEL = {
 export default function RoomsManage() {
   const [rooms, setRooms] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [openCreateModal, setOpenCreateModal] = useState(false);
+  const [openRoomTypeModal, setOpenRoomTypeModal] = useState(false);
+
+  const handleCreateRoom = async (data) => {
+    try {
+      await api.post("/rooms", data);
+      alert("สร้างห้องพักสำเร็จ!");
+      setOpenCreateModal(false);
+    } catch (err) {
+      alert(err?.response?.data?.message || "ไม่สามารถสร้างห้องได้");
+    }
+  };
+
+  /** ดึงข้อมูลห้องพัก */
+  const fetchRooms = async () => {
+    try {
+      const res = await api.get("/rooms");
+      if (res.data.success) {
+        setRooms(res.data.data);
+
+        // ตั้ง default เป็นห้อง 101
+        const firstRoom = res.data.data.find((r) => r.roomNum === "101");
+        if (firstRoom) {
+          setSelected(firstRoom);
+        }
+      }
+    } catch (err) {
+      console.error("Fetch error:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchRooms = async () => {
-      try {
-        const res = await axios.get(
-          `${import.meta.env.VITE_API_BASE_URL}/rooms`
-        );
-        if (res.data.success) {
-          setRooms(res.data.data);
-
-          // ตั้ง default เป็นห้อง 101
-          const firstRoom = res.data.data.find((r) => r.roomNum === "101");
-          if (firstRoom) {
-            setSelected(firstRoom);
-          }
-        }
-      } catch (err) {
-        console.error("Fetch error:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchRooms();
   }, []);
 
@@ -88,11 +94,10 @@ export default function RoomsManage() {
       selected.status === "available" ? "maintenance" : "available";
 
     try {
-      await axios.put(
-        `${import.meta.env.VITE_API_BASE_URL}/rooms/${selected.roomNum}`,
-        { ...selected, status: newStatus }
-      );
-
+      await api.put(`/rooms/${selected.roomNum}`, {
+        ...selected,
+        status: newStatus,
+      });
       // อัปเดต state ใน frontend
       setRooms((prev) =>
         prev.map((r) =>
@@ -111,10 +116,28 @@ export default function RoomsManage() {
       className="container py-3"
       style={{ fontFamily: "Kanit, system-ui, sans-serif" }}
     >
-      {/* ===== Header ===== */}
-      <div className="mb-3">
-        <h4 className="fw-bold mb-1">จัดการห้อง</h4>
-        <div className="text-secondary small">ภาพรวมของห้องพัก</div>
+      {/* Header */}
+      <div className="d-flex justify-content-between align-items-center mb-3">
+        <div>
+          <h4 className="fw-bold mb-1">จัดการห้อง</h4>
+          <div className="text-secondary small">รายงานและสถิติการดำเนินงาน</div>
+        </div>
+        <div>
+          <button
+            type="button"
+            className="btn btn-light text-primary me-2"
+            onClick={() => setOpenRoomTypeModal(true)}
+          >
+            จัดการประเภทห้องพัก
+          </button>
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={() => setOpenCreateModal(true)}
+          >
+            + เพิ่มห้องพัก
+          </button>
+        </div>
       </div>
 
       {/* ===== Stat tiles ===== */}
@@ -321,19 +344,20 @@ export default function RoomsManage() {
                         : "ไม่สามารถเปลี่ยนสถานะได้"}
                     </button>
 
+                    <button className="btn btn-outline-danger w-100">
+                      ลบห้อง
+                    </button>
+
                     {/* <button className="btn btn-outline-primary w-100">
-                      ดูโปรไฟล์ห้อง
-                    </button>
-                    <button className="btn btn-outline-primary w-100">
                       ดูรายละเอียดเงินมัดจำ
-                    </button>
-                    <button className="btn btn-outline-primary w-100">
+                    </button> */}
+                    {/* <button className="btn btn-outline-primary w-100">
                       แก้ไขข้อมูล
-                    </button>
-                    <button className="btn btn-outline-primary w-100">
+                    </button> */}
+                    {/* <button className="btn btn-outline-primary w-100">
                       บันทึกมิเตอร์
-                    </button>
-                    <button className="btn btn-outline-secondary w-100">
+                    </button> */}
+                    {/* <button className="btn btn-outline-secondary w-100">
                       ข้อมูลผู้เช่า
                     </button> */}
                   </div>
@@ -343,6 +367,40 @@ export default function RoomsManage() {
           </div>
         </div>
       </div>
+
+      {/* ===== RoomType Manage Modal ===== */}
+      {openRoomTypeModal && (
+        <>
+          <div className="modal-backdrop fade show"></div>
+          <div
+            className="modal fade show d-block"
+            tabIndex="-1"
+            role="dialog"
+            aria-modal="true"
+          >
+            <div className="modal-dialog modal-lg modal-dialog-centered" >
+              <div className="modal-content border-0 shadow">
+                <div className="modal-header">
+                  <h5 className="modal-title fw-bold">จัดการประเภทห้องพัก</h5>
+                  <button
+                    className="btn-close"
+                    onClick={() => setOpenRoomTypeModal(false)}
+                  ></button>
+                </div>
+                <div className="modal-body">
+                  <RoomTypeManage />
+                </div>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+      {/* ===== Modal เพิ่มห้องพัก ===== */}
+      <CreateRoomModal
+        open={openCreateModal}
+        onClose={() => setOpenCreateModal(false)}
+        onSubmit={handleCreateRoom}
+      />
     </div>
   );
 }
