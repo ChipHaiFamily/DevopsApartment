@@ -5,6 +5,7 @@ import StatCardBS from "../../../components/admin/StatCardBS";
 import TableBS from "../../../components/admin/TableBS";
 import InvoiceDetailModal from "./InvoiceDetailModal";
 import InvoiceFormModal from "./InvoiceFormModal";
+import InvoiceBulkPrintModal from "./InvoiceBulkPrintModal";
 
 export default function AdminInvoicesPage() {
   const [invoices, setInvoices] = useState([]);
@@ -12,6 +13,7 @@ export default function AdminInvoicesPage() {
   const [selectedInvoice, setSelectedInvoice] = useState(null); // modal ดูรายละเอียด
   const [editingInvoice, setEditingInvoice] = useState(null); // modal create/update
   const [creatingInvoice, setCreatingInvoice] = useState(false);
+  const [bulkPrintOpen, setBulkPrintOpen] = useState(false);
 
   const baseURL = import.meta.env.VITE_API_BASE_URL;
   // console.log("Calling API:", `${baseURL}/invoices`);
@@ -123,6 +125,7 @@ export default function AdminInvoicesPage() {
           <button
             type="button"
             className="btn btn-light text-primary me-2"
+            onClick={() => setBulkPrintOpen(true)}
           >
             ส่งออกหลายชุด
           </button>
@@ -283,6 +286,11 @@ export default function AdminInvoicesPage() {
               console.error("Create invoice failed:", err);
             }
           }}
+        />
+
+        <InvoiceBulkPrintModal
+          open={bulkPrintOpen}
+          onClose={() => setBulkPrintOpen(false)}
         />
       </div>
     </div>
