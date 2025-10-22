@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
-// import data from "../../data.json";
+import api from "../../../api/axiosConfig";
 import StatCardBS from "../../../components/admin/StatCardBS";
 import TableBS from "../../../components/admin/TableBS";
 import InvoiceDetailModal from "./InvoiceDetailModal";
@@ -21,7 +20,7 @@ export default function AdminInvoicesPage() {
   const fetchInvoices = async () => {
     setLoading(true);
     try {
-      const res = await axios.get(`${baseURL}/invoices`);
+      const res = await api.get("/invoices");
       setInvoices(Array.isArray(res.data) ? res.data : res.data.invoices || []);
     } catch (err) {
       console.error("Error fetching invoices:", err);
@@ -247,7 +246,7 @@ export default function AdminInvoicesPage() {
                 "[AdminInvoicesPage] PUT payload =",
                 JSON.stringify(payload, null, 2)
               );
-              const res = await axios.put(url, payload);
+              const res = await api.put(url, payload);
               console.log(
                 "[AdminInvoicesPage] PUT response =",
                 res.status,
@@ -279,7 +278,7 @@ export default function AdminInvoicesPage() {
           mode="create"
           onSubmit={async (data) => {
             try {
-              await axios.post(`${baseURL}/invoices`, data);
+              await api.post("/invoices", data); 
               await fetchInvoices();
               setCreatingInvoice(false);
             } catch (err) {

@@ -3,7 +3,7 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import QRCode from "qrcode";
 import generatePayload from "promptpay-qr";
-import axios from "axios";
+import api from "../../../api/axiosConfig";
 import Select from "react-select"; // ใช้ react-select เพื่อให้ค้นหาได้
 import JSZip from "jszip"; //  สำหรับรวมไฟล์ PDF
 import { saveAs } from "file-saver"; // สำหรับดาวน์โหลด ZIP
@@ -15,8 +15,8 @@ export default function InvoiceBulkPrintModal({ open, onClose }) {
 
   useEffect(() => {
     if (open) {
-      axios
-        .get(`${baseURL}/invoices`)
+      api
+        .get("/invoices")
         .then((res) => {
           setInvoices(
             Array.isArray(res.data) ? res.data : res.data?.invoices ?? []

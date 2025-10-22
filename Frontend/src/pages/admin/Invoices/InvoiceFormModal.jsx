@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
+import api from "../../../api/axiosConfig";
 
 export default function InvoiceFormModal({
   open,
@@ -13,8 +13,8 @@ export default function InvoiceFormModal({
   const [errors, setErrors] = useState({}); // เก็บข้อความ error ของแต่ละช่อง
 
   useEffect(() => {
-    axios
-      .get(`${import.meta.env.VITE_API_BASE_URL}/tenants`)
+    api
+      .get("tenants")
       .then((res) =>
         setTenants(Array.isArray(res.data) ? res.data : res.data?.data ?? [])
       )
