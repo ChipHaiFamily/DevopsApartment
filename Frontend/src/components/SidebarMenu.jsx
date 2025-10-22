@@ -12,7 +12,7 @@ const MENU = [
   { key: 'payments',    label: 'การชำระเงิน', to: '/admin/payments',      icon: 'bi-cash-stack' },
   { key: 'usage',       label: 'น้ำ-ไฟ',      to: '/admin/usage',     icon: 'bi-lightning-charge' },
   { key: 'maintenance', label: 'ซ่อมบำรุง',   to: '/admin/maintenance',   icon: 'bi-wrench' },
-  { key: 'inventory',   label: 'คลัง',        to: '/admin/inventory',     icon: 'bi-box-seam' },
+  { key: 'supply',   label: 'คลัง',        to: '/admin/supply',     icon: 'bi-box-seam' },
   { key: 'reports',     label: 'รายงาน',      to: '/admin/reports',       icon: 'bi-bar-chart' },
 ];
 

@@ -18,6 +18,7 @@ import RequestPage from "./pages/admin/Reservation/RequestPage.jsx";
 import RequestDetailPage from "./pages/admin/Reservation/RequestDetailPage.jsx";
 import AdminPaymentPage from "./pages/admin/Payment/AdminPaymentPage.jsx";
 import AdminUsagePage from "./pages/admin/Usage/AdminUsagePage.jsx";
+import AdminSupplyPage from "./pages/admin/Supply/AdminSupplyPage.jsx";
 
 import RoomDetailBS from "./pages/admin/RoomDetailBS";
 
@@ -75,6 +76,7 @@ const router = createBrowserRouter([
       { path: "reports", element: <AdminReportsPage /> },
       { path: "payments", element: <AdminPaymentPage />},
       { path: "usage", element: <AdminUsagePage />},
+      { path: "supply", element: <AdminSupplyPage />},
     ],
   },
 ]);
