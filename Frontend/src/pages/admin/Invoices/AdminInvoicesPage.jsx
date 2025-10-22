@@ -172,8 +172,8 @@ export default function AdminInvoicesPage() {
 
       {/* ตารางบิล */}
       <div className="card shadow-sm">
-        <div className="card-header d-flex justify-content-between align-items-center p-3">
-          <span>ใบแจ้งหนี้</span>
+        <div className="card-header no-bg d-flex justify-content-between align-items-center p-3">
+          <span className="fw-bold">ใบแจ้งหนี้</span>
         </div>
 
         <div className="card-body">

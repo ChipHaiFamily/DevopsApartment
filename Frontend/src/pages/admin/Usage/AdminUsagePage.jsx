@@ -176,8 +176,8 @@ export default function AdminUsagePage() {
 
       {/* Table */}
       <div className="card shadow-sm">
-        <div className="card-header d-flex justify-content-between align-items-center p-3">
-          <span>รายการ</span>
+        <div className="card-header no-bg d-flex justify-content-between align-items-center p-3">
+          <span className="fw-bold">บันทึกการใช้น้ำและไฟฟ้า</span>
         </div>
         <div className="card-body">
           <TableBS

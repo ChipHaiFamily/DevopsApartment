@@ -138,8 +138,8 @@ export default function AdminTenantsPage() {
 
       {/* ตารางบิล */}
       <div className="card shadow-sm">
-        <div className="card-header bg-light d-flex justify-content-between align-items-center p-3">
-          <span>รายชื่อผู้เช่า</span>
+        <div className="card-header no-bg bg-light d-flex justify-content-between align-items-center p-3">
+          <span className="fw-bold">รายชื่อผู้เช่า</span>
         </div>
 
         <div className="card-body">

@@ -208,7 +208,7 @@ export default function AdminSupplyPage() {
       {/* Content */}
       {tab === "list" ? (
         <div className="card shadow-sm">
-          <div className="card-header bg-light p-3">รายการสิ่งของ</div>
+          <div className="card-header no-bg bg-light p-3 fw-bold">รายการสิ่งของ</div>
           <div className="card-body">
             <TableBS
               columns={columns}
@@ -235,7 +235,7 @@ export default function AdminSupplyPage() {
         </div>
       ) : (
         <div className="card shadow-sm">
-          <div className="card-header bg-light p-3">
+          <div className="card-header no-bg fw-bold bg-light p-3">
             ประวัติการจัดการสิ่งของ
           </div>
           <div className="card-body">

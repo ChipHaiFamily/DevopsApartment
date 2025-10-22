@@ -143,8 +143,8 @@ export default function RequestPage() {
 
       {/* table */}
       <div className="card shadow-sm">
-        <div className="card-header bg-light d-flex justify-content-between align-items-center p-3">
-          <span>คำขอจองห้องเช่า</span>
+        <div className="card-header no-bg bg-light d-flex justify-content-between align-items-center p-3">
+          <span className="fw-bold">คำขอจองห้องเช่า</span>
         </div>
 
         <div className="card-body">

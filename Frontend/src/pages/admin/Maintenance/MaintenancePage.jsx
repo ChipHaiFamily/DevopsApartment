@@ -194,7 +194,7 @@ export default function MaintenancePage() {
         {/* Content */}
         {tab === "tickets" ? (
           <div className="card shadow-sm">
-            <div className="card-header bg-light p-3">รายการงานซ่อม</div>
+            <div className="card-header no-bg bg-light p-3 fw-bold">รายการงานซ่อม</div>
             <div className="card-body">
               <TableBS
                 columns={logColumns}
@@ -231,7 +231,7 @@ export default function MaintenancePage() {
           </div>
         ) : (
           <div className="card shadow-sm">
-            <div className="card-header bg-light p-3">ตารางซ่อมบำรุง</div>
+            <div className="card-header no-bg bg-light p-3 fw-bold ">ตารางซ่อมบำรุง</div>
             <div className="card-body">
               <div className="table-responsive">
                 <table className="table align-middle">

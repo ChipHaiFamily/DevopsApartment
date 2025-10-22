@@ -118,9 +118,9 @@ export default function RoomsManage() {
     >
       {/* Header */}
       <div className="d-flex justify-content-between align-items-center mb-3">
-        <div>
-          <h4 className="fw-bold mb-1">จัดการห้อง</h4>
-          <div className="text-secondary small">รายงานและสถิติการดำเนินงาน</div>
+         <div>
+          <h3 className="mb-0">จัดการห้อง</h3>
+          <p className="text-muted mb-0">รายงานและสถิติการดำเนินงาน</p>
         </div>
         <div>
           <button
