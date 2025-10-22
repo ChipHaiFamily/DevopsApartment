@@ -61,9 +61,9 @@ export default function TenantFormModal({ open, onClose, onSuccess }) {
   };
 
   const validatePhone = (phone) => {
-    if (!phone) return "กรุณากรอกหมายเลขโทรศัพ 10 หลัก";
+    if (!phone) return "กรุณากรอกหมายเลขโทรศัพท์ 10 หลัก";
     if (!/^\d{10}$/.test(phone))
-      return "เบอร์โทรศัพไม่ถูกต้อง กรุณากรอกเลข จำนวน 10 หลัก";
+      return "เบอร์โทรศัพท์ไม่ถูกต้อง กรุณากรอกเลข จำนวน 10 หลัก";
     return "";
   };
 
