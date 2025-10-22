@@ -11,6 +11,7 @@ export default function LeaseFormModal({
   const [tenants, setTenants] = useState([]);
   const [rooms, setRooms] = useState([]);
   const [error, setError] = useState("");
+  const [errors, setErrors] = useState({}); // สำหรับเก็บ error ของแต่ละช่อง
 
   const isReadOnly = mode === "read";
   const isUpdateLimited = mode === "update";
@@ -29,18 +30,19 @@ export default function LeaseFormModal({
       .catch((err) => console.error("Error fetching rooms:", err));
   }, []);
 
-  // คำนวณวันที่ 1 ของเดือนถัดไป
+  // วันเริ่มต้น = วันนี้โดยอัตโนมัติ (เมื่อสร้างสัญญา)
+  const getToday = () => new Date().toISOString().split("T")[0];
   const getNextMonthStart = () => {
     const d = new Date();
-    d.setMonth(d.getMonth() + 1, 1); // เดือนถัดไป, วันที่ 1
-    return d.toISOString().split("T")[0]; // yyyy-mm-dd
+    d.setMonth(d.getMonth() + 1, 1);
+    return d.toISOString().split("T")[0];
   };
 
-  const getDefaultDeposit = (price) => price * 2; // เงินมัดจำ = 2x ค่าเช่า
+  const getDefaultDeposit = (price) => price * 2;
 
   // ฟอร์มเริ่มต้น
   const [form, setForm] = useState({
-    startDate: mode === "create" ? getNextMonthStart() : "",
+    startDate: mode === "create" ? getToday() : "",
     endDate: "",
     rentAmount: 0,
     deposit: 0,
@@ -72,6 +74,41 @@ export default function LeaseFormModal({
 
   if (!open) return null;
 
+  // ========================== Validation ==========================
+  const validateForm = () => {
+    const newErrors = {};
+
+    // วันสิ้นสุด
+    if (!form.endDate) {
+      newErrors.endDate = "กรุณากรอกวันสิ้นสุด ก่อนกดบันทึกข้อมูล";
+    } else if (new Date(form.endDate) <= new Date(form.startDate)) {
+      newErrors.endDate = "วันสิ้นสุด ต้องอยู่หลังวันเริ่มต้น";
+    }
+
+    // ผู้เช่า
+    if (!form.tenantId) {
+      newErrors.tenantId = "กรุณาเลือกผู้เช่า ก่อนกดบันทึกข้อมูล";
+    }
+
+    // ห้อง
+    if (!form.roomNum) {
+      newErrors.roomNum = "กรุณาเลือกห้อง ก่อนกดบันทึกข้อมูล";
+    }
+
+    // ลิงก์สัญญา (optional แต่ถ้ามี ต้องเป็น URL ที่ถูกต้อง)
+    if (form.contractLink.trim() !== "") {
+      const urlRegex =
+        /^(https?:\/\/)([\w\-]+\.)+[a-z]{2,6}(:\d+)?(\/[\w\-._~:/?#[\]@!$&'()*+,;=]*)?$/i;
+      if (!urlRegex.test(form.contractLink.trim())) {
+        newErrors.contractLink = "กรุณากรอกลิ้งค์ที่ถูกต้อง";
+      }
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  // ========================== Handlers ==========================
   const handleChange = (e) => {
     const { name, value } = e.target;
 
@@ -91,8 +128,31 @@ export default function LeaseFormModal({
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
+  const handleTenantChange = async (tenantId) => {
+    setForm((prev) => ({ ...prev, tenantId }));
+
+    try {
+      const res = await axios.get(
+        `${import.meta.env.VITE_API_BASE_URL}/reservations`
+      );
+      const reservations = res.data || [];
+
+      const matched = reservations.find(
+        (r) =>
+          r.user.id === tenantId && r.assignedRoom && r.status === "processing"
+      );
+
+      if (matched) {
+        setForm((prev) => ({ ...prev, roomNum: matched.assignedRoom }));
+      }
+    } catch (err) {
+      console.error("Error fetching reservations for tenant:", err);
+    }
+  };
+
   const handleSubmit = async () => {
-    // สร้าง payload
+    if (!validateForm()) return;
+
     const payload = {
       startDate: form.startDate,
       endDate: form.endDate,
@@ -115,29 +175,7 @@ export default function LeaseFormModal({
     }
   };
 
-  const handleTenantChange = async (tenantId) => {
-    setForm((prev) => ({ ...prev, tenantId }));
-
-    try {
-      // เรียก reservation ของ tenant
-      const res = await axios.get(
-        `${import.meta.env.VITE_API_BASE_URL}/reservations`
-      );
-      const reservations = res.data || [];
-
-      const matched = reservations.find(
-        (r) =>
-          r.user.id === tenantId && r.assignedRoom && r.status === "processing"
-      );
-
-      if (matched) {
-        setForm((prev) => ({ ...prev, roomNum: matched.assignedRoom }));
-      }
-    } catch (err) {
-      console.error("Error fetching reservations for tenant:", err);
-    }
-  };
-
+  // ========================== JSX ==========================
   return (
     <>
       <div className="modal-backdrop fade show"></div>
@@ -174,7 +212,6 @@ export default function LeaseFormModal({
               )}
 
               <div className="row g-3 mb-3">
-                {/* contractNum + status */}
                 {(mode === "update" || mode === "read") && (
                   <>
                     <div className="col-md-6">
@@ -193,7 +230,7 @@ export default function LeaseFormModal({
                         name="status"
                         value={form.status}
                         onChange={handleChange}
-                        disabled={isReadOnly} // update แก้ได้
+                        disabled={isReadOnly}
                       >
                         <option value="active">ใช้งาน</option>
                         <option value="expired">หมดอายุ</option>
@@ -203,7 +240,7 @@ export default function LeaseFormModal({
                   </>
                 )}
 
-                {/* startDate */}
+                {/* Start Date */}
                 <div className="col-md-6">
                   <label className="form-label">วันเริ่มต้น</label>
                   <input
@@ -216,7 +253,7 @@ export default function LeaseFormModal({
                   />
                 </div>
 
-                {/* endDate */}
+                {/* End Date */}
                 <div className="col-md-6">
                   <label className="form-label">วันสิ้นสุด</label>
                   <input
@@ -225,11 +262,15 @@ export default function LeaseFormModal({
                     name="endDate"
                     value={form.endDate}
                     onChange={handleChange}
+                    onBlur={validateForm}
                     disabled={isReadOnly || isUpdateLimited}
                   />
+                  {errors.endDate && (
+                    <small className="text-danger">{errors.endDate}</small>
+                  )}
                 </div>
 
-                {/* rentAmount */}
+                {/* Rent */}
                 <div className="col-md-6">
                   <label className="form-label">ค่าเช่า</label>
                   <input
@@ -242,7 +283,7 @@ export default function LeaseFormModal({
                   />
                 </div>
 
-                {/* deposit */}
+                {/* Deposit */}
                 <div className="col-md-6">
                   <label className="form-label">เงินมัดจำ</label>
                   <input
@@ -255,7 +296,7 @@ export default function LeaseFormModal({
                   />
                 </div>
 
-                {/* billingCycle */}
+                {/* Billing Cycle */}
                 <div className="col-md-6">
                   <label className="form-label">รอบบิล</label>
                   <select
@@ -270,7 +311,7 @@ export default function LeaseFormModal({
                   </select>
                 </div>
 
-                {/* contractLink */}
+                {/* Contract Link */}
                 <div className="col-md-6">
                   <label className="form-label">เอกสารสัญญา (ลิงก์)</label>
                   <input
@@ -279,11 +320,15 @@ export default function LeaseFormModal({
                     name="contractLink"
                     value={form.contractLink}
                     onChange={handleChange}
-                    disabled={isReadOnly} // update แก้ได้
+                    onBlur={validateForm}
+                    disabled={isReadOnly}
                   />
+                  {errors.contractLink && (
+                    <small className="text-danger">{errors.contractLink}</small>
+                  )}
                 </div>
 
-                {/* tenant */}
+                {/* Tenant */}
                 <div className="col-md-12">
                   <label className="form-label">ผู้เช่า</label>
                   <select
@@ -291,6 +336,7 @@ export default function LeaseFormModal({
                     name="tenantId"
                     value={form.tenantId}
                     onChange={(e) => handleTenantChange(e.target.value)}
+                    onBlur={validateForm}
                     disabled={isReadOnly || isUpdateLimited}
                   >
                     <option value="">-- เลือกผู้เช่า --</option>
@@ -300,9 +346,12 @@ export default function LeaseFormModal({
                       </option>
                     ))}
                   </select>
+                  {errors.tenantId && (
+                    <small className="text-danger">{errors.tenantId}</small>
+                  )}
                 </div>
 
-                {/* room */}
+                {/* Room */}
                 <div className="col-md-12">
                   <label className="form-label">ห้อง</label>
                   <select
@@ -310,6 +359,7 @@ export default function LeaseFormModal({
                     name="roomNum"
                     value={form.roomNum}
                     onChange={handleChange}
+                    onBlur={validateForm}
                     disabled={isReadOnly || isUpdateLimited}
                   >
                     <option value="">-- เลือกห้อง --</option>
@@ -329,6 +379,9 @@ export default function LeaseFormModal({
                       <option disabled>ไม่มีห้องว่าง</option>
                     )}
                   </select>
+                  {errors.roomNum && (
+                    <small className="text-danger">{errors.roomNum}</small>
+                  )}
                 </div>
               </div>
             </div>

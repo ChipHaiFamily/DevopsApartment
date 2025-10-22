@@ -3,6 +3,7 @@ import axios from "axios";
 
 export default function MaintenanceFormModal({ open, onClose, onSuccess, log }) {
   const isEdit = !!log;
+  const [errors, setErrors] = useState({}); // เก็บข้อความ error
 
   const [form, setForm] = useState({
     logId: "",
@@ -11,7 +12,7 @@ export default function MaintenanceFormModal({ open, onClose, onSuccess, log }) 
     description: "",
     technician: "",
     cost: "",
-    requestDate: "",
+    requestDate: new Date().toISOString().split("T")[0], // วันที่แจ้ง = วันนี้
     completedDate: "",
     status: "in_progress",
   });
@@ -27,7 +28,7 @@ export default function MaintenanceFormModal({ open, onClose, onSuccess, log }) 
         description: log.description || "",
         technician: log.technician || "",
         cost: log.cost || "",
-        requestDate: log.requestDate || "",
+        requestDate: log.requestDate || new Date().toISOString().split("T")[0],
         completedDate: log.completedDate || "",
         status: log.status || "in_progress",
       });
@@ -36,12 +37,48 @@ export default function MaintenanceFormModal({ open, onClose, onSuccess, log }) 
 
   if (!open) return null;
 
+  //  Validation Function
+  const validateForm = () => {
+    const newErrors = {};
+
+    if (!form.roomNum.trim()) {
+      newErrors.roomNum = "กรุณากรอก หมายเลขห้อง";
+    }
+
+    if (!form.logType.trim()) {
+      newErrors.logType = "กรุณากรอก ประเภทงาน";
+    }
+
+    if (!form.technician.trim()) {
+      newErrors.technician = "กรุณากรอก ชื่อผู้ดำเงินงาน หรือผู้รับผิดชอบ";
+    }
+
+    if (form.cost === "" || form.cost === null || isNaN(form.cost)) {
+      newErrors.cost = "กรุณากรอก จำนวนเงิน ค่าใช้จ่าย (ตัวเลข)";
+    }
+
+    if (!form.requestDate) {
+      newErrors.requestDate = "กรุณากรอก วันที่แจ้งซ่อม";
+    }
+
+    if (!form.completedDate) {
+      newErrors.completedDate = "กรุณากรอก วันที่ดำเนินกาเสร็จ";
+    } else if (new Date(form.completedDate) <= new Date(form.requestDate)) {
+      newErrors.completedDate = "วันที่เสร็จ ต้องอยู่อหลังวันที่แจ้ง";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async () => {
+    if (!validateForm()) return; // หยุดถ้าฟอร์มไม่ผ่าน validation
+
     const payload = {
       logId: form.logId,
       room: { roomNum: form.roomNum },
@@ -95,6 +132,8 @@ export default function MaintenanceFormModal({ open, onClose, onSuccess, log }) 
                     />
                   </div>
                 )}
+
+                {/* Room Number */}
                 <div className="col-md-6">
                   <label className="form-label">ห้อง</label>
                   <input
@@ -102,9 +141,15 @@ export default function MaintenanceFormModal({ open, onClose, onSuccess, log }) 
                     name="roomNum"
                     value={form.roomNum}
                     onChange={handleChange}
-                    readOnly={isEdit} 
+                    readOnly={isEdit}
+                    onBlur={validateForm}
                   />
+                  {errors.roomNum && (
+                    <small className="text-danger">{errors.roomNum}</small>
+                  )}
                 </div>
+
+                {/* Log Type */}
                 <div className="col-md-6">
                   <label className="form-label">ประเภทงาน</label>
                   <input
@@ -113,8 +158,14 @@ export default function MaintenanceFormModal({ open, onClose, onSuccess, log }) 
                     value={form.logType}
                     onChange={handleChange}
                     readOnly={isEdit}
+                    onBlur={validateForm}
                   />
+                  {errors.logType && (
+                    <small className="text-danger">{errors.logType}</small>
+                  )}
                 </div>
+
+                {/* Description (optional) */}
                 <div className="col-md-12">
                   <label className="form-label">รายละเอียด</label>
                   <textarea
@@ -125,6 +176,8 @@ export default function MaintenanceFormModal({ open, onClose, onSuccess, log }) 
                     readOnly={isEdit}
                   />
                 </div>
+
+                {/* Technician */}
                 <div className="col-md-6">
                   <label className="form-label">ผู้ดำเนินการ</label>
                   <input
@@ -132,8 +185,14 @@ export default function MaintenanceFormModal({ open, onClose, onSuccess, log }) 
                     name="technician"
                     value={form.technician}
                     onChange={handleChange}
+                    onBlur={validateForm}
                   />
+                  {errors.technician && (
+                    <small className="text-danger">{errors.technician}</small>
+                  )}
                 </div>
+
+                {/* Cost */}
                 <div className="col-md-6">
                   <label className="form-label">ค่าใช้จ่าย</label>
                   <input
@@ -142,8 +201,14 @@ export default function MaintenanceFormModal({ open, onClose, onSuccess, log }) 
                     type="number"
                     value={form.cost}
                     onChange={handleChange}
+                    onBlur={validateForm}
                   />
+                  {errors.cost && (
+                    <small className="text-danger">{errors.cost}</small>
+                  )}
                 </div>
+
+                {/* Request Date */}
                 <div className="col-md-6">
                   <label className="form-label">วันที่แจ้ง</label>
                   <input
@@ -152,9 +217,15 @@ export default function MaintenanceFormModal({ open, onClose, onSuccess, log }) 
                     type="date"
                     value={form.requestDate}
                     onChange={handleChange}
+                    onBlur={validateForm}
                     readOnly={isEdit}
                   />
+                  {errors.requestDate && (
+                    <small className="text-danger">{errors.requestDate}</small>
+                  )}
                 </div>
+
+                {/* Completed Date */}
                 <div className="col-md-6">
                   <label className="form-label">วันที่เสร็จ</label>
                   <input
@@ -163,8 +234,14 @@ export default function MaintenanceFormModal({ open, onClose, onSuccess, log }) 
                     type="date"
                     value={form.completedDate}
                     onChange={handleChange}
+                    onBlur={validateForm}
                   />
+                  {errors.completedDate && (
+                    <small className="text-danger">{errors.completedDate}</small>
+                  )}
                 </div>
+
+                {/* Status */}
                 <div className="col-md-6">
                   <label className="form-label">สถานะ</label>
                   <select
