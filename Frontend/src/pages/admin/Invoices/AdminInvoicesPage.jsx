@@ -111,19 +111,28 @@ export default function AdminInvoicesPage() {
 
   return (
     <div className="container py-3">
+      {/* Header */}
       <div className="d-flex justify-content-between align-items-center mb-3">
         <div>
-          <h3 className="mb-0">ใบแจ้งหนี้และการชำระเงิน</h3>
+          <h3 className="mb-0">ใบแจ้งหนี้</h3>
           <p className="text-muted mb-0">
-            จัดการใบแจ้งหนี้และติดตามการชำระเงิน
+            จัดการใบแจ้งหนี้และติดตามสถานะการชำระเงิน
           </p>
         </div>
-        <button
-          className="btn btn-primary"
-          onClick={() => setCreatingInvoice(true)}
-        >
-          + สร้างใบแจ้งหนี้ใหม่
-        </button>
+        <div>
+          <button
+            type="button"
+            className="btn btn-light text-primary me-2"
+          >
+            ส่งออกหลายชุด
+          </button>
+          <button
+            className="btn btn-primary"
+            onClick={() => setCreatingInvoice(true)}
+          >
+            + สร้างใบแจ้งหนี้ใหม่
+          </button>
+        </div>
       </div>
 
       {/* เมทริก */}
@@ -185,9 +194,7 @@ export default function AdminInvoicesPage() {
                     เกินกำหนด
                   </span>
                 ) : value === "Partial" ? (
-                  <span className="badge bg-info rounded-pill">
-                    แบ่งจ่าย
-                  </span>
+                  <span className="badge bg-info rounded-pill">แบ่งจ่าย</span>
                 ) : (
                   <span className="badge bg-white text-black rounded-pill">
                     ???

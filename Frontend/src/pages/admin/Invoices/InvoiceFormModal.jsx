@@ -10,7 +10,7 @@ export default function InvoiceFormModal({
 }) {
   const [tenants, setTenants] = useState([]);
   const [deletedPaymentIds, setDeletedPaymentIds] = useState([]);
-  const [errors, setErrors] = useState({}); // ✅ เก็บข้อความ error ของแต่ละช่อง
+  const [errors, setErrors] = useState({}); // เก็บข้อความ error ของแต่ละช่อง
 
   useEffect(() => {
     axios
@@ -23,14 +23,21 @@ export default function InvoiceFormModal({
 
   const [form, setForm] = useState({
     invoiceId: "",
-    issueDate: new Date().toISOString().slice(0, 10), // ✅ วันที่ออกบิล = วันนี้
+    issueDate: new Date().toISOString().slice(0, 10), // วันที่ออกบิล = วันนี้
     dueDate: "",
     status: "pending",
     totalAmount: 0,
     tenantId: "",
-    items: [],
+    items: [
+      { type: "ค่าน้ำ", description: "Water Bill", amount: 0 },
+      { type: "ค่าไฟฟ้า", description: "Electricity Bill", amount: 0 },
+      { type: "ค่าห้อง", description: "Rent Bill", amount: 0 },
+    ],
     payments: [],
   });
+
+  // ตรวจประเภทที่ถูกเลือกไปแล้ว (ไว้ใช้ disable dropdown)
+  const selectedTypes = form.items.map((i) => i.type);
 
   useEffect(() => {
     if (mode === "update" && invoice) {
@@ -76,7 +83,8 @@ export default function InvoiceFormModal({
 
     // รายละเอียดค่าใช้จ่าย
     if (!form.items || form.items.length === 0) {
-      newErrors.items = "กรุณาเพิ่ม รายละเอียดค่าใช้จ่าย อย่างน้อย 1 รายการก่อนกดบันทึก";
+      newErrors.items =
+        "กรุณาเพิ่ม รายละเอียดค่าใช้จ่าย อย่างน้อย 1 รายการก่อนกดบันทึก";
     } else {
       form.items.forEach((item, index) => {
         if (!item.description?.trim()) {
@@ -100,16 +108,36 @@ export default function InvoiceFormModal({
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
+  // --- handleItemChange ---
   const handleItemChange = (index, field, value) => {
     const newItems = [...form.items];
     newItems[index][field] = value;
+
+    // อัปเดต description อัตโนมัติตามประเภท
+    if (field === "type") {
+      switch (value) {
+        case "ค่าน้ำ":
+          newItems[index].description = "Water Bill";
+          break;
+        case "ค่าไฟฟ้า":
+          newItems[index].description = "Electricity Bill";
+          break;
+        case "ค่าห้อง":
+          newItems[index].description = "Rent Bill";
+          break;
+        default:
+          newItems[index].description = "";
+      }
+    }
+
     setForm((prev) => ({ ...prev, items: newItems }));
   };
 
+  // --- handleAddItem ---
   const handleAddItem = () => {
     setForm((prev) => ({
       ...prev,
-      items: [...prev.items, { description: "", amount: 0 }],
+      items: [...prev.items, { type: "อื่น ๆ", description: "", amount: 0 }],
     }));
   };
 
@@ -120,8 +148,9 @@ export default function InvoiceFormModal({
     }));
   };
 
+  // --- handleSubmit (map description ก่อนส่ง) ---
   const handleSubmit = () => {
-    if (!validateForm()) return; // หยุดถ้ามี error
+    if (!validateForm()) return;
 
     const total = form.items.reduce(
       (sum, item) => sum + Number(item.amount || 0),
@@ -135,16 +164,17 @@ export default function InvoiceFormModal({
       totalAmount: total,
       tenant: { tenantId: form.tenantId },
       items: form.items.map((it) => ({
-        description: it.description,
+        description:
+          it.type === "ค่าน้ำ"
+            ? "Water Bill"
+            : it.type === "ค่าไฟฟ้า"
+            ? "Electricity Bill"
+            : it.type === "ค่าห้อง"
+            ? "Rent Bill"
+            : it.description,
         amount: Number(it.amount || 0),
       })),
     };
-
-    if (mode === "update") {
-      payload.status = form.status;
-      payload.payments = form.payments;
-      payload.deletedPaymentIds = deletedPaymentIds;
-    }
 
     onSubmit(payload);
   };
@@ -245,8 +275,15 @@ export default function InvoiceFormModal({
                     <option value="">-- เลือกผู้เช่า --</option>
                     {tenants.map((t) => (
                       <option key={t.tenantId} value={t.tenantId}>
-                        {t.user?.fullName} (ห้อง{" "}
-                        {t.contract?.room?.roomNum || "-"})
+                        {t.user?.fullName} ( ห้อง{" "}
+                        {t.contract
+                          ?.filter((c) => c.status === "active") // เลือกเฉพาะสัญญาที่ยัง active
+                          ?.sort(
+                            (a, b) =>
+                              new Date(b.startDate) - new Date(a.startDate)
+                          ) // เผื่อมีหลาย active เอาอันล่าสุด
+                          ?.at(0)?.room?.roomNum || "-"}
+                        )
                       </option>
                     ))}
                   </select>
@@ -255,50 +292,79 @@ export default function InvoiceFormModal({
                   )}
                 </div>
               </div>
-
               {/* รายละเอียดค่าใช้จ่าย */}
               <h6 className="fw-bold mt-3">รายละเอียดค่าใช้จ่าย</h6>
               {errors.items && <p className="text-danger">{errors.items}</p>}
 
               {form.items.map((item, index) => (
                 <div className="row g-2 mb-2" key={index}>
-                  <div className="col-md-7">
+                  <div className="col-md-3">
+                    <select
+                      className="form-select"
+                      value={item.type}
+                      onChange={(e) =>
+                        handleItemChange(index, "type", e.target.value)
+                      }
+                    >
+                      <option
+                        value="ค่าน้ำ"
+                        disabled={
+                          selectedTypes.includes("ค่าน้ำ") &&
+                          item.type !== "ค่าน้ำ"
+                        }
+                      >
+                        ค่าน้ำ
+                      </option>
+                      <option
+                        value="ค่าไฟฟ้า"
+                        disabled={
+                          selectedTypes.includes("ค่าไฟฟ้า") &&
+                          item.type !== "ค่าไฟฟ้า"
+                        }
+                      >
+                        ค่าไฟฟ้า
+                      </option>
+                      <option
+                        value="ค่าห้อง"
+                        disabled={
+                          selectedTypes.includes("ค่าห้อง") &&
+                          item.type !== "ค่าห้อง"
+                        }
+                      >
+                        ค่าห้อง
+                      </option>
+                      <option value="อื่น ๆ">อื่น ๆ</option>
+                    </select>
+                  </div>
+
+                  <div className="col-md-5">
                     <input
                       className="form-control"
-                      placeholder="คำอธิบาย"
-                      value={item.description}
+                      placeholder={
+                        item.type === "อื่น ๆ"
+                          ? "ระบุรายการอื่น ๆ"
+                          : item.description
+                      }
+                      value={item.type === "อื่น ๆ" ? item.description : ""}
+                      readOnly={item.type !== "อื่น ๆ"}
                       onChange={(e) =>
                         handleItemChange(index, "description", e.target.value)
                       }
-                      onBlur={validateForm}
                     />
-                    {errors[`item_desc_${index}`] && (
-                      <small className="text-danger">
-                        {errors[`item_desc_${index}`]}
-                      </small>
-                    )}
                   </div>
-                  <div className="col-md-3">
+
+                  <div className="col-md-2">
                     <input
                       type="number"
                       className="form-control text-end"
                       placeholder="จำนวนเงิน"
                       value={item.amount}
                       onChange={(e) =>
-                        handleItemChange(
-                          index,
-                          "amount",
-                          e.target.value
-                        )
+                        handleItemChange(index, "amount", e.target.value)
                       }
-                      onBlur={validateForm}
                     />
-                    {errors[`item_amount_${index}`] && (
-                      <small className="text-danger">
-                        {errors[`item_amount_${index}`]}
-                      </small>
-                    )}
                   </div>
+
                   <div className="col-md-2">
                     <button
                       type="button"
@@ -310,7 +376,6 @@ export default function InvoiceFormModal({
                   </div>
                 </div>
               ))}
-
               <button
                 type="button"
                 className="btn btn-outline-primary mt-2"

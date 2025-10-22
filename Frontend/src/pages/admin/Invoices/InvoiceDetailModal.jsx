@@ -1,16 +1,28 @@
 import React from "react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import QRCode from "qrcode";
+import generatePayload from "promptpay-qr"; // ใช้ lib นี้แปลงเบอร์เป็น QR string
 
 export default function InvoiceDetailModal({ open, onClose, invoice, onEdit }) {
   if (!open || !invoice) return null;
 
-  const handleExportPDF = () => {
+  const handleExportPDF = async () => {
     const doc = new jsPDF();
 
     // Header
     doc.setFontSize(16);
     doc.text("INVOICE", 14, 20);
+
+    // PromptPay QR
+    const phoneNumber = "0876470150"; // เบอร์พร้อมเพย์
+    const amount = invoice.totalAmount; // ยอดจากใบแจ้งหนี้
+    const payload = generatePayload(phoneNumber, { amount }); // สร้าง string พร้อมเพย์
+    const qrImage = await QRCode.toDataURL(payload); // แปลงเป็น base64 image
+
+    // แทรก QR ลงใน PDF
+    doc.addImage(qrImage, "PNG", 150, 20, 40, 40);
+    doc.text("QR PromptPay", 158, 65);
 
     // Invoice info
     doc.setFontSize(12);
@@ -23,7 +35,6 @@ export default function InvoiceDetailModal({ open, onClose, invoice, onEdit }) {
     );
     doc.text(`Issue Date: ${invoice.issueDate}`, 14, 51);
     doc.text(`Due Date: ${invoice.dueDate}`, 14, 58);
-    doc.text(`Status: ${invoice.status}`, 14, 65);
 
     // Items table
     autoTable(doc, {
