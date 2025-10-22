@@ -10,7 +10,7 @@ const MENU = [
   { key: 'leases',      label: 'สัญญาเช่า',   to: '/admin/leases',        icon: 'bi-file-text' },
   { key: 'invoices',    label: 'ใบแจ้งหนี้', to: '/admin/invoices',      icon: 'bi-receipt' },
   { key: 'payments',    label: 'การชำระเงิน', to: '/admin/payments',      icon: 'bi-cash-stack' },
-  { key: 'utilities',   label: 'น้ำ-ไฟ',      to: '/admin/utilities',     icon: 'bi-lightning-charge' },
+  { key: 'usage',       label: 'น้ำ-ไฟ',      to: '/admin/usage',     icon: 'bi-lightning-charge' },
   { key: 'maintenance', label: 'ซ่อมบำรุง',   to: '/admin/maintenance',   icon: 'bi-wrench' },
   { key: 'inventory',   label: 'คลัง',        to: '/admin/inventory',     icon: 'bi-box-seam' },
   { key: 'reports',     label: 'รายงาน',      to: '/admin/reports',       icon: 'bi-bar-chart' },
