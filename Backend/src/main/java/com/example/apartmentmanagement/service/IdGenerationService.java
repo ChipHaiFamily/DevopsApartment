@@ -67,6 +67,17 @@ public class IdGenerationService {
         return generateSequentialId("ITM", lastId);
     }
 
+    public String generateMeterId(String room, String period, String lastId) {
+        String prefix = "MTR-" + period + "-" + room;
+        if (lastId == null) {
+            return prefix + "-01"; // เริ่มต้นเลข 01
+        }
+        int num = Integer.parseInt(lastId.substring(lastId.lastIndexOf("-") + 1));
+        return String.format("%s-%02d", prefix, num + 1);
+    }
+
+
+
     public String generateReservationId() {
         int year = LocalDate.now().getYear();
         String lastId = reservationRepository.findTopByOrderByReservationNumDesc()
