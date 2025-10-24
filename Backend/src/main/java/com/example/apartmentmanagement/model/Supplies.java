@@ -11,10 +11,10 @@ import lombok.*;
 @Builder
 public class Supplies {
     @Id
-    @Column(length = 20)
+    @Column(name = "itemid", length = 20)
     private String itemId;
 
-    private String itemName;
-    private int quantity;
+    private String item_Name;
+    private Integer quantity;
     private String status;
 }

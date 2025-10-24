@@ -19,6 +19,8 @@ public class IdGenerationService {
     private final MaintenanceScheduleRepository mtncSchRepository;
     private final MaintenanceLogRepository mtncLogRepository;
     private final ContractRepository contractRepository;
+    private final SuppliesRepository suppliesRepository;
+    private final SuppliesHistoryRepository suppliesHistoryRepository;
 
     private String generateYearId(String prefix, String lastId, int year) {
         if (lastId == null || !lastId.contains(String.valueOf(year))) {
@@ -37,13 +39,32 @@ public class IdGenerationService {
         return String.format("%s-%s-%03d", prefix, ym, num + 1);
     }
 
+    private String generateSequentialId(String prefix, String lastId) {
+        if (lastId == null || lastId.isEmpty()) {
+            return String.format("%s-001", prefix);
+        }
+        String[] parts = lastId.split("-");
+        int num;
+        try {
+            num = Integer.parseInt(parts[parts.length - 1]);
+        } catch (NumberFormatException e) {
+            num = 0;
+        }
+        return String.format("%s-%03d", prefix, num + 1);
+    }
+
     public String generateUserId() {
         String lastId = userRepository.findTopByOrderByIdDesc()
                 .map(User::getId)
                 .orElse(null);
-        if (lastId == null) return "USR-001";
-        int num = Integer.parseInt(lastId.split("-")[1]);
-        return String.format("USR-%03d", num + 1);
+        return generateSequentialId("USR", lastId);
+    }
+
+    public String generateSupplyId() {
+        String lastId = suppliesRepository.findTopByOrderByItemIdDesc()
+                .map(Supplies::getItemId)
+                .orElse(null);
+        return generateSequentialId("ITM", lastId);
     }
 
     public String generateReservationId() {
@@ -68,6 +89,14 @@ public class IdGenerationService {
                 .map(Invoice::getInvoiceId)
                 .orElse(null);
         return generateYearMonthId("INV", lastId, now.getYear(), now.getMonthValue());
+    }
+
+    public String generateSupplyHistoryId() {
+        LocalDate now = LocalDate.now();
+        String lastId = suppliesHistoryRepository.findTopByOrderByHistoryIdDesc()
+                .map(SuppliesHistory::getHistoryId)
+                .orElse(null);
+        return generateYearMonthId("HIT", lastId, now.getYear(), now.getMonthValue());
     }
 
     public String generateMtncSchId() {
