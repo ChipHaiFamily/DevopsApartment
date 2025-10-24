@@ -12,9 +12,8 @@ public class RoomDto {
     private String roomNum;
     private int floor;
     private String status;
+    private String roomTypeId;
     private String roomTypeName;
     private BigDecimal price;
     private String tenantName;
 }
-
-
