@@ -74,6 +74,12 @@ public class RoomService {
         return mapToDto(updated);
     }
 
+    public void deleteById(String id) {
+        Room room = repository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Room not found"));
+        repository.delete(room);
+    }
+
     public int countRooms() {
         return (int) repository.count();
     }
