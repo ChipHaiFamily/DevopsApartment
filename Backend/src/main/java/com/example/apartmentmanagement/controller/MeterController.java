@@ -6,6 +6,7 @@ import com.example.apartmentmanagement.service.MeterService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Optional;
@@ -42,6 +43,16 @@ public class MeterController {
                 obj.getRecordDate()
         );
         return ResponseEntity.ok(meter);
+    }
+
+    @PostMapping("/upload")
+    public ResponseEntity<String> uploadCsv(@RequestParam("file") MultipartFile file) {
+        try {
+            service.importMetersFromCsv(file);
+            return ResponseEntity.ok("CSV imported successfully");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Error: " + e.getMessage());
+        }
     }
 
     @PutMapping("/{id}")
