@@ -12,27 +12,32 @@ export default function AdminSupplyPage() {
   const [selectedSupply, setSelectedSupply] = useState(null);
   const [manageOpen, setManageOpen] = useState(false);
   const [history, setHistory] = useState([]);
+  const [toast, setToast] = useState({ show: false, message: "", type: "" });
 
-  // โหลด mock data
-  // โหลด mock data สิ่งของ
-  useEffect(() => {
-    const fetchSupplies = async () => {
-      try {
-        const res = await api.get("/supplies");
-        if (Array.isArray(res.data)) {
-          setSupplies(res.data);
-        } else if (res.data?.data) {
-          setSupplies(res.data.data);
-        } else {
-          setSupplies([]);
-        }
-      } catch (err) {
-        console.error("Error fetching supplies:", err);
-      } finally {
-        setLoading(false);
+  const showToast = (message, type = "success") => {
+    setToast({ show: true, message, type });
+    setTimeout(() => setToast({ show: false, message: "", type: "" }), 3000);
+  };
+
+  const fetchSupplies = async () => {
+    try {
+      const res = await api.get("/supplies");
+      if (Array.isArray(res.data)) {
+        setSupplies(res.data);
+      } else if (res.data?.data) {
+        setSupplies(res.data.data);
+      } else {
+        setSupplies([]);
       }
-    };
+    } catch (err) {
+      console.error("Error fetching supplies:", err);
+      showToast("โหลดข้อมูลสิ่งของไม่สำเร็จ", "danger");
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     fetchSupplies();
   }, []);
 
@@ -295,7 +300,16 @@ export default function AdminSupplyPage() {
           open={formOpen}
           supply={selectedSupply}
           onClose={() => setFormOpen(false)}
-          onSuccess={() => console.log("saved!")}
+          onSuccess={(success, message) => {
+            setFormOpen(false);
+            fetchSupplies();
+            if (success) {
+              showToast(message || "เพิ่มสิ่งของใหม่เรียบร้อยแล้ว!", "success");
+            } else {
+              showToast(message || "ไม่สามารถเพิ่มสิ่งของได้", "danger");
+            }
+          }}
+          supplies={supplies}
         />
       )}
 
@@ -303,8 +317,28 @@ export default function AdminSupplyPage() {
         open={manageOpen}
         supply={selectedSupply}
         onClose={() => setManageOpen(false)}
-        onSubmit={(data) => console.log("📦 บันทึกการจัดการ:", data)}
+        onSubmit={(data) => console.log("บันทึกการจัดการ:", data)}
       />
+
+      {/* ===== Toast แจ้งผล ===== */}
+      {toast.show && (
+        <div
+          className={`toast align-items-center text-bg-${toast.type} border-0 show position-fixed top-0 end-0 m-3`}
+          role="alert"
+          aria-live="assertive"
+          aria-atomic="true"
+          style={{ zIndex: 1055 }}
+        >
+          <div className="d-flex">
+            <div className="toast-body">{toast.message}</div>
+            <button
+              type="button"
+              className="btn-close btn-close-white me-2 m-auto"
+              onClick={() => setToast({ show: false, message: "", type: "" })}
+            ></button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
