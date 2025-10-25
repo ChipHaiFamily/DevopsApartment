@@ -12,46 +12,32 @@ export default function AdminUsagePage() {
   const [editData, setEditData] = useState(null);
   const [usageSettingOpen, setUsageSettingOpen] = useState(false);
 
-  // mock data ตามภาพ
   useEffect(() => {
-    const mockData = [
-      {
-        meterId: "MTR-2025-08-107-01",
-        room: "107",
-        period: "2025-08",
-        type: "น้ำ",
-        unit: 10,
-        recordDate: "2025-08-25",
-      },
-      {
-        meterId: "MTR-2025-08-107-02",
-        room: "107",
-        period: "2025-08",
-        type: "ไฟฟ้า",
-        unit: 150,
-        recordDate: "2025-08-25",
-      },
-      {
-        meterId: "MTR-2025-08-108-01",
-        room: "108",
-        period: "2025-08",
-        type: "น้ำ",
-        unit: 30,
-        recordDate: "2025-08-25",
-      },
-      {
-        meterId: "MTR-2025-08-108-02",
-        room: "108",
-        period: "2025-08",
-        type: "ไฟฟ้า",
-        unit: 20,
-        recordDate: "2025-08-25",
-      },
-    ];
-    setTimeout(() => {
-      setUsages(mockData);
-      setLoading(false);
-    }, 400);
+    const fetchUsages = async () => {
+      try {
+        const res = await api.get("/meters");
+        const data = Array.isArray(res.data) ? res.data : res.data.data;
+
+        // แปลงประเภทให้เป็นชื่อไทย
+        const mapped = data.map((u) => ({
+          ...u,
+          type:
+            u.type === "water"
+              ? "น้ำ"
+              : u.type === "electricity"
+              ? "ไฟฟ้า"
+              : u.type,
+        }));
+
+        setUsages(mapped);
+      } catch (err) {
+        console.error("Error fetching meter data:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUsages();
   }, []);
 
   // ฟังก์ชันเมื่อสร้างหรือแก้ไข
@@ -85,23 +71,26 @@ export default function AdminUsagePage() {
     {
       key: "room",
       label: "ทุกห้อง",
-      options: [
-        { value: "107", label: "107" },
-        { value: "108", label: "108" },
-      ],
+      options: [...new Set(usages.map((u) => u.room))].map((r) => ({
+        value: r,
+        label: r,
+      })),
     },
     {
       key: "type",
       label: "ทุกประเภท",
-      options: [
-        { value: "น้ำ", label: "น้ำ" },
-        { value: "ไฟฟ้า", label: "ไฟฟ้า" },
-      ],
+      options: [...new Set(usages.map((u) => u.type))].map((t) => ({
+        value: t,
+        label: t,
+      })),
     },
     {
       key: "period",
       label: "ทุกรอบ",
-      options: [{ value: "2025-08", label: "2025-08" }],
+      options: [...new Set(usages.map((u) => u.period))].map((p) => ({
+        value: p,
+        label: p,
+      })),
     },
   ];
 
