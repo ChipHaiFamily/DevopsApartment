@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import api from "../../../api/axiosConfig";
 
-export default function RoomTypeManage() {
+export default function RoomTypeManage({ onClose }) {
   const [roomTypes, setRoomTypes] = useState([]);
   const [isAdding, setIsAdding] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -23,7 +23,7 @@ export default function RoomTypeManage() {
         res.data || // ถ้าส่ง array ตรง ๆ
         [];
 
-    //   console.log("Fetched Room Types:", data);
+      //   console.log("Fetched Room Types:", data);
       setRoomTypes(data);
     } catch (err) {
       console.error("Error fetching room types:", err);
@@ -113,7 +113,7 @@ export default function RoomTypeManage() {
   return (
     <div
       className="container py-4"
-      style={{ fontFamily: "Kanit, system-ui, sans-serif", maxWidth: 600 }}
+     style={{ fontFamily: "Kanit, system-ui, sans-serif", maxWidth: "100%" }}
     >
       {/* Toast Notification */}
       {toast.show && (
@@ -230,9 +230,19 @@ export default function RoomTypeManage() {
           + เพิ่มประเภทห้อง
         </button>
 
-        <button className="btn btn-secondary" onClick={fetchRoomTypes}>
-          โหลดใหม่
-        </button>
+        <div className="d-flex gap-2">
+          <button className="btn btn-success" onClick={fetchRoomTypes}>
+            โหลดใหม่
+          </button>
+          <button
+            className="btn btn-outline-dark"
+            onClick={() => {
+              if (onClose) onClose(); // เรียกปิด modal จากหน้า RoomsManage
+            }}
+          >
+            ปิด
+          </button>
+        </div>
       </div>
 
       {/* Modal ยืนยันการลบ */}
@@ -245,7 +255,7 @@ export default function RoomTypeManage() {
             role="dialog"
             aria-modal="true"
           >
-            <div className="modal-dialog modal-dialog-centered">
+            <div className="modal-dialog modal-fullscreen modal-dialog-centered">
               <div className="modal-content border-0 shadow">
                 <div className="modal-header">
                   <h5 className="modal-title fw-bold text-danger">

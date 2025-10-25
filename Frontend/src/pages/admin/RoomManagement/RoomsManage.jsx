@@ -118,7 +118,7 @@ export default function RoomsManage() {
     >
       {/* Header */}
       <div className="d-flex justify-content-between align-items-center mb-3">
-         <div>
+        <div>
           <h3 className="mb-0">จัดการห้อง</h3>
           <p className="text-muted mb-0">รายงานและสถิติการดำเนินงาน</p>
         </div>
@@ -378,7 +378,7 @@ export default function RoomsManage() {
             role="dialog"
             aria-modal="true"
           >
-            <div className="modal-dialog modal-lg modal-dialog-centered" >
+            <div className="modal-dialog modal-lg modal-dialog-centered">
               <div className="modal-content border-0 shadow">
                 <div className="modal-header">
                   <h5 className="modal-title fw-bold">จัดการประเภทห้องพัก</h5>
@@ -388,7 +388,7 @@ export default function RoomsManage() {
                   ></button>
                 </div>
                 <div className="modal-body">
-                  <RoomTypeManage />
+                  <RoomTypeManage onClose={() => setOpenRoomTypeModal(false)} />
                 </div>
               </div>
             </div>
