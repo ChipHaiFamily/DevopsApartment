@@ -11,41 +11,49 @@ export default function AdminUsagePage() {
   const [usageModalOpen, setUsageModalOpen] = useState(false);
   const [editData, setEditData] = useState(null);
   const [usageSettingOpen, setUsageSettingOpen] = useState(false);
+  const [toast, setToast] = useState({ show: false, message: "", type: "" });
+
+  const showToast = (message, type = "success") => {
+    setToast({ show: true, message, type });
+    setTimeout(() => setToast({ show: false, message: "", type: "" }), 3000);
+  };
+
+  const fetchUsages = async () => {
+    try {
+      const res = await api.get("/meters");
+      const data = Array.isArray(res.data) ? res.data : res.data.data;
+
+      // แปลงประเภทให้เป็นชื่อไทย
+      const mapped = data.map((u) => ({
+        ...u,
+        type:
+          u.type === "water"
+            ? "น้ำ"
+            : u.type === "electricity"
+            ? "ไฟฟ้า"
+            : u.type,
+      }));
+
+      setUsages(mapped);
+    } catch (err) {
+      console.error("Error fetching meter data:", err);
+      showToast("โหลดข้อมูลการใช้น้ำ/ไฟฟ้าไม่สำเร็จ", "danger");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchUsages = async () => {
-      try {
-        const res = await api.get("/meters");
-        const data = Array.isArray(res.data) ? res.data : res.data.data;
-
-        // แปลงประเภทให้เป็นชื่อไทย
-        const mapped = data.map((u) => ({
-          ...u,
-          type:
-            u.type === "water"
-              ? "น้ำ"
-              : u.type === "electricity"
-              ? "ไฟฟ้า"
-              : u.type,
-        }));
-
-        setUsages(mapped);
-      } catch (err) {
-        console.error("Error fetching meter data:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchUsages();
   }, []);
 
   // ฟังก์ชันเมื่อสร้างหรือแก้ไข
   const handleUsageSubmit = (payload) => {
-    console.log("📦 ข้อมูลที่บันทึก:", payload);
-    alert("บันทึกสำเร็จ!");
-    setUsageModalOpen(false);
-    setEditData(null);
+    // console.log("ข้อมูลที่บันทึก:", payload);
+  setUsageModalOpen(false);
+  setEditData(null);
+  fetchUsages(); //  reload table
+  showToast("บันทึกข้อมูลสำเร็จ!", "success");
   };
 
   // metrics (mock)
@@ -202,6 +210,28 @@ export default function AdminUsagePage() {
         open={usageSettingOpen}
         onClose={() => setUsageSettingOpen(false)}
       />
+
+       {/* ===== Toast แจ้งผล ===== */}
+      {toast.show && (
+        <div
+          className={`toast align-items-center text-bg-${toast.type} border-0 show position-fixed top-0 end-0 m-3`}
+          role="alert"
+          aria-live="assertive"
+          aria-atomic="true"
+          style={{ zIndex: 1055 }}
+        >
+          <div className="d-flex">
+            <div className="toast-body">{toast.message}</div>
+            <button
+              type="button"
+              className="btn-close btn-close-white me-2 m-auto"
+              onClick={() =>
+                setToast({ show: false, message: "", type: "" })
+              }
+            ></button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

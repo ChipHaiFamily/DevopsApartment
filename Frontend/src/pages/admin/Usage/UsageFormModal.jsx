@@ -92,8 +92,21 @@ export default function UsageFormModal({
     if (!validateForm()) return;
 
     try {
-      await onSubmit(form);
-      onClose();
+      // แปลงประเภทให้ตรงกับ API
+      const payload = {
+        room: form.room,
+        period: form.period,
+        type: form.type === "น้ำ" ? "water" : "electricity",
+        unit: Number(form.unit),
+        recordDate: form.recordDate,
+      };
+
+      // ส่งข้อมูลไปยัง API
+      const res = await api.post("/meters", payload);
+      // console.log("สร้างข้อมูลสำเร็จ:", res.data);
+
+      if (onSubmit) onSubmit(); // refresh ตารางหลัก
+      onClose(); // ปิด modal
     } catch (err) {
       console.error("Error saving usage:", err);
       setError(err?.response?.data?.message || "ไม่สามารถบันทึกได้");
@@ -108,13 +121,20 @@ export default function UsageFormModal({
       <div className="modal-backdrop fade show"></div>
 
       {/* Modal */}
-      <div className="modal fade show d-block" tabIndex="-1" role="dialog" aria-modal="true">
+      <div
+        className="modal fade show d-block"
+        tabIndex="-1"
+        role="dialog"
+        aria-modal="true"
+      >
         <div className="modal-dialog modal-md modal-dialog-centered">
           <div className="modal-content" style={{ fontFamily: "Kanit" }}>
             {/* Header */}
             <div className="modal-header">
               <h5 className="modal-title fw-bold">
-                {isEdit ? "แก้ไขบันทึกการใช้น้ำ/ไฟฟ้า" : "บันทึกการใช้น้ำ/ไฟฟ้า"}
+                {isEdit
+                  ? "แก้ไขบันทึกการใช้น้ำ/ไฟฟ้า"
+                  : "บันทึกการใช้น้ำ/ไฟฟ้า"}
               </h5>
               <button className="btn-close" onClick={onClose}></button>
             </div>
@@ -144,7 +164,9 @@ export default function UsageFormModal({
                       </option>
                     ))}
                   </select>
-                  {errors.room && <small className="text-danger">{errors.room}</small>}
+                  {errors.room && (
+                    <small className="text-danger">{errors.room}</small>
+                  )}
                 </div>
 
                 {/* รอบและวันที่บันทึก */}
@@ -154,22 +176,32 @@ export default function UsageFormModal({
                     <input
                       type="month"
                       name="period"
-                      className={`form-control ${errors.period ? "is-invalid" : ""}`}
+                      className={`form-control ${
+                        errors.period ? "is-invalid" : ""
+                      }`}
                       value={form.period}
                       onChange={handleChange}
                     />
-                    {errors.period && <small className="text-danger">{errors.period}</small>}
+                    {errors.period && (
+                      <small className="text-danger">{errors.period}</small>
+                    )}
                   </div>
                   <div className="col-md-6 mb-3">
-                    <label className="form-label fw-semibold">วันที่บันทึก</label>
+                    <label className="form-label fw-semibold">
+                      วันที่บันทึก
+                    </label>
                     <input
                       type="date"
                       name="recordDate"
-                      className={`form-control ${errors.recordDate ? "is-invalid" : ""}`}
+                      className={`form-control ${
+                        errors.recordDate ? "is-invalid" : ""
+                      }`}
                       value={form.recordDate}
                       onChange={handleChange}
                     />
-                    {errors.recordDate && <small className="text-danger">{errors.recordDate}</small>}
+                    {errors.recordDate && (
+                      <small className="text-danger">{errors.recordDate}</small>
+                    )}
                   </div>
                 </div>
 
@@ -178,7 +210,9 @@ export default function UsageFormModal({
                   <div className="col-md-6 mb-3">
                     <label className="form-label fw-semibold">ประเภท</label>
                     <select
-                      className={`form-select ${errors.type ? "is-invalid" : ""}`}
+                      className={`form-select ${
+                        errors.type ? "is-invalid" : ""
+                      }`}
                       name="type"
                       value={form.type}
                       onChange={handleChange}
@@ -186,27 +220,39 @@ export default function UsageFormModal({
                       <option value="น้ำ">น้ำ</option>
                       <option value="ไฟฟ้า">ไฟฟ้า</option>
                     </select>
-                    {errors.type && <small className="text-danger">{errors.type}</small>}
+                    {errors.type && (
+                      <small className="text-danger">{errors.type}</small>
+                    )}
                   </div>
                   <div className="col-md-6 mb-3">
-                    <label className="form-label fw-semibold">การใช้งาน (หน่วย)</label>
+                    <label className="form-label fw-semibold">
+                      การใช้งาน (หน่วย)
+                    </label>
                     <input
                       type="number"
-                      className={`form-control ${errors.unit ? "is-invalid" : ""}`}
+                      className={`form-control ${
+                        errors.unit ? "is-invalid" : ""
+                      }`}
                       name="unit"
                       min="0"
                       step="0.1"
                       value={form.unit}
                       onChange={handleChange}
                     />
-                    {errors.unit && <small className="text-danger">{errors.unit}</small>}
+                    {errors.unit && (
+                      <small className="text-danger">{errors.unit}</small>
+                    )}
                   </div>
                 </div>
               </div>
 
               {/* Footer */}
               <div className="modal-footer">
-                <button type="button" className="btn btn-outline-secondary" onClick={onClose}>
+                <button
+                  type="button"
+                  className="btn btn-outline-secondary"
+                  onClick={onClose}
+                >
                   ยกเลิก
                 </button>
                 <button type="submit" className="btn btn-primary">
