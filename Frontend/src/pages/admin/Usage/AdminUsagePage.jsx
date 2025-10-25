@@ -50,10 +50,37 @@ export default function AdminUsagePage() {
   // ฟังก์ชันเมื่อสร้างหรือแก้ไข
   const handleUsageSubmit = (payload) => {
     // console.log("ข้อมูลที่บันทึก:", payload);
-  setUsageModalOpen(false);
-  setEditData(null);
-  fetchUsages(); //  reload table
-  showToast("บันทึกข้อมูลสำเร็จ!", "success");
+    setUsageModalOpen(false);
+    setEditData(null);
+    fetchUsages(); //  reload table
+    showToast("บันทึกข้อมูลสำเร็จ!", "success");
+  };
+
+  // ฟังก์ชันอัปโหลด CSV
+  const handleFileUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      const res = await api.post("/meters/upload", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+
+      console.log(" อัปโหลดสำเร็จ:", res.data);
+      showToast("นำเข้าไฟล์ CSV สำเร็จ!", "success");
+      fetchUsages(); //  refresh ตารางหลังอัปโหลด
+    } catch (err) {
+      console.error("❌ Error uploading CSV:", err);
+      showToast(
+        err?.response?.data?.message || "เกิดข้อผิดพลาดในการอัปโหลด CSV",
+        "danger"
+      );
+    } finally {
+      e.target.value = ""; // reset input เพื่อให้อัปโหลดไฟล์เดิมซ้ำได้
+    }
   };
 
   // metrics (mock)
@@ -127,9 +154,21 @@ export default function AdminUsagePage() {
           >
             ตั้งค่าราคาต่อหน่วย
           </button>
-          <button className="btn btn-light text-primary me-2">
+
+          <input
+            type="file"
+            id="csvInput"
+            accept=".csv"
+            className="d-none"
+            onChange={handleFileUpload}
+          />
+          <button
+            className="btn btn-light text-primary me-2"
+            onClick={() => document.getElementById("csvInput").click()}
+          >
             นำเข้า CSV
           </button>
+
           <button
             className="btn btn-primary"
             onClick={() => setUsageModalOpen(true)}
@@ -211,7 +250,7 @@ export default function AdminUsagePage() {
         onClose={() => setUsageSettingOpen(false)}
       />
 
-       {/* ===== Toast แจ้งผล ===== */}
+      {/* ===== Toast แจ้งผล ===== */}
       {toast.show && (
         <div
           className={`toast align-items-center text-bg-${toast.type} border-0 show position-fixed top-0 end-0 m-3`}
@@ -225,9 +264,7 @@ export default function AdminUsagePage() {
             <button
               type="button"
               className="btn-close btn-close-white me-2 m-auto"
-              onClick={() =>
-                setToast({ show: false, message: "", type: "" })
-              }
+              onClick={() => setToast({ show: false, message: "", type: "" })}
             ></button>
           </div>
         </div>
