@@ -18,15 +18,13 @@ export default function RoomsManage() {
   const [loading, setLoading] = useState(true);
   const [openCreateModal, setOpenCreateModal] = useState(false);
   const [openRoomTypeModal, setOpenRoomTypeModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [toast, setToast] = useState({ show: false, message: "", type: "" });
 
   const handleCreateRoom = async (data) => {
-    try {
-      await api.post("/rooms", data);
-      alert("สร้างห้องพักสำเร็จ!");
-      setOpenCreateModal(false);
-    } catch (err) {
-      alert(err?.response?.data?.message || "ไม่สามารถสร้างห้องได้");
-    }
+    fetchRooms(); // รีโหลดข้อมูลใหม่หลัง modal สร้างเสร็จ
+    setOpenCreateModal(false);
   };
 
   /** ดึงข้อมูลห้องพัก */
@@ -52,6 +50,33 @@ export default function RoomsManage() {
   useEffect(() => {
     fetchRooms();
   }, []);
+
+  // ฟังก์ชันช่วยเรียก toast
+  const showToast = (message, type = "success") => {
+    setToast({ show: true, message, type });
+    setTimeout(() => setToast({ show: false, message: "", type: "" }), 3000);
+  };
+
+  // เปิด Modal ยืนยันการลบ
+  const confirmDeleteRoom = (room) => {
+    setDeleteTarget(room);
+    setShowDeleteModal(true);
+  };
+
+  // ลบห้องจริง
+  const handleDeleteRoom = async () => {
+    if (!deleteTarget) return;
+    try {
+      await api.delete(`/rooms/${deleteTarget.roomNum}`);
+      setShowDeleteModal(false);
+      setSelected(null);
+      fetchRooms();
+      showToast(`ลบห้อง ${deleteTarget.roomNum} เรียบร้อยแล้ว`, "success");
+    } catch (err) {
+      console.error("Error deleting room:", err);
+      showToast(err?.response?.data?.message || "ไม่สามารถลบห้องได้", "danger");
+    }
+  };
 
   // ---------- derived stats ----------
   const total = rooms.length;
@@ -344,7 +369,10 @@ export default function RoomsManage() {
                         : "ไม่สามารถเปลี่ยนสถานะได้"}
                     </button>
 
-                    <button className="btn btn-outline-danger w-100">
+                    <button
+                      className="btn btn-outline-danger w-100"
+                      onClick={() => confirmDeleteRoom(selected)}
+                    >
                       ลบห้อง
                     </button>
 
@@ -401,6 +429,73 @@ export default function RoomsManage() {
         onClose={() => setOpenCreateModal(false)}
         onSubmit={handleCreateRoom}
       />
+
+      {/* ===== Modal ยืนยันการลบห้อง ===== */}
+      {showDeleteModal && (
+        <>
+          <div className="modal-backdrop fade show"></div>
+          <div
+            className="modal fade show d-block"
+            tabIndex="-1"
+            role="dialog"
+            aria-modal="true"
+          >
+            <div className="modal-dialog modal-dialog-centered">
+              <div className="modal-content border-0 shadow">
+                <div className="modal-header">
+                  <h5 className="modal-title fw-bold text-danger">
+                    ยืนยันการลบห้อง
+                  </h5>
+                  <button
+                    className="btn-close"
+                    onClick={() => setShowDeleteModal(false)}
+                  ></button>
+                </div>
+                <div className="modal-body">
+                  <p>
+                    ต้องการลบห้อง <strong>{deleteTarget?.roomNum}</strong>{" "}
+                    ใช่หรือไม่?
+                  </p>
+                  <p className="text-muted mb-0">
+                    ห้องนี้จะถูกลบออกจากระบบและไม่สามารถกู้คืนได้
+                  </p>
+                </div>
+                <div className="modal-footer">
+                  <button
+                    className="btn btn-outline-secondary"
+                    onClick={() => setShowDeleteModal(false)}
+                  >
+                    ยกเลิก
+                  </button>
+                  <button className="btn btn-danger" onClick={handleDeleteRoom}>
+                    ลบ
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* ===== Toast แจ้งผล ===== */}
+      {toast.show && (
+        <div
+          className={`toast align-items-center text-bg-${toast.type} border-0 show position-fixed top-0 end-0 m-3`}
+          role="alert"
+          aria-live="assertive"
+          aria-atomic="true"
+          style={{ zIndex: 1055 }}
+        >
+          <div className="d-flex">
+            <div className="toast-body">{toast.message}</div>
+            <button
+              type="button"
+              className="btn-close btn-close-white me-2 m-auto"
+              onClick={() => setToast({ show: false, message: "", type: "" })}
+            ></button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

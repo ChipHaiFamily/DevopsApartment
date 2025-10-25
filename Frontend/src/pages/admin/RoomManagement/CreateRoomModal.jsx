@@ -4,11 +4,12 @@ import api from "../../../api/axiosConfig";
 export default function CreateRoomModal({ open, onClose, onSubmit }) {
   const [roomTypes, setRoomTypes] = useState([]);
   const [form, setForm] = useState({
-    roomTypeName: "",
     roomNum: "",
     floor: "",
+    roomTypeId: "",
   });
   const [error, setError] = useState("");
+  
 
   // โหลดประเภทห้องจาก backend
   useEffect(() => {
@@ -41,15 +42,20 @@ export default function CreateRoomModal({ open, onClose, onSubmit }) {
     }
 
     try {
-      await api.post("/rooms", {
-        roomTypeId: form.roomTypeId,
+      const res = await api.post("/rooms", {
         roomNum: form.roomNum,
+        floor: Number(form.floor),
+        roomTypeId: form.roomTypeId,
       });
+      console.log("Response:", res.data);
 
-      // callback จาก props ถ้ามี
-      if (onSubmit) await onSubmit();
+      if (onSubmit) {
+        await onSubmit();
+      }
+      // ปิด modal หลัง onSubmit เสร็จ
       onClose();
     } catch (err) {
+      console.error("Create room error:", err);
       setError(err?.response?.data?.message || "ไม่สามารถบันทึกได้");
     }
   };
