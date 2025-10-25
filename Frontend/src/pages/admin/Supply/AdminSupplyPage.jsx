@@ -60,13 +60,15 @@ export default function AdminSupplyPage() {
 
   const translateStatus = (status) => {
     switch (status) {
+      case "In Stock":
+        return "ปกติ";
       case "in stock":
         return "ปกติ";
-      case "low stock":
+      case "Low Stock":
         return "ใกล้หมด";
-      case "out of stock":
+      case "Out of Stock":
         return "หมด";
-      case "out of service":
+      case "Out of Service":
         return "ปิดใช้งาน";
       default:
         return status;
@@ -136,18 +138,18 @@ export default function AdminSupplyPage() {
   // ฟิลเตอร์ฝั่งประวัติ
   const historyFilters = [
     {
-      key: "action",
+      key: "actionRaw",
       label: "ทุกประเภท",
       options: [
-        { value: "เติม", label: "เติม" },
-        { value: "เบิกใช้", label: "เบิกใช้" },
-        { value: "คืน", label: "คืน" },
+        { value: "restock", label: "เติม" },
+        { value: "withdraw", label: "เบิกใช้" },
+        { value: "return", label: "คืน" },
       ],
     },
     {
       key: "name",
       label: "ทุกสิ่งของ",
-      options: [...new Set(history.map((h) => h.name))].map((name) => ({
+      options: [...new Set(history.map((h) => h.item_Name))].map((name) => ({
         value: name,
         label: name,
       })),
@@ -257,24 +259,7 @@ export default function AdminSupplyPage() {
                     : h.action
                 ),
               }))}
-              filters={[
-                {
-                  key: "actionRaw",
-                  label: "ทุกประเภท",
-                  options: [
-                    { value: "restock", label: "เติม" },
-                    { value: "withdraw", label: "เบิกใช้" },
-                    { value: "return", label: "คืน" },
-                  ],
-                },
-                {
-                  key: "item_Name",
-                  label: "ทุกสิ่งของ",
-                  options: [...new Set(history.map((h) => h.item_Name))].map(
-                    (name) => ({ value: name, label: name })
-                  ),
-                },
-              ]}
+              filters={historyFilters}
             />
           </div>
         </div>
@@ -303,7 +288,11 @@ export default function AdminSupplyPage() {
         open={manageOpen}
         supply={selectedSupply}
         onClose={() => setManageOpen(false)}
-        onSubmit={(data) => console.log("บันทึกการจัดการ:", data)}
+        onSubmit={() => {
+          fetchSupplies(); // รีโหลดตารางหลัก (ถ้ามีการอัปเดตจำนวน)
+          fetchHistory(); // รีโหลดตารางประวัติทันที
+          showToast("บันทึกการจัดการสิ่งของสำเร็จ!", "success");
+        }}
       />
 
       {/* ===== Toast แจ้งผล ===== */}
