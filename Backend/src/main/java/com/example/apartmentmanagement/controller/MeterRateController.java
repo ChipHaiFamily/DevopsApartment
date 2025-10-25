@@ -27,11 +27,13 @@ public class MeterRateController {
         return ResponseEntity.ok(repository.findByTypeOrderByTimestampDesc(type));
     }
 
-    @GetMapping("/{type}")
-    public ResponseEntity<MeterRate> getRateByType(@PathVariable String type) {
-        MeterRate rate = repository.findByType(type);
-        if (rate == null) return ResponseEntity.notFound().build();
-        return ResponseEntity.ok(rate);
+    @GetMapping("/latest")
+    public ResponseEntity<List<MeterRate>> getLatestForAllTypes() {
+        List<MeterRate> result = repository.findLatestRatesForAllTypes();
+        if (result.isEmpty()) {
+            return ResponseEntity.noContent().build();
+        }
+        return ResponseEntity.ok(result);
     }
 
     @GetMapping("/latest/{type}")
