@@ -37,8 +37,25 @@ export default function AdminSupplyPage() {
     }
   };
 
+  const fetchHistory = async () => {
+    try {
+      const res = await api.get("/supplies-history");
+      if (Array.isArray(res.data)) {
+        setHistory(res.data);
+      } else if (res.data?.data) {
+        setHistory(res.data.data);
+      } else {
+        setHistory([]);
+      }
+    } catch (err) {
+      console.error("Error fetching supplies history:", err);
+      showToast("โหลดประวัติการจัดการสิ่งของไม่สำเร็จ", "danger");
+    }
+  };
+
   useEffect(() => {
     fetchSupplies();
+    fetchHistory();
   }, []);
 
   const translateStatus = (status) => {
@@ -55,50 +72,6 @@ export default function AdminSupplyPage() {
         return status;
     }
   };
-
-  // โหลด mock data ประวัติ
-  useEffect(() => {
-    const mockHistory = [
-      {
-        historyId: "HIT-001-001",
-        itemId: "ITM-001",
-        name: "Light bulb",
-        quantity: 100,
-        date: "2025-08-25",
-        operator: "Kbtr",
-        action: "คืน",
-      },
-      {
-        historyId: "HIT-001-002",
-        itemId: "ITM-002",
-        name: "Pen",
-        quantity: 120,
-        date: "2025-08-25",
-        operator: "PJ",
-        action: "เติม",
-      },
-      {
-        historyId: "HIT-001-003",
-        itemId: "ITM-003",
-        name: "Water Pipe",
-        quantity: 7,
-        date: "2025-08-25",
-        operator: "Sukol",
-        action: "เบิกใช้",
-      },
-      {
-        historyId: "HIT-001-004",
-        itemId: "ITM-004",
-        name: "Toilet",
-        quantity: "-",
-        date: "2025-08-25",
-        operator: "PJ",
-        action: "เติม",
-      },
-    ];
-
-    setHistory(mockHistory);
-  }, []);
 
   // columns ของตาราง
   const columns = [
@@ -267,24 +240,37 @@ export default function AdminSupplyPage() {
             <TableBS
               columns={historyColumns}
               data={history.map((h) => ({
-                ...h,
+                historyId: h.historyId,
+                itemId: h.itemId,
+                name: h.item_Name,
+                quantity: h.quantity ?? "-",
+                date: h.date,
+                operator: h.operator,
                 actionRaw: h.action,
-                action: renderActionBadge(h.action),
+                action: renderActionBadge(
+                  h.action === "restock"
+                    ? "เติม"
+                    : h.action === "withdraw"
+                    ? "เบิกใช้"
+                    : h.action === "return"
+                    ? "คืน"
+                    : h.action
+                ),
               }))}
               filters={[
                 {
                   key: "actionRaw",
                   label: "ทุกประเภท",
                   options: [
-                    { value: "เติม", label: "เติม" },
-                    { value: "เบิกใช้", label: "เบิกใช้" },
-                    { value: "คืน", label: "คืน" },
+                    { value: "restock", label: "เติม" },
+                    { value: "withdraw", label: "เบิกใช้" },
+                    { value: "return", label: "คืน" },
                   ],
                 },
                 {
-                  key: "name",
+                  key: "item_Name",
                   label: "ทุกสิ่งของ",
-                  options: [...new Set(history.map((h) => h.name))].map(
+                  options: [...new Set(history.map((h) => h.item_Name))].map(
                     (name) => ({ value: name, label: name })
                   ),
                 },
