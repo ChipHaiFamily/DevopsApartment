@@ -12,21 +12,9 @@ public class MeterRateService {
 
     private final MeterRateRepository repository;
 
-    public void initRates() {
-        if (repository.count() == 0) {
-            MeterRate water = new MeterRate();
-            water.setType("water");
-            water.setRate(4.0);
-            water.setTimestamp(LocalDateTime.now());
-
-            MeterRate electric = new MeterRate();
-            electric.setType("electricity");
-            electric.setRate(7.0);
-            electric.setTimestamp(LocalDateTime.now());
-
-            repository.save(water);
-            repository.save(electric);
-        }
+    public MeterRate saveRate(MeterRate meterRate) {
+        meterRate.setTimestamp(LocalDateTime.now());
+        return repository.save(meterRate);
     }
 }
 

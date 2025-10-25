@@ -10,8 +10,10 @@ import java.time.LocalDateTime;
 public class MeterRate {
 
     @Id
-    private String type;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
+    private String type;
     private Double rate;
 
     private LocalDateTime timestamp;
