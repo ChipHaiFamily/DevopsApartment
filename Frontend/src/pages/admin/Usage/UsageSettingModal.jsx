@@ -5,36 +5,64 @@ import UsageRateHistoryModal from "./UsageRateHistoryModal";
 export default function UsageSettingModal({ open, onClose }) {
   const [waterRate, setWaterRate] = useState("");
   const [electricRate, setElectricRate] = useState("");
+  const [waterDate, setWaterDate] = useState("");
+  const [electricDate, setElectricDate] = useState("");
   const [historyOpen, setHistoryOpen] = useState(false);
 
-  // โหลดค่าปัจจุบันจาก backend (mock ก่อน)
+  // โหลดค่าปัจจุบันจาก backend
   useEffect(() => {
-    if (open) {
-      // ตัวอย่าง mock data — ถ้ามี API จริง ให้ใช้ api.get("/settings/usage")
-      setWaterRate("0.66");
-      setElectricRate("1.25");
-    }
+    const fetchRates = async () => {
+      try {
+        const res = await api.get("/meter-rate");
+        const data = Array.isArray(res.data) ? res.data : res.data.data || [];
+
+        // หาค่าล่าสุดของน้ำและไฟตาม timestamp ล่าสุด
+        const latestWater = data
+          .filter((r) => r.type === "water")
+          .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))[0];
+
+        const latestElectric = data
+          .filter((r) => r.type === "electricity")
+          .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))[0];
+
+        if (latestWater) {
+          setWaterRate(latestWater.rate);
+          setWaterDate(
+            new Date(latestWater.timestamp).toLocaleDateString("th-TH", {
+              year: "numeric",
+              month: "short",
+              day: "numeric",
+            })
+          );
+        }
+
+        if (latestElectric) {
+          setElectricRate(latestElectric.rate);
+          setElectricDate(
+            new Date(latestElectric.timestamp).toLocaleDateString("th-TH", {
+              year: "numeric",
+              month: "short",
+              day: "numeric",
+            })
+          );
+        }
+      } catch (err) {
+        console.error("Error fetching meter rate:", err);
+      }
+    };
+
+    if (open) fetchRates();
   }, [open]);
 
-  const handleSaveWater = async () => {
+  // ฟังก์ชันบันทึก
+  const handleSaveRate = async (type, rate) => {
     try {
-      await api.put("/settings/usage/water", { value: Number(waterRate) });
-      alert("บันทึกราคาน้ำสำเร็จ");
+      await api.post("/meter-rate", { type, rate: Number(rate) });
+      alert(`บันทึกราคา${type === "water" ? "น้ำ" : "ไฟ"}สำเร็จ`);
+      onClose(); // ปิด modal หลังบันทึก
     } catch (err) {
-      console.error("Error saving water rate:", err);
-      alert("เกิดข้อผิดพลาดในการบันทึกราคาน้ำ");
-    }
-  };
-
-  const handleSaveElectric = async () => {
-    try {
-      await api.put("/settings/usage/electricity", {
-        value: Number(electricRate),
-      });
-      alert("บันทึกราคาไฟสำเร็จ");
-    } catch (err) {
-      console.error("Error saving electricity rate:", err);
-      alert("เกิดข้อผิดพลาดในการบันทึกราคาไฟ");
+      console.error("Error saving rate:", err);
+      alert("เกิดข้อผิดพลาดในการบันทึกข้อมูล");
     }
   };
 
@@ -72,11 +100,16 @@ export default function UsageSettingModal({ open, onClose }) {
                     />
                     <button
                       className="btn btn-outline-primary"
-                      onClick={handleSaveWater}
+                      onClick={() => handleSaveRate("water", waterRate)}
                     >
                       บันทึก
                     </button>
                   </div>
+                  {waterDate && (
+                    <small className="text-muted">
+                      อัปเดตล่าสุด: {waterDate}
+                    </small>
+                  )}
                 </div>
 
                 {/* ไฟ */}
@@ -93,11 +126,16 @@ export default function UsageSettingModal({ open, onClose }) {
                     />
                     <button
                       className="btn btn-outline-primary"
-                      onClick={handleSaveElectric}
+                      onClick={() => handleSaveRate("electricity", electricRate)}
                     >
                       บันทึก
                     </button>
                   </div>
+                  {electricDate && (
+                    <small className="text-muted">
+                      อัปเดตล่าสุด: {electricDate}
+                    </small>
+                  )}
                 </div>
               </div>
             </div>
