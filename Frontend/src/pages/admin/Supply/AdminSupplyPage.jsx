@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import TableBS from "../../../components/admin/TableBS";
 import SupplyFormModal from "./SupplyFormModal";
 import SupplyManageModal from "./SupplyManageModal";
+import api from "../../../api/axiosConfig";
 
 export default function AdminSupplyPage() {
   const [supplies, setSupplies] = useState([]);
@@ -15,23 +16,40 @@ export default function AdminSupplyPage() {
   // โหลด mock data
   // โหลด mock data สิ่งของ
   useEffect(() => {
-    const mockData = [
-      { itemId: "ITM-001", name: "Light bulb", quantity: 0, status: "หมด" },
-      { itemId: "ITM-002", name: "Pen", quantity: 120, status: "ปกติ" },
-      { itemId: "ITM-003", name: "Water Pipe", quantity: 7, status: "ใกล้หมด" },
-      {
-        itemId: "ITM-004",
-        name: "Toilet",
-        quantity: null,
-        status: "ปิดใช้งาน",
-      },
-    ];
+    const fetchSupplies = async () => {
+      try {
+        const res = await api.get("/supplies");
+        if (Array.isArray(res.data)) {
+          setSupplies(res.data);
+        } else if (res.data?.data) {
+          setSupplies(res.data.data);
+        } else {
+          setSupplies([]);
+        }
+      } catch (err) {
+        console.error("Error fetching supplies:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-    setTimeout(() => {
-      setSupplies(mockData);
-      setLoading(false);
-    }, 400);
+    fetchSupplies();
   }, []);
+
+  const translateStatus = (status) => {
+    switch (status) {
+      case "in stock":
+        return "ปกติ";
+      case "low stock":
+        return "ใกล้หมด";
+      case "out of stock":
+        return "หมด";
+      case "out of service":
+        return "ปิดใช้งาน";
+      default:
+        return status;
+    }
+  };
 
   // โหลด mock data ประวัติ
   useEffect(() => {
@@ -208,15 +226,17 @@ export default function AdminSupplyPage() {
       {/* Content */}
       {tab === "list" ? (
         <div className="card shadow-sm">
-          <div className="card-header no-bg bg-light p-3 fw-bold">รายการสิ่งของ</div>
+          <div className="card-header no-bg bg-light p-3 fw-bold">
+            รายการสิ่งของ
+          </div>
           <div className="card-body">
             <TableBS
               columns={columns}
               data={supplies.map((s) => ({
-                ...s,
+                itemId: s.itemId,
+                name: s.item_Name,
                 quantity: s.quantity ?? "-",
-                statusRaw: s.status,
-                status: renderStatusBadge(s.status),
+                status: renderStatusBadge(translateStatus(s.status)),
               }))}
               filters={listFilters}
               renderActions={(row) => (
