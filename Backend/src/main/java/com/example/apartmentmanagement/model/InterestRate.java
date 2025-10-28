@@ -3,7 +3,7 @@ package com.example.apartmentmanagement.model;
 import jakarta.persistence.*;
 import lombok.Data;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 @Entity
 @Table(name = "interest_rate")
@@ -17,6 +17,8 @@ public class InterestRate {
     private String type;
     private Double percentage;
 
-    private LocalDateTime timestamp;
+    @Column(columnDefinition = "TIMESTAMP WITH TIME ZONE")
+    private OffsetDateTime timestamp;
+
 }
 
