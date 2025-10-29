@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import api from "../../../api/axiosConfig";
 import InterestHistoryModal from "./InterestHistoryModal";
 
-export default function InterestSettingModal({ open, onClose }) {
+export default function InterestSettingModal({ open, onClose, onSaved }) {
   const [installmentInterest, setInstallmentInterest] = useState("");
   const [lateInterest, setLateInterest] = useState("");
   const [installmentDate, setInstallmentDate] = useState("");
@@ -54,8 +54,10 @@ export default function InterestSettingModal({ open, onClose }) {
         type,
         percentage: Number(value),
       });
-      alert(`บันทึกดอกเบี้ย${type === "partial" ? "แบ่งจ่าย" : "ค้างชำระ"}สำเร็จ`);
-      onClose();
+
+      if (onSaved) onSaved();
+
+      // onClose();
     } catch (err) {
       console.error("Error saving interest rate:", err);
       alert("เกิดข้อผิดพลาดในการบันทึกข้อมูล");

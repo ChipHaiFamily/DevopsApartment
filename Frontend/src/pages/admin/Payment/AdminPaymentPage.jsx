@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import StatCardBS from "../../../components/admin/StatCardBS";
 import TableBS from "../../../components/admin/TableBS";
 import api from "../../../api/axiosConfig";
@@ -11,6 +11,42 @@ export default function AdminPaymentPage() {
   const [loading, setLoading] = useState(true);
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
   const [interestModalOpen, setInterestModalOpen] = useState(false);
+  const [ratePartial, setRatePartial] = useState(0);
+  const [rateUnpaid, setRateUnpaid] = useState(0);
+
+  const toastRef = useRef(null);
+
+  const fetchInterestRates = async () => {
+    try {
+      const res = await api.get("/interest-rate/latest");
+      const data = Array.isArray(res.data) ? res.data : res.data.data || [];
+
+      const partial = data.find((r) => r.type === "partial");
+      const unpaid = data.find((r) => r.type === "unpaid");
+
+      setRatePartial(partial?.percentage ?? 0);
+      setRateUnpaid(unpaid?.percentage ?? 0);
+    } catch (err) {
+      console.error("Error fetching interest rates:", err);
+    }
+  };
+
+  // เรียกตอนเริ่มโหลด
+  useEffect(() => {
+    fetchInterestRates();
+  }, []);
+
+   const showToast = (message, type = "success") => {
+    const toastEl = toastRef.current;
+    if (!toastEl) return;
+    const toastBody = toastEl.querySelector(".toast-body");
+    toastBody.textContent = message;
+    toastEl.classList.remove("bg-success", "bg-danger");
+    toastEl.classList.add(type === "success" ? "bg-success" : "bg-danger");
+
+    const bsToast = new window.bootstrap.Toast(toastEl);
+    bsToast.show();
+  };
 
   // เมื่อบันทึกใน modal เสร็จ
   const handlePaymentSubmit = async (payload) => {
@@ -99,13 +135,29 @@ export default function AdminPaymentPage() {
     fetchRooms();
   }, []);
 
+  useEffect(() => {
+    const fetchInterestRates = async () => {
+      try {
+        const res = await api.get("/interest-rate/latest");
+        const data = Array.isArray(res.data) ? res.data : res.data.data || [];
+
+        const partial = data.find((r) => r.type === "partial");
+        const unpaid = data.find((r) => r.type === "unpaid");
+
+        setRatePartial(partial?.percentage ?? 0);
+        setRateUnpaid(unpaid?.percentage ?? 0);
+      } catch (err) {
+        console.error("Error fetching interest rates:", err);
+      }
+    };
+    fetchInterestRates();
+  }, []);
+
   // Metrics
   const totalIncome = payments.reduce(
     (sum, p) => sum + Number(p.amount || 0),
     0
   );
-  const ratePending = 0.66;
-  const rateOverdue = 1.25;
 
   // Normalize
   const normalizedPayments = payments.map((p) => ({
@@ -145,6 +197,7 @@ export default function AdminPaymentPage() {
       options: rooms, // เอามาจาก API /api/rooms
     },
   ];
+  
 
   if (loading) {
     return (
@@ -193,14 +246,14 @@ export default function AdminPaymentPage() {
         <div className="col-12 col-md-6 col-lg-4">
           <StatCardBS
             label="ยอดที่ค้างชำระ"
-            value={`${ratePending.toFixed(2)}%`}
+            value={`${ratePartial.toFixed(2)}%`}
             icon={<i className="bi bi-clock text-warning"></i>}
           />
         </div>
         <div className="col-12 col-md-6 col-lg-4">
           <StatCardBS
             label="ยอดที่ล่าช้า"
-            value={`${rateOverdue.toFixed(2)}%`}
+            value={`${rateUnpaid.toFixed(2)}%`}
             icon={<i className="bi bi-exclamation-triangle text-danger"></i>}
           />
         </div>
@@ -238,7 +291,23 @@ export default function AdminPaymentPage() {
       <InterestSettingModal
         open={interestModalOpen}
         onClose={() => setInterestModalOpen(false)}
+        onSaved={() => {
+          fetchInterestRates();
+          showToast("อัปเดตดอกเบี้ยเรียบร้อย!", "success");
+        }}
       />
+
+       {/*  Bootstrap Toast Container */}
+      <div
+        className="toast position-fixed top-0 end-0 m-3 text-white"
+        role="alert"
+        aria-live="assertive"
+        aria-atomic="true"
+        ref={toastRef}
+        style={{ zIndex: 2000 }}
+      >
+        <div className="toast-body">บันทึกข้อมูลสำเร็จ</div>
+      </div>
     </div>
   );
 }
