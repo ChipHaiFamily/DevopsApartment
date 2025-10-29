@@ -5,38 +5,60 @@ import InterestHistoryModal from "./InterestHistoryModal";
 export default function InterestSettingModal({ open, onClose }) {
   const [installmentInterest, setInstallmentInterest] = useState("");
   const [lateInterest, setLateInterest] = useState("");
+  const [installmentDate, setInstallmentDate] = useState("");
+  const [lateDate, setLateDate] = useState("");
   const [historyOpen, setHistoryOpen] = useState(false);
 
-  // หลดค่าปัจจุบันจาก backend (mock ไว้ก่อน)
+  // โหลดค่าดอกเบี้ยจาก backend
   useEffect(() => {
-    if (open) {
-      // ตัวอย่าง mock ถ้ามี API จริง ให้ใช้ api.get("/settings/interest")
-      setInstallmentInterest("0.66");
-      setLateInterest("1.25");
-    }
+    const fetchInterestRates = async () => {
+      try {
+        const res = await api.get("/interest-rate/latest");
+        const data = Array.isArray(res.data) ? res.data : res.data.data || [];
+
+        const partial = data.find((r) => r.type === "partial");
+        const unpaid = data.find((r) => r.type === "unpaid");
+
+        if (partial) {
+          setInstallmentInterest(partial.percentage);
+          setInstallmentDate(
+            new Date(partial.timestamp).toLocaleDateString("th-TH", {
+              year: "numeric",
+              month: "short",
+              day: "numeric",
+            })
+          );
+        }
+        if (unpaid) {
+          setLateInterest(unpaid.percentage);
+          setLateDate(
+            new Date(unpaid.timestamp).toLocaleDateString("th-TH", {
+              year: "numeric",
+              month: "short",
+              day: "numeric",
+            })
+          );
+        }
+      } catch (err) {
+        console.error("Error fetching interest rates:", err);
+      }
+    };
+
+    if (open) fetchInterestRates();
   }, [open]);
 
-  const handleSaveInstallment = async () => {
+  // ฟังก์ชันบันทึกข้อมูลใหม่
+  const handleSaveInterest = async (type, value) => {
     try {
-      await api.put("/settings/interest/installment", {
-        value: Number(installmentInterest),
+      await api.post("/interest-rate", {
+        type,
+        percentage: Number(value),
       });
-      alert("บันทึกดอกเบี้ยแบ่งจ่ายสำเร็จ");
+      alert(`บันทึกดอกเบี้ย${type === "partial" ? "แบ่งจ่าย" : "ค้างชำระ"}สำเร็จ`);
+      onClose();
     } catch (err) {
-      console.error("Error saving installment interest:", err);
-      alert("เกิดข้อผิดพลาดในการบันทึกดอกเบี้ยแบ่งจ่าย");
-    }
-  };
-
-  const handleSaveLate = async () => {
-    try {
-      await api.put("/settings/interest/late", {
-        value: Number(lateInterest),
-      });
-      alert("บันทึกดอกเบี้ยค้างชำระสำเร็จ");
-    } catch (err) {
-      console.error("Error saving late interest:", err);
-      alert("เกิดข้อผิดพลาดในการบันทึกดอกเบี้ยค้างชำระ");
+      console.error("Error saving interest rate:", err);
+      alert("เกิดข้อผิดพลาดในการบันทึกข้อมูล");
     }
   };
 
@@ -60,46 +82,56 @@ export default function InterestSettingModal({ open, onClose }) {
 
             <div className="modal-body">
               <div className="row">
+                {/* ดอกเบี้ยแบ่งจ่าย */}
                 <div className="col-md-6 mb-3">
-                  <label className="form-label fw-semibold">
-                    ดอกเบี้ยแบ่งจ่าย
-                  </label>
+                  <label className="form-label fw-semibold">ดอกเบี้ยแบ่งจ่าย (%)</label>
                   <div className="d-flex align-items-center gap-2">
                     <input
                       type="number"
+                      step="0.01"
                       className="form-control text-end"
-                      style={{ whiteSpace: "nowrap" }}
                       value={installmentInterest}
                       onChange={(e) => setInstallmentInterest(e.target.value)}
                     />
                     <button
                       className="btn btn-outline-primary"
-                      onClick={handleSaveInstallment}
+                      onClick={() =>
+                        handleSaveInterest("partial", installmentInterest)
+                      }
                     >
                       บันทึก
                     </button>
                   </div>
+                  {installmentDate && (
+                    <small className="text-muted">
+                      อัปเดตล่าสุด: {installmentDate}
+                    </small>
+                  )}
                 </div>
 
+                {/* ดอกเบี้ยค้างชำระ */}
                 <div className="col-md-6 mb-3">
-                  <label className="form-label fw-semibold">
-                    ดอกเบี้ยค้างชำระ
-                  </label>
+                  <label className="form-label fw-semibold">ดอกเบี้ยค้างชำระ (%)</label>
                   <div className="d-flex align-items-center gap-2">
                     <input
                       type="number"
+                      step="0.01"
                       className="form-control text-end"
-                      style={{ whiteSpace: "nowrap" }}
                       value={lateInterest}
                       onChange={(e) => setLateInterest(e.target.value)}
                     />
                     <button
                       className="btn btn-outline-primary"
-                      onClick={handleSaveLate}
+                      onClick={() => handleSaveInterest("unpaid", lateInterest)}
                     >
                       บันทึก
                     </button>
                   </div>
+                  {lateDate && (
+                    <small className="text-muted">
+                      อัปเดตล่าสุด: {lateDate}
+                    </small>
+                  )}
                 </div>
               </div>
             </div>

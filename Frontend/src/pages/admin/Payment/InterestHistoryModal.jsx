@@ -4,24 +4,44 @@ import api from "../../../api/axiosConfig";
 export default function InterestHistoryModal({ open, onClose }) {
   const [history, setHistory] = useState([]);
 
-  // โหลดข้อมูล mockup
+  // โหลดข้อมูลจริงจาก backend
   useEffect(() => {
-    if (open) {
-      // ตัวอย่าง mock data
-      const mockData = [
-        {
-          timestamp: "2025-06-02 17:32:11",
-          type: "Partial",
-          percent: 0.5,
-        },
-        {
-          timestamp: "2025-06-02 17:32:11",
-          type: "Unpaid",
-          percent: 1.1,
-        },
-      ];
-      setHistory(mockData);
-    }
+    const fetchHistory = async () => {
+      try {
+        const res = await api.get("/interest-rate");
+        const data = Array.isArray(res.data) ? res.data : res.data.data || [];
+
+        const sorted = data.sort(
+          (a, b) => new Date(b.timestamp) - new Date(a.timestamp)
+        );
+
+        // จัดรูปแบบข้อมูล
+        const formatted = sorted
+          .map((item) => ({
+            timestamp: new Date(item.timestamp).toLocaleString("th-TH", {
+              year: "numeric",
+              month: "short",
+              day: "numeric",
+              hour: "2-digit",
+              minute: "2-digit",
+            }),
+            type:
+              item.type === "partial"
+                ? "แบ่งจ่าย"
+                : item.type === "unpaid"
+                ? "ค้างชำระ"
+                : item.type,
+            percent: item.percentage,
+          }))
+          .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+        setHistory(formatted);
+      } catch (err) {
+        console.error("Error fetching interest history:", err);
+      }
+    };
+
+    if (open) fetchHistory();
   }, [open]);
 
   if (!open) return null;
@@ -43,24 +63,40 @@ export default function InterestHistoryModal({ open, onClose }) {
             </div>
 
             <div className="modal-body">
-              <table className="table table-sm align-middle">
-                <thead className="table">
-                  <tr>
-                    <th>วันเวลาแก้ไข</th>
-                    <th>ประเภท</th>
-                    <th className="text-end">เปอร์เซ็นต์</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {history.map((item, index) => (
-                    <tr key={index}>
-                      <td>{item.timestamp}</td>
-                      <td>{item.type}</td>
-                      <td className="text-end">{item.percent}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              {history.length === 0 ? (
+                <p className="text-center text-muted mb-0">
+                  ไม่พบข้อมูลประวัติการแก้ไข
+                </p>
+              ) : (
+                // ✅ จำกัดสูงสุด ~6 แถว และ scroll ได้
+                <div
+                  style={{
+                    maxHeight: "300px",
+                    overflowY: "auto",
+                  }}
+                >
+                  <table className="table table-sm align-middle mb-0">
+                    <thead className="table">
+                      <tr>
+                        <th>วันเวลาแก้ไข</th>
+                        <th>ประเภท</th>
+                        <th className="text-end">เปอร์เซ็นต์ (%)</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {history.map((item, index) => (
+                        <tr key={index}>
+                          <td>{item.timestamp}</td>
+                          <td>{item.type}</td>
+                          <td className="text-end">
+                            {item.percent?.toFixed(2) ?? "-"}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
 
             <div className="modal-footer">
