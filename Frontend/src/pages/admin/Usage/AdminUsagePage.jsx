@@ -12,6 +12,8 @@ export default function AdminUsagePage() {
   const [editData, setEditData] = useState(null);
   const [usageSettingOpen, setUsageSettingOpen] = useState(false);
   const [toast, setToast] = useState({ show: false, message: "", type: "" });
+  const [waterRate, setWaterRate] = useState(0);
+  const [electricRate, setElectricRate] = useState(0);
 
   const showToast = (message, type = "success") => {
     setToast({ show: true, message, type });
@@ -43,8 +45,25 @@ export default function AdminUsagePage() {
     }
   };
 
+  const fetchMeterRates = async () => {
+    try {
+      const res = await api.get("/meter-rate/latest");
+      const rates = Array.isArray(res.data) ? res.data : res.data.data;
+
+      const water = rates.find((r) => r.type === "water");
+      const electric = rates.find((r) => r.type === "electricity");
+
+      if (water) setWaterRate(water.rate);
+      if (electric) setElectricRate(electric.rate);
+    } catch (err) {
+      console.error("Error fetching meter rates:", err);
+      showToast("โหลดราคาต่อหน่วยไม่สำเร็จ", "danger");
+    }
+  };
+
   useEffect(() => {
     fetchUsages();
+    fetchMeterRates();
   }, []);
 
   // ฟังก์ชันเมื่อสร้างหรือแก้ไข
@@ -83,15 +102,27 @@ export default function AdminUsagePage() {
     }
   };
 
-  // metrics (mock)
+  const now = new Date();
+  const currentMonth = now.getMonth();
+  const currentYear = now.getFullYear();
+
   const totalWater = usages
-    .filter((u) => u.type === "น้ำ")
+    .filter(
+      (u) =>
+        u.type === "น้ำ" &&
+        new Date(u.recordDate).getMonth() === currentMonth &&
+        new Date(u.recordDate).getFullYear() === currentYear
+    )
     .reduce((sum, u) => sum + u.unit, 0);
+
   const totalElectric = usages
-    .filter((u) => u.type === "ไฟฟ้า")
+    .filter(
+      (u) =>
+        u.type === "ไฟฟ้า" &&
+        new Date(u.recordDate).getMonth() === currentMonth &&
+        new Date(u.recordDate).getFullYear() === currentYear
+    )
     .reduce((sum, u) => sum + u.unit, 0);
-  const waterRate = 25.0;
-  const electricRate = 6.5;
 
   const columns = [
     { key: "meterId", label: "เลขรายการบันทึก" },
