@@ -16,7 +16,6 @@ export default function AdminUsagePage() {
 
   const toastRef = useRef(null);
 
-  // ✅ Toast function เหมือน payment page
   const showToast = (message, type = "success") => {
     const toastEl = toastRef.current;
     if (!toastEl) return;
@@ -283,6 +282,7 @@ export default function AdminUsagePage() {
         }}
         onSubmit={handleUsageSubmit}
         initialData={editData}
+        mode={editData ? "edit" : "create"}
       />
 
       <UsageSettingModal
@@ -295,7 +295,7 @@ export default function AdminUsagePage() {
         onToast={(msg, type) => showToast(msg, type)}
       />
 
-      {/* ✅ Bootstrap Toast Container */}
+      {/* Bootstrap Toast Container */}
       <div
         className="toast position-fixed top-0 end-0 m-3 text-white"
         role="alert"

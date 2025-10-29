@@ -92,7 +92,6 @@ export default function UsageFormModal({
     if (!validateForm()) return;
 
     try {
-      // แปลงประเภทให้ตรงกับ API
       const payload = {
         room: form.room,
         period: form.period,
@@ -101,12 +100,18 @@ export default function UsageFormModal({
         recordDate: form.recordDate,
       };
 
-      // ส่งข้อมูลไปยัง API
-      const res = await api.post("/meters", payload);
-      // console.log("สร้างข้อมูลสำเร็จ:", res.data);
+      if (isEdit && initialData?.meterId) {
+        //  กรณีแก้ไข
+        await api.put(`/meters/${initialData.meterId}`, payload);
+        // console.log(" แก้ไขข้อมูลสำเร็จ");
+      } else {
+        // กรณีสร้างใหม่
+        await api.post("/meters", payload);
+        // console.log("สร้างข้อมูลใหม่สำเร็จ");
+      }
 
-      if (onSubmit) onSubmit(); // refresh ตารางหลัก
-      onClose(); // ปิด modal
+      if (onSubmit) onSubmit();
+      onClose();
     } catch (err) {
       console.error("Error saving usage:", err);
       setError(err?.response?.data?.message || "ไม่สามารถบันทึกได้");
@@ -256,7 +261,7 @@ export default function UsageFormModal({
                   ยกเลิก
                 </button>
                 <button type="submit" className="btn btn-primary">
-                  {isEdit ? "บันทึกการแก้ไข" : "สร้าง"}
+                  {isEdit ? "บันทึก" : "สร้าง"}
                 </button>
               </div>
             </form>
