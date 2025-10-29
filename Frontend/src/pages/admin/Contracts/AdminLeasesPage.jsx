@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
 import StatCardBS from "../../../components/admin/StatCardBS";
 import TableBS from "../../../components/admin/TableBS";
 import LeaseFormModal from "./LeaseFormModal";
+import api from "../../../api/axiosConfig";
 
 export default function AdminLeasesPage() {
   const [leases, setLeases] = useState([]);
@@ -11,15 +11,16 @@ export default function AdminLeasesPage() {
   const [showContractModal, setShowContractModal] = useState(false);
 
   const baseURL = import.meta.env.VITE_API_BASE_URL;
-  console.log("BASE URL =", import.meta.env.VITE_API_BASE_URL);
 
-  console.log("Calling API:", `${baseURL}/contracts`);
   const fetchLeases = async () => {
     try {
-      const res = await axios.get(`${baseURL}/contracts`);
+      const res = await api.get("/contracts");
       const data = res.data;
       if (Array.isArray(data)) {
-        setLeases(data);
+        const sorted = data.sort(
+          (a, b) => new Date(b.endDate) - new Date(a.endDate)
+        );
+        setLeases(sorted);
       } else {
         console.error("Contracts API did not return an array:", data);
         setLeases([]);
@@ -202,8 +203,8 @@ export default function AdminLeasesPage() {
             mode="update"
             contract={selectedLease?.raw}
             onSubmit={async (payload) => {
-              await axios.put(
-                `${baseURL}/contracts/${selectedLease.raw.contractNum}`,
+              await api.put(
+                `/contracts/${selectedLease.raw.contractNum}`,
                 payload
               );
               fetchLeases();
@@ -216,8 +217,8 @@ export default function AdminLeasesPage() {
             onClose={() => setShowContractModal(false)}
             mode="create"
             onSubmit={async (payload) => {
-              console.log("Payload CREATE =", payload); // debug log
-              await axios.post(`${baseURL}/contracts`, payload);
+              // console.log("Payload CREATE =", payload); // debug log
+              await api.post(`/contracts`, payload);
               fetchLeases();
               setShowContractModal(false);
             }}

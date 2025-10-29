@@ -21,7 +21,12 @@ export default function AdminInvoicesPage() {
     setLoading(true);
     try {
       const res = await api.get("/invoices");
-      setInvoices(Array.isArray(res.data) ? res.data : res.data.invoices || []);
+      const data = Array.isArray(res.data) ? res.data : res.data.invoices || [];
+      const sorted = data.sort(
+        (a, b) => new Date(b.dueDate) - new Date(a.dueDate)
+      );
+
+      setInvoices(sorted);
     } catch (err) {
       console.error("Error fetching invoices:", err);
     } finally {
@@ -278,7 +283,7 @@ export default function AdminInvoicesPage() {
           mode="create"
           onSubmit={async (data) => {
             try {
-              await api.post("/invoices", data); 
+              await api.post("/invoices", data);
               await fetchInvoices();
               setCreatingInvoice(false);
             } catch (err) {

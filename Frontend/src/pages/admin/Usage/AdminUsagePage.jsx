@@ -45,7 +45,11 @@ export default function AdminUsagePage() {
             : u.type,
       }));
 
-      setUsages(mapped);
+      const sorted = mapped.sort(
+        (a, b) => new Date(b.recordDate) - new Date(a.recordDate)
+      );
+
+      setUsages(sorted);
     } catch (err) {
       console.error("Error fetching meter data:", err);
       showToast("โหลดข้อมูลการใช้น้ำ/ไฟฟ้าไม่สำเร็จ", "danger");
