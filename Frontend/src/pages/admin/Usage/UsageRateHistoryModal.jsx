@@ -11,8 +11,12 @@ export default function UsageRateHistoryModal({ open, onClose }) {
           const res = await api.get("/meter-rate");
           const data = Array.isArray(res.data) ? res.data : res.data.data || [];
 
+          const sorted = data.sort(
+            (a, b) => new Date(b.timestamp) - new Date(a.timestamp)
+          );
+
           // แปลงชื่อประเภท + เรียงเวลาจากใหม่ไปเก่า
-          const formatted = data
+          const formatted = sorted
             .map((item) => ({
               timestamp: new Date(item.timestamp).toLocaleString("th-TH", {
                 year: "numeric",
