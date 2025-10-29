@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import StatCardBS from "../../../components/admin/StatCardBS";
 import TableBS from "../../../components/admin/TableBS";
 import UsageFormModal from "./UsageFormModal";
@@ -11,13 +11,24 @@ export default function AdminUsagePage() {
   const [usageModalOpen, setUsageModalOpen] = useState(false);
   const [editData, setEditData] = useState(null);
   const [usageSettingOpen, setUsageSettingOpen] = useState(false);
-  const [toast, setToast] = useState({ show: false, message: "", type: "" });
   const [waterRate, setWaterRate] = useState(0);
   const [electricRate, setElectricRate] = useState(0);
 
+  const toastRef = useRef(null);
+
+  // ✅ Toast function เหมือน payment page
   const showToast = (message, type = "success") => {
-    setToast({ show: true, message, type });
-    setTimeout(() => setToast({ show: false, message: "", type: "" }), 3000);
+    const toastEl = toastRef.current;
+    if (!toastEl) return;
+
+    const toastBody = toastEl.querySelector(".toast-body");
+    toastBody.textContent = message;
+
+    toastEl.classList.remove("bg-success", "bg-danger");
+    toastEl.classList.add(type === "success" ? "bg-success" : "bg-danger");
+
+    const bsToast = new window.bootstrap.Toast(toastEl);
+    bsToast.show();
   };
 
   const fetchUsages = async () => {
@@ -25,7 +36,6 @@ export default function AdminUsagePage() {
       const res = await api.get("/meters");
       const data = Array.isArray(res.data) ? res.data : res.data.data;
 
-      // แปลงประเภทให้เป็นชื่อไทย
       const mapped = data.map((u) => ({
         ...u,
         type:
@@ -68,10 +78,9 @@ export default function AdminUsagePage() {
 
   // ฟังก์ชันเมื่อสร้างหรือแก้ไข
   const handleUsageSubmit = (payload) => {
-    // console.log("ข้อมูลที่บันทึก:", payload);
     setUsageModalOpen(false);
     setEditData(null);
-    fetchUsages(); //  reload table
+    fetchUsages();
     showToast("บันทึกข้อมูลสำเร็จ!", "success");
   };
 
@@ -88,9 +97,9 @@ export default function AdminUsagePage() {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
-      console.log(" อัปโหลดสำเร็จ:", res.data);
+      console.log("✅ อัปโหลดสำเร็จ:", res.data);
       showToast("นำเข้าไฟล์ CSV สำเร็จ!", "success");
-      fetchUsages(); //  refresh ตารางหลังอัปโหลด
+      fetchUsages();
     } catch (err) {
       console.error("❌ Error uploading CSV:", err);
       showToast(
@@ -98,7 +107,7 @@ export default function AdminUsagePage() {
         "danger"
       );
     } finally {
-      e.target.value = ""; // reset input เพื่อให้อัปโหลดไฟล์เดิมซ้ำได้
+      e.target.value = "";
     }
   };
 
@@ -279,27 +288,24 @@ export default function AdminUsagePage() {
       <UsageSettingModal
         open={usageSettingOpen}
         onClose={() => setUsageSettingOpen(false)}
+        onSaved={() => {
+          fetchMeterRates();
+          showToast("อัปเดตราคาต่อหน่วยเรียบร้อย!", "success");
+        }}
+        onToast={(msg, type) => showToast(msg, type)}
       />
 
-      {/* ===== Toast แจ้งผล ===== */}
-      {toast.show && (
-        <div
-          className={`toast align-items-center text-bg-${toast.type} border-0 show position-fixed top-0 end-0 m-3`}
-          role="alert"
-          aria-live="assertive"
-          aria-atomic="true"
-          style={{ zIndex: 1055 }}
-        >
-          <div className="d-flex">
-            <div className="toast-body">{toast.message}</div>
-            <button
-              type="button"
-              className="btn-close btn-close-white me-2 m-auto"
-              onClick={() => setToast({ show: false, message: "", type: "" })}
-            ></button>
-          </div>
-        </div>
-      )}
+      {/* ✅ Bootstrap Toast Container */}
+      <div
+        className="toast position-fixed top-0 end-0 m-3 text-white"
+        role="alert"
+        aria-live="assertive"
+        aria-atomic="true"
+        ref={toastRef}
+        style={{ zIndex: 2000 }}
+      >
+        <div className="toast-body">บันทึกข้อมูลสำเร็จ</div>
+      </div>
     </div>
   );
 }

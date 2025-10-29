@@ -2,13 +2,12 @@ import React, { useState, useEffect } from "react";
 import api from "../../../api/axiosConfig";
 import UsageRateHistoryModal from "./UsageRateHistoryModal";
 
-export default function UsageSettingModal({ open, onClose }) {
+export default function UsageSettingModal({ open, onClose, onSaved, onToast }) {
   const [waterRate, setWaterRate] = useState("");
   const [electricRate, setElectricRate] = useState("");
   const [waterDate, setWaterDate] = useState("");
   const [electricDate, setElectricDate] = useState("");
   const [historyOpen, setHistoryOpen] = useState(false);
-  
 
   // โหลดค่าปัจจุบันจาก backend
   useEffect(() => {
@@ -17,7 +16,6 @@ export default function UsageSettingModal({ open, onClose }) {
         const res = await api.get("/meter-rate/latest");
         const data = Array.isArray(res.data) ? res.data : res.data.data || [];
 
-        // หาค่าล่าสุดของน้ำและไฟตาม timestamp ล่าสุด
         const latestWater = data
           .filter((r) => r.type === "water")
           .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))[0];
@@ -49,21 +47,32 @@ export default function UsageSettingModal({ open, onClose }) {
         }
       } catch (err) {
         console.error("Error fetching meter rate:", err);
+        if (onToast) onToast("โหลดข้อมูลราคาต่อหน่วยไม่สำเร็จ", "danger");
       }
     };
 
     if (open) fetchRates();
   }, [open]);
 
-  // ฟังก์ชันบันทึก
+  // ✅ ฟังก์ชันบันทึก
   const handleSaveRate = async (type, rate) => {
     try {
       await api.post("/meter-rate", { type, rate: Number(rate) });
-      alert(`บันทึกราคา${type === "water" ? "น้ำ" : "ไฟ"}สำเร็จ`);
+
+      if (onToast)
+        onToast(`บันทึกราคา${type === "water" ? "น้ำ" : "ไฟ"}สำเร็จ!`, "success");
+
+      if (onSaved) onSaved();
       onClose(); // ปิด modal หลังบันทึก
     } catch (err) {
       console.error("Error saving rate:", err);
-      alert("เกิดข้อผิดพลาดในการบันทึกข้อมูล");
+      if (onToast)
+        onToast(
+          `เกิดข้อผิดพลาดในการบันทึกราคา${
+            type === "water" ? "น้ำ" : "ไฟ"
+          }`,
+          "danger"
+        );
     }
   };
 
