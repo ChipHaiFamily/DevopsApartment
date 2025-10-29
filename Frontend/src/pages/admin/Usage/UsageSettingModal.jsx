@@ -8,12 +8,13 @@ export default function UsageSettingModal({ open, onClose }) {
   const [waterDate, setWaterDate] = useState("");
   const [electricDate, setElectricDate] = useState("");
   const [historyOpen, setHistoryOpen] = useState(false);
+  
 
   // โหลดค่าปัจจุบันจาก backend
   useEffect(() => {
     const fetchRates = async () => {
       try {
-        const res = await api.get("/meter-rate");
+        const res = await api.get("/meter-rate/latest");
         const data = Array.isArray(res.data) ? res.data : res.data.data || [];
 
         // หาค่าล่าสุดของน้ำและไฟตาม timestamp ล่าสุด

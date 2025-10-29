@@ -29,9 +29,7 @@ export default function UsageRateHistoryModal({ open, onClose }) {
                   : item.type,
               rate: item.rate,
             }))
-            .sort(
-              (a, b) => new Date(b.timestamp) - new Date(a.timestamp)
-            );
+            .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
           setHistory(formatted);
         } catch (err) {
@@ -69,34 +67,38 @@ export default function UsageRateHistoryModal({ open, onClose }) {
                   ไม่พบข้อมูลประวัติการแก้ไข
                 </p>
               ) : (
-                <table className="table table-sm align-middle">
-                  <thead className="table">
-                    <tr>
-                      <th>วันเวลาแก้ไข</th>
-                      <th>ประเภท</th>
-                      <th className="text-end">ราคาต่อหน่วย (บาท)</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {history.map((item, index) => (
-                      <tr key={index}>
-                        <td>{item.timestamp}</td>
-                        <td>{item.type}</td>
-                        <td className="text-end">
-                          {item.rate?.toFixed(2) ?? "-"}
-                        </td>
+                <div
+                  style={{
+                    maxHeight: "300px", // สูงสุดประมาณ 6 แถว
+                    overflowY: "auto",
+                  }}
+                >
+                  <table className="table table-sm align-middle mb-0">
+                    <thead className="table">
+                      <tr>
+                        <th>วันเวลาแก้ไข</th>
+                        <th>ประเภท</th>
+                        <th className="text-end">ราคาต่อหน่วย (บาท)</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {history.map((item, index) => (
+                        <tr key={index}>
+                          <td>{item.timestamp}</td>
+                          <td>{item.type}</td>
+                          <td className="text-end">
+                            {item.rate?.toFixed(2) ?? "-"}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               )}
             </div>
 
             <div className="modal-footer">
-              <button
-                className="btn btn-outline-secondary"
-                onClick={onClose}
-              >
+              <button className="btn btn-outline-secondary" onClick={onClose}>
                 ปิด
               </button>
             </div>
