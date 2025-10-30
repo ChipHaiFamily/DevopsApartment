@@ -1,5 +1,9 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+import jsPDF from "jspdf";
+import html2canvas from "html2canvas";
+import ContractTemplate from "./ContractTemplate";
+import ReactDOM from "react-dom/client";
 
 export default function LeaseFormModal({
   open,
@@ -109,6 +113,44 @@ export default function LeaseFormModal({
   };
 
   // ========================== Handlers ==========================
+
+  const handleExportPDF = async () => {
+    try {
+      // สร้าง div ชั่วคราวเพื่อ render Template
+      const container = document.createElement("div");
+      container.style.position = "absolute";
+      container.style.left = "-9999px";
+      document.body.appendChild(container);
+
+      // render Template เข้าไป
+      const template = <ContractTemplate data={contract || form} />;
+      const root = ReactDOM.createRoot(container);
+      root.render(template);
+
+      // รอให้ render เสร็จ
+      await new Promise((r) => setTimeout(r, 300));
+
+      // แปลงเป็นภาพ
+      const canvas = await html2canvas(container, { scale: 2 });
+      const imgData = canvas.toDataURL("image/png");
+
+      // สร้าง PDF
+      const pdf = new jsPDF("p", "mm", "a4");
+      const imgProps = pdf.getImageProperties(imgData);
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+
+      pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
+      pdf.save(`Lease_${form.contractNum || "new"}.pdf`);
+
+      // ลบ container หลังใช้งาน
+      root.unmount();
+      document.body.removeChild(container);
+    } catch (err) {
+      console.error("PDF export error:", err);
+    }
+  };
+
   const handleChange = (e) => {
     const { name, value } = e.target;
 
@@ -391,6 +433,16 @@ export default function LeaseFormModal({
               <button className="btn btn-outline-secondary" onClick={onClose}>
                 {mode === "read" ? "ปิด" : "ยกเลิก"}
               </button>
+
+              {mode !== "create" && (
+                <button
+                  className="btn btn-outline-success"
+                  onClick={handleExportPDF}
+                >
+                  <i className="bi bi-file-earmark-pdf"></i> ส่งออก PDF
+                </button>
+              )}
+
               {mode !== "read" && (
                 <button className="btn btn-primary" onClick={handleSubmit}>
                   บันทึก
