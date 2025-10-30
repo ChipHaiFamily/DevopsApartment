@@ -4,12 +4,14 @@ import com.example.apartmentmanagement.dto.InvoiceDetailDto;
 import com.example.apartmentmanagement.dto.InvoiceUpdateDTO;
 import com.example.apartmentmanagement.exception.ResourceNotFoundException;
 import com.example.apartmentmanagement.model.*;
+import com.example.apartmentmanagement.repository.InterestRateRepository;
 import com.example.apartmentmanagement.repository.InvoiceRepository;
 import com.example.apartmentmanagement.repository.TenantRepository;
 import lombok.*;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -19,6 +21,7 @@ import java.util.stream.Collectors;
 public class InvoiceService {
     private final InvoiceRepository repository;
     private final TenantRepository tenantRepository;
+    private final InterestRateRepository interestRateRepository;
     private final IdGenerationService idGenerationService;
 
     public List<Invoice> findAll() { return repository.findAll(); }
@@ -107,7 +110,61 @@ public class InvoiceService {
             invoice.setStatus("Partial");
         }
 
+        applyLateInterest(invoice);
+
         return repository.save(invoice);
+    }
+
+    private void applyLateInterest(Invoice invoice) {
+        LocalDate today = LocalDate.now();
+        LocalDate dueDate = invoice.getDueDate();
+
+        if (dueDate == null || !today.isAfter(dueDate)) {
+            return;
+        }
+
+        long daysLate = java.time.temporal.ChronoUnit.DAYS.between(dueDate, today);
+
+        BigDecimal totalPaid = invoice.getPayments().stream()
+                .map(Payment::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal remaining = invoice.getTotalAmount().subtract(totalPaid);
+        if (remaining.compareTo(BigDecimal.ZERO) <= 0) {
+            return;
+        }
+
+        String rateType = invoice.getStatus().equalsIgnoreCase("Partial") ? "partial" : "unpaid";
+
+        InterestRate rate = interestRateRepository.findTopByTypeOrderByTimestampDesc(rateType);
+        if (rate == null) {
+            return;
+        }
+
+        BigDecimal interestRatePerDay = BigDecimal.valueOf(rate.getPercentage() / 100.0 / 30.0);
+        BigDecimal interestAmount = remaining
+                .multiply(interestRatePerDay.multiply(BigDecimal.valueOf(daysLate)))
+                .setScale(2, RoundingMode.HALF_UP);
+
+        Optional<InvoiceItem> existingInterest = invoice.getItems().stream()
+                .filter(i -> i.getDescription().equalsIgnoreCase("Interest"))
+                .findFirst();
+
+        if (existingInterest.isPresent()) {
+            existingInterest.get().setAmount(interestAmount);
+        } else {
+            InvoiceItem interestItem = new InvoiceItem();
+            interestItem.setDescription("Interest");
+            interestItem.setAmount(interestAmount);
+            interestItem.setInvoice(invoice);
+            invoice.getItems().add(interestItem);
+        }
+
+        BigDecimal newTotal = invoice.getItems().stream()
+                .map(InvoiceItem::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        invoice.setTotalAmount(newTotal);
     }
 
     public InvoiceDetailDto toInvoiceDetailDto(Invoice invoice) {
