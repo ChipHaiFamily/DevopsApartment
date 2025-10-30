@@ -13,9 +13,10 @@ describe('Admin Dashboard UI snapshot', () => {
     cy.contains('ผู้เช่า').should('be.visible');
     cy.contains('สัญญาเช่า').should('be.visible');
     cy.contains('ใบแจ้งหนี้').should('be.visible');
+    cy.contains('น้ำ-ไฟ').should('be.visible');
     cy.contains('ซ่อมบำรุง').should('be.visible');
+    cy.contains('คลัง').should('be.visible');
     cy.contains('รายงาน').should('be.visible');
-    cy.contains('ตั้งค่า').should('be.visible');
   });
 
   it('shows top 4 metric cards', () => {
