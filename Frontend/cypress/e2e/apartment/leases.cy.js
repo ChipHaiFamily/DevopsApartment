@@ -13,7 +13,7 @@ const safeCloseModal = (alias) => {
   cy.get('.modal.fade.show,[aria-modal="true"],.modal.d-block:visible').should('not.exist');
 };
 
-describe('🧾 Admin Leases Page', () => {
+describe(' Admin Leases Page', () => {
   beforeEach(() => {
     cy.loginPreset();
     cy.visit('/admin/leases');
