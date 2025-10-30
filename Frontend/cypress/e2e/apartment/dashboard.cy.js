@@ -20,9 +20,11 @@ describe('Admin Dashboard', () => {
       'ผู้เช่า',
       'สัญญาเช่า',
       'ใบแจ้งหนี้',
+      'การชำระเงิน',
+      'น้ำ-ไฟ',
       'ซ่อมบำรุง',
+      'คลัง',
       'รายงาน',
-      'ตั้งค่า',
     ].forEach(txt => cy.contains(txt).should('be.visible'));
 
     // cards widgets 

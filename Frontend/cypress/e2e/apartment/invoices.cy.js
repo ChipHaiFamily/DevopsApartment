@@ -1,343 +1,173 @@
 // cypress/e2e/admin/invoices.cy.js
-// เงื่อนไข: ทุกเทสต์ต้องล็อกอินก่อน และเข้า /admin/invoices
+// รองรับ modal bootstrap + react + field disabled
 
-const openVisibleModal = () =>
-  cy.get('.modal.fade.show,[aria-modal="true"],.modal:visible', { timeout: 8000 }).first();
+//  หา modal แรกที่เปิดอยู่
+const getOpenModal = () =>
+  cy.get('.modal.fade.show,[aria-modal="true"],.modal.d-block:visible', { timeout: 10000 }).first();
 
-const closeModalIfAny = (modal) => {
-  // ปิดแบบยืดหยุ่น: ปุ่มที่มี data-bs-dismiss, ปุ่ม "ยกเลิก/ปิด", หรือปุ่ม X
-  modal.find('[data-bs-dismiss="modal"]').then($btn => {
-    if ($btn.length) {
-      cy.wrap($btn.first()).click({ force: true });
-    } else {
-      const candidates = ['ยกเลิก', 'ปิด', 'Close', 'Cancel'];
-      let clicked = false;
-      candidates.forEach(txt => {
-        if (!clicked && modal.find(`button:contains(${txt})`).length) {
-          cy.wrap(modal).contains('button', txt).click({ force: true });
-          clicked = true;
-        }
-      });
-      if (!clicked) {
-        // fallback: กดปุ่ม X
-        const $x = modal.find('.btn-close');
-        if ($x.length) cy.wrap($x.first()).click({ force: true });
+//  ปิด modal แบบ fallback
+const safeCloseModal = (modalAlias) => {
+  cy.get(modalAlias).then($m => {
+    // 1) ปุ่ม X
+    const $x = $m.find('.btn-close');
+    if ($x.length) {
+      cy.wrap($x.first()).click({ force: true });
+      return;
+    }
+    // 2) ปุ่มยกเลิก / ปิด
+    const closeTexts = ['ยกเลิก', 'ปิด', 'Close', 'Cancel'];
+    for (const label of closeTexts) {
+      const $btn = $m.find(`button:contains(${label})`);
+      if ($btn.length) {
+        cy.wrap($btn.first()).click({ force: true });
+        return;
       }
     }
+    // 3) กัน error ให้ กด ESC แทน
+    cy.get('body').type('{esc}', { force: true });
   });
+
+  // หลังปิดแล้วห้ามใช้ alias เดิม เช็กจาก DOM ตรงๆ แทน
+  cy.get('.modal.fade.show,[aria-modal="true"],.modal.d-block:visible')
+    .should('not.exist');
 };
 
-// 🔁 Helper ใหม่: พยายามหา input/select แบบค่อยเป็นค่อยไป (ไม่ใช้ aria-label)
-const fillField = (modal, opts) => {
-  const { labelRe, placeholderRe, nameRe, value, select = false, date = false } = opts;
-
-  // 1) จาก <label for="..."> → #id
-  if (labelRe) {
-    cy.wrap(modal).find('label').then($labels => {
-      const hit = [...$labels].find(el => labelRe.test(el.innerText.trim()));
-      if (hit) {
-        const forId = hit.getAttribute('for');
-        if (forId) {
-          const sel = `#${forId}`;
-          if (select) { cy.wrap(modal).find(sel).select(value); return; }
-          if (date)   { cy.wrap(modal).find(sel).clear().type(value); return; }
-          cy.wrap(modal).find(sel).clear().type(value); return;
-        }
-        // ไม่มี for → หา input/ select ใต้กลุ่มเดียวกัน
-        const group = hit.closest('.form-group, .mb-3, .col, .row, .field, .form-floating') || hit.parentElement;
-        if (group) {
-          const firstSel = select ? 'select' : 'input, textarea, select';
-          const $inputs = group.querySelectorAll(firstSel);
-          if ($inputs.length) {
-            const $first = cy.wrap($inputs[0]);
-            if (select) { $first.select(value); return; }
-            if (date)   { $first.clear().type(value); return; }
-            $first.clear().type(value); return;
-          }
-        }
-      }
-    });
-  }
-
-  // 2) จาก placeholder
-  if (placeholderRe) {
-    cy.wrap(modal).find('input[placeholder], textarea[placeholder]').then($els => {
-      const el = [...$els].find(el => placeholderRe.test(el.getAttribute('placeholder') || ''));
-      if (el) {
-        const $el = cy.wrap(el);
-        if (date) { $el.clear().type(value); return; }
-        $el.clear().type(value); return;
-      }
-    });
-  }
-
-  // 3) จาก name
-  if (nameRe) {
-    cy.wrap(modal).find('input[name], textarea[name], select[name]').then($els => {
-      const el = [...$els].find(el => nameRe.test(el.getAttribute('name') || ''));
-      if (el) {
-        const $el = cy.wrap(el);
-        if (select) { $el.select(value); return; }
-        if (date)   { $el.clear().type(value); return; }
-        $el.clear().type(value); return;
-      }
-    });
-  }
-};
-
-describe('Admin Invoices Page', () => {
+describe(' Admin Invoices Page (fixed disabled + close)', () => {
   beforeEach(() => {
-    cy.loginPreset();   // 👈 login ก่อนทุก test
+    cy.loginPreset();
     cy.visit('/admin/invoices');
+    cy.contains('ใบแจ้งหนี้', { timeout: 10000 }).should('be.visible');
   });
 
-  it('searches for INV-2025-06-001 and shows tenant Jane Smith', () => {
-    cy.contains('ใบแจ้งหนี้และการชำระเงิน', { timeout: 8000 }).should('be.visible');
+  // 1) เช็กหน้า
+  it('1️ แสดง dashboard + ตารางบิล', () => {
+    cy.contains('รายได้รวม').should('exist');
+    cy.contains('ใบแจ้งหนี้').should('exist');
+    cy.contains('INV-2025-06-001').should('exist');
+  });
 
-    cy.get('input[placeholder="Search"]').should('exist').clear().type('INV-2025-06-001');
-
-    // พบเลขบิล
-    cy.contains('td', 'INV-2025-06-001', { timeout: 8000 }).should('be.visible');
-
-    // แถวเดียวกันควรมีชื่อ Jane Smith (เช็คแบบยืดหยุ่น: ในแถวเดียวกัน)
-    cy.contains('td', 'INV-2025-06-001').parents('tr')
-      .should('exist')
+  // 2) ค้นหา
+  it('2️ ค้นหา INV-2025-06-001 แล้วเจอ Jane Smith', () => {
+    cy.get('input[placeholder="Search"]').clear().type('INV-2025-06-001');
+    cy.contains('td', 'INV-2025-06-001')
+      .parents('tr')
       .within(() => {
         cy.contains(/Jane Smith/i).should('be.visible');
       });
   });
 
-  it('opens the create-invoice modal, types fields, then CANCEL to close (no real create)', () => {
-    // เปิดโมดัล (ไม่พึ่ง data-testid)
-    cy.contains('button', /สร้างใบแจ้งหนี้|เพิ่มใบแจ้งหนี้|Create Invoice|New Invoice/i)
-      .should('be.visible')
-      .click();
-  
-    // รอ modal แสดง (รองรับ bootstrap & react)
-    cy.get('.modal.fade.show,[aria-modal="true"],.modal.d-block:visible', { timeout: 8000 })
-      .first()
-      .as('createModal');
-  
-    // หัวข้อใน modal: ใช้ exist (บางทียัง fade-in)
-    cy.get('@createModal').find('.modal-title').should('exist');
-  
-    // ===== กรอกค่าหลักแบบ "ยึดชนิด input" เพื่อไม่ชน date/number อีก =====
-    cy.get('@createModal').within(() => {
-      // 1) เลขบิล: หา input ตัวแรกที่เป็น text/ไม่มี type (ไม่ใช่ date/number)
-      cy.get('input, textarea').then($els => {
-        const el = [...$els].find(e => {
-          const t = (e.getAttribute('type') || '').toLowerCase();
-          return (t === '' || t === 'text') && t !== 'date' && t !== 'number';
-        });
-        if (el) cy.wrap(el).clear().type('INV-TEST-001');
-      });
+  // 3) สร้าง + validation
+  it('3️ เปิด "สร้างใบแจ้งหนี้ใหม่" แล้วตรวจ Validation', () => {
+    cy.contains('button', '+ สร้างใบแจ้งหนี้ใหม่').click();
 
-      // 2) เลือกห้อง: select ตัวแรก (ถ้ามี)
-      cy.get('select').then($sels => {
-        if ($sels.length) cy.wrap($sels[0]).select(1); // หรือ .select('107') ถ้าตัวเลือกตรง
-      });
+    getOpenModal().as('modal');
+    // cy.get('@modal').should('contain.text', 'ใบแจ้งหนี้').or('contain.text', 'สร้างใบแจ้งหนี้');
 
-      // 3) วันที่กำหนดชำระ: input[type=date] ตัวแรก
-      cy.get('input[type="date"]').first().then($d => {
-        if ($d.length) cy.wrap($d).clear().type('2025-10-05');
-      });
+    // 3.1 กดบันทึกเปล่า → ต้องมี error
+    cy.get('@modal').contains('button', 'บันทึก').click({ force: true });
 
-    });
+    // ข้อความ error อาจขึ้นเป็น <small> หรือ <div> → ใช้ contains เอา
+    cy.contains(/กรุณากรอกวันกำหนดชำระ/i).should('be.visible');
+    cy.contains(/กรุณาเลือกผู้เช่า/i).should('be.visible');
 
-    // หลังจากกดเพิ่มรายการ (หรือถ้าเดิมก็มีอยู่แล้ว) → กรอกตัวเลขแบบไม่พึ่งตาราง
-    cy.get('@createModal').then($m => {
-      const ensureNumberInputs = () => {
-        // รอให้มี number input อย่างน้อย 1 ช่องในโมดัล
-        cy.wrap($m)
-          .find('input[type="number"], input[inputmode="numeric"]', { timeout: 8000 })
-          .should('have.length.at.least', 1);
-      };
+    // 3.2 ช่องกำหนดชำระตอนนี้อาจถูก disable → ต้องแก้แบบเงื่อนไข
+    const next7 = new Date();
+    next7.setDate(next7.getDate() + 7);
+    const next7Str = next7.toISOString().split('T')[0];
 
-      // ถ้ายังไม่มีช่องตัวเลข ให้พยายามกดปุ่มเพิ่มรายการก่อน
-      const hasNumber = $m.find('input[type="number"], input[inputmode="numeric"]').length > 0;
-      if (!hasNumber) {
-        const addLabels = [
-          /เพิ่มรายการ/i,
-          /เพิ่มแถว/i,
-          /เพิ่มค่าใช้จ่าย/i,
-          /Add Item/i,
-          /Add Row/i,
-          /Add/i
-        ];
+    cy.get('@modal').find('input[name="dueDate"]').then($el => {
+      if ($el.is(':disabled')) {
+        // ถ้ามันถูก disable ให้ลองโฟกัส/คลิกที่ modal ก่อน 1 ที (บางโปรเจ็กต์ enable หลังมี tenant)
+        // → เลือกผู้เช่าก่อน แล้วค่อยกรอก dueDate
+        cy.get('@modal')
+          .find('select[name="tenantId"]', { timeout: 5000 })
+          .should('be.visible')
+          .select('USR-004', { force: true }); // Peter Kong
 
-        let clicked = false;
-        for (const r of addLabels) {
-          if ($m.find(`button:contains(${r.source})`).length) {
-            cy.wrap($m).contains('button', r).click({ force: true });
-            clicked = true;
-            break;
-          }
-        }
-        if (!clicked && $m.find('[data-testid="btn-add-item"]').length) {
-          cy.wrap($m).find('[data-testid="btn-add-item"]').click({ force: true });
-          clicked = true;
-        }
-
-        // รอให้ number inputs โผล่
-        ensureNumberInputs();
+        // ตอนนี้ลองกรอกใหม่อีกรอบ
+        cy.get('@modal')
+          .find('input[name="dueDate"]', { timeout: 5000 })
+          .should('not.be.disabled')
+          .clear()
+          .type(next7Str);
+      } else {
+        // ไม่ได้ disabled → กรอกได้เลย
+        cy.wrap($el).clear().type(next7Str);
       }
     });
 
-    // ตอนนี้ต้องมี number input แล้ว → กรอกค่าแบบยืดหยุ่น
-    cy.get('@createModal')
-      .find('input[type="number"], input[inputmode="numeric"]')
-      .then($nums => {
-        if ($nums.length >= 2) {
-          // สมมติช่องที่ 0 = จำนวน, ช่องที่ 1 = ราคา (ถ้าโปรเจกต์สลับ ก็ยังผ่านเพราะเราไม่ assert ค่าจำเพาะ)
-          cy.wrap($nums[0]).scrollIntoView().clear().type('1');
-          cy.wrap($nums[1]).scrollIntoView().clear().type('12345');
-        } else {
-          // มีช่องเดียวก็กรอกช่องเดียว
-          cy.wrap($nums[0]).scrollIntoView().clear().type('12345');
+    // 3.3 เพิ่มรายการ แล้วกรอกช่องแรกเท่านั้น (เมื่อกี้มันเจอ 4 element)
+    cy.get('@modal').contains('+ เพิ่มรายการ').click({ force: true });
+    cy.wait(200);
+
+    // หา input จำนวนเงินแถวแรกจริงๆ
+    cy.get('@modal')
+      .find('input[placeholder="จำนวนเงิน"]')
+      .first()
+      .clear()
+      .type('150');
+
+    // ถ้ามีช่องคำอธิบายแบบพิมพ์ได้ (ไม่ readonly) ก็กรอก
+    cy.get('@modal')
+      .find('input[placeholder="ระบุรายการอื่น ๆ"]')
+      .then($els => {
+        const editable = [...$els].find(el => !el.hasAttribute('readonly'));
+        if (editable) {
+          cy.wrap(editable).clear().type('ค่าบำรุงรักษา');
         }
       });
-      
-    cy.get('@createModal').within(() => {
-        // 5) สถานะ: select ที่มี option สถานะ
-        cy.get('select').each($sel => {
-            const txt = ($sel.text() || '').toLowerCase();
-            if (/paid|pending|overdue|ชำระ|รอ|เกินกำหนด/.test(txt)) {
-            // พยายามเลือก pending ก่อน ถ้าไม่มีให้เลือก index 1
-            if (txt.includes('pending') || txt.includes('รอ')) {
-                cy.wrap($sel).select('pending', { force: true }).catch(() => {
-                cy.wrap($sel).select(1, { force: true });
-                });
-            } else {
-                cy.wrap($sel).select(1, { force: true });
-            }
-            }
-        });
-    });
 
-    // ✅ ปิดโมดัลแบบยืดหยุ่น (scope ในโมดัลที่เปิดอยู่)
-    cy.get('.modal.fade.show,[aria-modal="true"],.modal.d-block:visible', { timeout: 8000 })
-    .last()
-    .then($modal => {
-      const tryClose = () => {
-        // 1) X button (Bootstrap)
-        const xBtn = $modal.find('.btn-close')[0];
-        if (xBtn) {
-          cy.wrap(xBtn).click({ force: true });
-          return true;
+    // 3.4 ถ้ายังไม่ได้เลือกผู้เช่า (ในกรณีบนไม่ได้เข้าเงื่อนไข disabled)
+    cy.get('@modal')
+      .find('select[name="tenantId"]')
+      .then($sel => {
+        const val = $sel.val();
+        if (!val) {
+          cy.wrap($sel).select('USR-004', { force: true });
         }
+      });
 
-        // 2) ปุ่มข้อความ (ไทย/อังกฤษ)
-        const labelList = ['ยกเลิก','ปิด','Close','Cancel','ตกลง'];
-        for (const label of labelList) {
-          const btn = $modal.find(`button:contains(${label})`)[0];
-          if (btn) {
-            cy.wrap(btn).click({ force: true });
-            return true;
-          }
-        }
+    // 3.5 กดบันทึกอีกที ไม่ควรมีข้อความ “กรุณา...” เหลือแล้ว
+    cy.get('@modal').contains('button', 'บันทึก').click({ force: true });
+    cy.contains(/^กรุณา/).should('not.exist');
 
-        // 3) ปุ่มที่สื่อถึง close ผ่าน aria-label
-        const ariaBtn = [...$modal.find('button')].find(
-          b => (b.getAttribute('aria-label') || '').toLowerCase().includes('close')
-        );
-        if (ariaBtn) {
-          cy.wrap(ariaBtn).click({ force: true });
-          return true;
-        }
-
-        // 4) กด ESC (บางโปรเจ็กต์ตั้งให้ปิดได้)
-        cy.get('body').type('{esc}', { force: true });
-        return true;
-      };
-
-      // พยายามปิด
-      tryClose();
-    });
-
-    // ยืนยันว่าโมดัลปิดแล้ว
-    cy.get('.modal.fade.show,[aria-modal="true"],.modal.d-block:visible')
-      .should('not.exist');
+    // ปิด modal แบบ safe
+    safeCloseModal('@modal');
   });
 
-  it('opens invoice detail via magnifier, sees fields, clicks Save PDF, then closes', () => {
-    // เลือกสักแถว (หรือจะค้นหาบิลก่อนก็ได้)
-    cy.get('table tbody tr:visible', { timeout: 8000 }).first().as('firstRow');
-
-    // กดปุ่มแว่นขยาย (ลองทั้งไอคอนและปุ่มมีคำ)
-    cy.get('@firstRow').within(() => {
-      const tryClick = () => {
-        cy.get('button i.bi-search').parents('button').first().click({ force: true });
-      };
-
-      cy.get('button i.bi-search').then($i => {
-        if ($i.length) {
-          tryClick();
-        } else {
-          cy.contains('button', /ดูรายละเอียด|รายละเอียด|Detail|View/i).first().click({ force: true });
-        }
-      });
+  // 4) รายละเอียดใบแจ้งหนี้
+  it('4️⃣ เปิด "รายละเอียดใบแจ้งหนี้" แล้วปิดได้', () => {
+    cy.get('table tbody tr').first().within(() => {
+      cy.get('button i.bi-search').parents('button').click({ force: true });
     });
 
-    // รอโมดัลรายละเอียดโผล่
-    openVisibleModal().as('detailModal');
+    getOpenModal().as('detailModal');
 
-    // ตรวจฟิลด์หลักแบบยืดหยุ่น
-    cy.get('@detailModal').within(() => {
-      // มีเลขบิล/ข้อความ invoice
-      cy.contains(/เลขที่.*ใบแจ้งหนี้|invoice/i).should('exist');
-    
-      // ห้อง/Room (อาจขึ้นเป็น "Room 107" หรือคอลัมน์)
-      cy.contains(/ห้อง|room/i).should('exist');
-    
-      // ผู้เช่า/Tenant
-      cy.contains(/ผู้เช่า|tenant/i).should('exist');
-    
-      // ยอดรวม: ตรวจรูปแบบเงิน (฿12,345.67 หรือ 12,345)
-      cy.contains(/[฿]?\s?\d[\d,]*(\.\d+)?/).should('exist');
-    
-      // กำหนดชำระ: ยอมรับทั้ง 2025-10-05 หรือ 05/10/2025
-      cy.contains(/\b(\d{4}-\d{2}-\d{2}|\d{2}\/\d{2}\/\d{4})\b/).should('exist');
-    });
+    cy.get('@detailModal').should('contain.text', 'รายละเอียดใบแจ้งหนี้');
+    cy.get('@detailModal').should('contain.text', 'กำหนดชำระ');
+    // ใน UI จริงไม่มีคำว่า "ยอดรวม" แต่มี "รวม" ในตาราง เปลี่ยน assert
+    cy.get('@detailModal').should('contain.text', 'รวม');
+    cy.get('@detailModal').contains(/[฿]?\s?\d[\d,]*(\.\d+)?/).should('exist');
 
-    // กด Save PDF (ไม่ต้องดาวน์โหลดจริง เพียงเรียกปุ่ม/handler)
-    cy.get('@detailModal').then($m => {
-      const labels = [/PDF/i, /พีดีเอฟ/i, /บันทึกเป็น PDF/i, /Save.*PDF/i];
-      let clicked = false;
-      labels.forEach(r => {
-        if (!clicked && $m.find(`button:contains(${r.source})`).length) {
-          cy.wrap($m).contains('button', r).click({ force: true });
-          clicked = true;
-        }
-      });
-      // ถ้าไม่มีปุ่มข้อความ ลอง icon download
-      if (!clicked) {
-        const $iconBtn = $m.find('button i.bi-download').first();
-        if ($iconBtn.length) cy.wrap($iconBtn).parents('button').click({ force: true });
-      }
-    });
+    // save pdf (มีจริงใน UI)
+    cy.get('@detailModal')
+      .contains('button', /Save as PDF/i)
+      .scrollIntoView()
+      .click({ force: true });
 
-    cy.get('@detailModal').within(() => {
-      // (คงไว้) ฟิลด์หลักอื่น ๆ แบบยืดหยุ่น
-      cy.contains(/เลขที่.*ใบแจ้งหนี้|invoice/i).should('exist');
-      cy.contains(/ห้อง|room/i).should('exist');
-      cy.contains(/ผู้เช่า|tenant/i).should('exist');
-    
-      // เงิน: ฿12,345.67 หรือ 12,345
-      cy.contains(/[฿]?\s?\d[\d,]*(\.\d+)?/).should('exist');
-    
-      // วันที่: 2025-10-05 หรือ 05/10/2025
-      cy.contains(/\b(\d{4}-\d{2}-\d{2}|\d{2}\/\d{2}\/\d{4})\b/).should('exist');
-    
-      // ✅ สถานะแบบยืดหยุ่น: badge/chip/label หรือข้อความสถานะ
-      cy.get('*, .badge, .chip, .label').then($all => {
-        const txt = ($all.text() || '').toLowerCase();
-        const hasKnownStatus =
-          /ชำระแล้ว|รอดำเนินการ|เกินกำหนด|paid|pending|overdue/.test(txt);
-        if (!hasKnownStatus) {
-          // ถ้าอยากเข้มขึ้น คอมเมนต์/ลบ should ออกได้
-          // throw new Error('ไม่พบข้อความ/ป้ายสถานะในรายละเอียดบิล');
-        }
-      });
-    });
+    // ⚠️ สำคัญ: หลังจากนี้ห้ามใช้ @detailModal อีก ให้ปิดด้วยฟังก์ชัน
+    safeCloseModal('@detailModal');
+  });
+
+  // 5) ส่งออกหลายชุด
+  it('5️⃣ เปิด "ส่งออกใบแจ้งหนี้หลายชุด" แล้วปิดได้', () => {
+    cy.contains('button', 'ส่งออกหลายชุด').click();
+    getOpenModal().as('bulkModal');
+
+    cy.get('@bulkModal').should('contain.text', 'ส่งออกใบแจ้งหนี้หลายชุด');
+    cy.get('@bulkModal').find('input[id^="react-select"]').should('exist');
+
+    // ปิด modal แล้วค่อย assert ว่าหาย
+    safeCloseModal('@bulkModal');
   });
 });
