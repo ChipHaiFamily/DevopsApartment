@@ -40,7 +40,8 @@ public class MeterController {
                 obj.getRoom(),
                 obj.getType(),
                 obj.getUnit(),
-                obj.getRecordDate()
+                obj.getRecordDate(),
+                obj.getPeriod()
         );
         return ResponseEntity.ok(meter);
     }

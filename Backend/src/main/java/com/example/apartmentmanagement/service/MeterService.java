@@ -25,9 +25,11 @@ public class MeterService {
     public List<Meter> getAllMeters() {
         return repository.findAll();
     }
-
-    public Meter addMeter(String room, String type, int unit, LocalDate recordDate) {
-        String period = recordDate.getYear() + "-" + String.format("%02d", recordDate.getMonthValue());
+    // TODO
+    public Meter addMeter(String room, String type, int unit, LocalDate recordDate, String period) {
+        if (period == null || period.isBlank()) {
+            period = recordDate.getYear() + "-" + String.format("%02d", recordDate.getMonthValue());
+        }
 
         Meter lastMeter = repository.findTopByPeriodAndRoomOrderByMeterIdDesc(period, room);
         String lastId = lastMeter != null ? lastMeter.getMeterId() : null;
