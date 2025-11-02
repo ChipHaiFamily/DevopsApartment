@@ -33,7 +33,7 @@ const safeCloseModal = (modalAlias) => {
 };
 
 describe(' Admin Invoices Page (fixed disabled + close)', () => {
-  beforeEach(() => {
+  beforeEach(() => { 
     cy.loginPreset();
     cy.visit('/admin/invoices');
     cy.contains('ใบแจ้งหนี้', { timeout: 10000 }).should('be.visible');
