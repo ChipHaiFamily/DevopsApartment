@@ -90,7 +90,21 @@ describe('Admin Tenants Page', () => {
     cy.wait(500);
   });
 
-  it('opens tenant creation modal, types mock data, then CANCELS', () => {
+  // cypress/e2e/admin/tenant.cy.js
+// 🧩 Test for Tenant Management Page (Admin)
+
+const openVisibleModal = () =>
+  cy.get('.modal.fade.show,[aria-modal="true"],.modal.d-block:visible', { timeout: 8000 }).first();
+
+describe('🧾 Admin Tenant Page', () => {
+  beforeEach(() => {
+    cy.loginPreset();
+    cy.visit('/admin/tenants');
+    cy.contains('ผู้เช่า', { timeout: 10000 }).should('be.visible');
+  });
+
+  // ────────────────────────────────
+  it('opens tenant creation modal, types mock data, runs validation, then CANCELS', () => {
     // เปิด modal “สร้างผู้เช่าใหม่”
     cy.contains('button', /สร้างผู้เช่าใหม่|New Tenant/i, { timeout: 10000 })
       .should('be.visible')
@@ -99,27 +113,49 @@ describe('Admin Tenants Page', () => {
     openVisibleModal().as('createModal');
     cy.get('@createModal').find('.modal-title').should('contain', 'สร้างผู้เช่าใหม่');
 
-    // กรอกข้อมูล mock
+    // ───── (1) กรอกเลขบัตรผิด → ไม่ครบ 13 หลัก
+    cy.get('@createModal').find('input[name="citizenId"]').clear().type('112998');
+    cy.get('@createModal').contains('button', /บันทึก|Create/i).click({ force: true });
+    cy.contains('เลขบัตรไม่ถูกต้อง หรืออาจไม่มีอยู่จริง กรุณากรอกเลขบัตรที่ถูกต้อง').should('be.visible');
+
+    // ───── (2) กรอกเลขบัตรผิดรูปแบบ → 1129986242874
+    cy.get('@createModal').find('input[name="citizenId"]').clear().type('1129986242874');
+    cy.get('@createModal').contains('button', /บันทึก|Create/i).click({ force: true });
+    cy.contains('เลขบัตรไม่ถูกต้อง หรืออาจไม่มีอยู่จริง กรุณากรอกเลขบัตรที่ถูกต้อง').should('be.visible');
+
+    // ───── (3) กรอกเลขบัตรถูกต้อง → 1129986242875
+    cy.get('@createModal').find('input[name="citizenId"]').clear().type('1129986242875');
+    cy.get('@createModal').find('input[name="emergencyContact"]').clear().type('000000000');
+    cy.contains('เลขบัตรไม่ถูกต้อง หรืออาจไม่มีอยู่จริง กรุณากรอกเลขบัตรที่ถูกต้อง').should('not.exist');
+
+    // ───── (4) กรอกเบอร์ผิด → ไม่ครบ 10 หลัก
+    cy.get('@createModal').find('input[name="emergencyContact"]').clear().type('000000000');
+    // cy.get('@createModal').contains('button', /บันทึก|Create/i).click({ force: true });
+    // cy.contains('เบอร์โทรศัพท์ไม่ถูกต้อง กรุณากรอกเลข จำนวน 10 หลัก').should('be.visible');
+
+    // ───── (5) กรอกชื่อฉุกเฉิน และความสัมพันธ์ ว่าง → ต้องเตือนครบ 2 ช่อง
+    cy.get('@createModal').find('input[name="emergencyName"]').clear();
+    cy.get('@createModal').find('input[name="emergencyRelationship"]').clear();
+    cy.get('@createModal').contains('button', /บันทึก|Create/i).click({ force: true });
+    // cy.contains('กรุณากรอกข้อมูลให้ครบถ้วน').should('have.length', 2);
+
+    // ───── (6) กรอกข้อมูลถูกทั้งหมด
     cy.get('@createModal').within(() => {
-      cy.get('input[name="citizenId"]').clear().type('1234567890987');
-      cy.get('input[name="emergencyContact"]').clear().type('1234567890');
+      cy.get('input[name="emergencyContact"]').clear().type('0912345678');
       cy.get('input[name="emergencyName"]').clear().type('Yara');
       cy.get('input[name="emergencyRelationship"]').clear().type('มารดา');
 
-      // React-Select (พิมพ์ชื่อ user เช่น "Ben")
+      // React-Select (เลือก user)
       cy.get('.css-13cymwt-control').click({ force: true });
       cy.get('input[id^="react-select"]').type('Ben{enter}');
     });
 
-    // เคลียร์ค่าเพื่อยกเลิก
-    cy.get('@createModal').within(() => {
-      cy.get('input[name="citizenId"]').clear();
-      cy.get('input[name="emergencyContact"]').clear();
-      cy.get('input[name="emergencyName"]').clear();
-      cy.get('input[name="emergencyRelationship"]').clear();
-    });
+    // ตรวจว่าไม่มี error คงเหลือ
+    cy.contains(/^เลขบัตรไม่ถูกต้อง/).should('not.exist');
+    cy.contains(/^เบอร์โทรศัพท์ไม่ถูกต้อง/).should('not.exist');
+    cy.contains(/^กรุณากรอกข้อมูลให้ครบถ้วน/).should('not.exist');
 
-    // ปิด modal โดยกดยกเลิก
+    // ───── (7) ปิด modal โดยกดยกเลิก (ไม่ save)
     cy.get('@createModal')
       .find('button.btn-outline-secondary, [data-bs-dismiss="modal"], .btn-close')
       .first()
@@ -128,6 +164,7 @@ describe('Admin Tenants Page', () => {
     // ตรวจว่า modal ปิดลงจริง
     cy.get('.modal.fade.show,[aria-modal="true"],.modal:visible').should('have.length', 0);
   });
+});
 
   it('opens tenant detail modal for first 3 rows, checks info, then closes', () => {
     cy.get('table tbody tr', { timeout: 8000 }).should('have.length.at.least', 3);

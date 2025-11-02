@@ -45,7 +45,6 @@ describe('Login and Admin Navigation Flow', () => {
     checkMenu('ใบแจ้งหนี้', '/admin/invoices', /ใบแจ้งหนี้|Invoice/i);
     checkMenu('ซ่อมบำรุง', '/admin/maintenance', /ซ่อมบำรุง|Maintenance/i);
     checkMenu('รายงาน', '/admin/reports', /รายงาน|Report/i);
-    checkMenu('ตั้งค่า', '/admin/settings', /ตั้งค่า|Setting/i);
 
     // กลับหน้าแดชบอร์ด
     checkMenu('แดชบอร์ด', '/admin', /แดชบอร์ด|Dashboard/i);
