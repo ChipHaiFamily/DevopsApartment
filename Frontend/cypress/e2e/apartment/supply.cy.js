@@ -54,7 +54,7 @@ const openModal = () =>
       openModal().as('createModal');
       cy.get('@createModal').should('contain.text', 'สร้างบันทึกสิ่งของ');
   
-      // กรอก mock data
+      // data
       cy.get('@createModal').within(() => {
         cy.get('input[name="item_Name"]').type('Mock Item');
         cy.get('input[name="quantity"]').type('50');
@@ -62,7 +62,7 @@ const openModal = () =>
         cy.get('input[name="quantity"]').should('have.value', '50');
       });
   
-      // คืนค่าเดิม (ล้างฟอร์ม)
+      // คืนค่าเดิม ล้างฟอร์ม
       cy.get('@createModal').within(() => {
         cy.get('input[name="item_Name"]').clear();
         cy.get('input[name="quantity"]').clear();
