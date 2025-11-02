@@ -89,6 +89,7 @@ describe(' Admin Maintenance Page', () => {
   // ────────────────────────────────
   it('4️ สลับแท็บ "ตารางซ่อมบำรุง" และกดข้ามได้', () => {
     cy.contains('ตารางซ่อมบำรุง').click();
+    
 
     cy.contains('.nav-link.active', 'ตารางซ่อมบำรุง').should('exist');
 
