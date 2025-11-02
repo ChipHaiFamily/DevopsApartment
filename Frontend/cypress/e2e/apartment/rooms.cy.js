@@ -50,7 +50,7 @@ describe('Admin Rooms Management Page', () => {
       cy.contains(`${num}`).should('be.visible');
       cy.contains(type).should('be.visible');
       cy.contains('สถานะ').parent().should('contain', status);
-      // cy.contains('ค่าเช่าต่อเดือน').parent().should('contain', price);
+      cy.contains('ค่าเช่าต่อเดือน').parent().should('contain', price);
       cy.contains('ผู้เช่าปัจจุบัน').parent().should('contain', tenant);
       // cy.contains(buttonText).should('be.visible');
     };
