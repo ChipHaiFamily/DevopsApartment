@@ -25,10 +25,18 @@ public class MeterService {
     public List<Meter> getAllMeters() {
         return repository.findAll();
     }
-    // TODO
+
     public Meter addMeter(String room, String type, int unit, LocalDate recordDate, String period) {
         if (period == null || period.isBlank()) {
             period = recordDate.getYear() + "-" + String.format("%02d", recordDate.getMonthValue());
+        }
+
+        Meter existingMeter = repository.findByRoomAndPeriodAndTypeAndRecordDate(room, period, type, recordDate);
+
+        if (existingMeter != null) {
+            existingMeter.setUnit(unit);
+
+            return repository.save(existingMeter);
         }
 
         Meter lastMeter = repository.findTopByPeriodAndRoomOrderByMeterIdDesc(period, room);
