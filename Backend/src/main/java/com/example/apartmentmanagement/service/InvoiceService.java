@@ -51,8 +51,8 @@ public class InvoiceService {
         return repository.findAll().stream()
                 .filter(i -> i.getIssueDate().getMonth() == java.time.LocalDate.now().getMonth())
                 .filter(i -> "PAID".equalsIgnoreCase(i.getStatus()))
-                .map(Invoice::getTotalAmount) // ใช้ totalAmount
-                .reduce(BigDecimal.ZERO, BigDecimal::add); // ใช้ BigDecimal.add
+                .map(Invoice::getTotalAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
     public Invoice updateFromDto(String id, InvoiceUpdateDTO dto) {

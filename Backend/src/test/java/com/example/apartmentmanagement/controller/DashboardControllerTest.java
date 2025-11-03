@@ -58,9 +58,11 @@ class DashboardControllerTest {
     @Test
     void getRoomDashboard_returnsApiResponse() {
         RoomDashboardDto dto = new RoomDashboardDto();
-        when(dashboardService.getRoomDashboard("R101")).thenReturn(dto);
 
-        var response = controller.getRoomDashboard("R101");
+        when(dashboardService.getRoomDashboard("101", "2025-04", "2025-09"))
+                .thenReturn(dto);
+
+        var response = controller.getRoomDashboard("101", "2025-04", "2025-09");
         ApiResponse<RoomDashboardDto> body = response.getBody();
 
         assertTrue(body.isSuccess());

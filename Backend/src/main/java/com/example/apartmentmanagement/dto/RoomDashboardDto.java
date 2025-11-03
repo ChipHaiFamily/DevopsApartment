@@ -17,5 +17,5 @@ public class RoomDashboardDto {
     private BigDecimal totalUnpaid;
     private long maintenanceCount;
     private BigDecimal totalExpenses;
-    private List<ConsumptionDto> last6Months; // ✅ เพิ่ม field นี้
+    private List<ConsumptionDto> consumption;
 }

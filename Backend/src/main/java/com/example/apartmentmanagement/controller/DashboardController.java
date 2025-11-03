@@ -23,6 +23,7 @@ public class DashboardController {
     private final ReportDashboardService reportDashboardService;
     private final RoomService roomService;
     private final InvoiceService invoiceService;
+    private final PaymentService paymentService;
     private final MaintenanceLogService maintenanceService;
     private final TenantService tenantService;
     private final RoomTypeService roomTypeService;
@@ -46,10 +47,14 @@ public class DashboardController {
         return ResponseEntity.ok(dto);
     }
 
-    @GetMapping("/rooms/{roomNum}")
-    public ResponseEntity<ApiResponse<RoomDashboardDto>> getRoomDashboard(@PathVariable String roomNum) {
-        RoomDashboardDto dto = dashboardService.getRoomDashboard(roomNum);
-        return ResponseEntity.ok(new ApiResponse<>(true, "OK", dto));
+    @GetMapping("/room/{roomNum}")
+    public ResponseEntity<ApiResponse<RoomDashboardDto>> getRoomDashboard(
+            @PathVariable String roomNum,
+            @RequestParam String startMonth,
+            @RequestParam String endMonth) {
+
+        RoomDashboardDto dto = dashboardService.getRoomDashboard(roomNum, startMonth, endMonth);
+        return ResponseEntity.ok(new ApiResponse<>(true, "success", dto));
     }
 
     @GetMapping("/rooms/{roomNum}/payment")
@@ -125,6 +130,18 @@ public class DashboardController {
     public ResponseEntity<InvoiceDetailDto> getInvoiceById(@PathVariable String id) {
         Invoice invoice = invoiceService.getInvoiceById(id);
         InvoiceDetailDto dto = invoiceService.toInvoiceDetailDto(invoice);
+        return ResponseEntity.ok(dto);
+    }
+
+    @GetMapping("/admin/payment")
+    public ResponseEntity<List<PaymentDashboardDto>> getAllPayments() {
+        List<PaymentDashboardDto> data = paymentService.getAllPayments();
+        return ResponseEntity.ok(data);
+    }
+
+    @GetMapping("/admin/payment/{id}")
+    public ResponseEntity<PaymentDashboardDto> getPaymentById(@PathVariable String id) {
+        PaymentDashboardDto dto = paymentService.getPaymentById(id);
         return ResponseEntity.ok(dto);
     }
 

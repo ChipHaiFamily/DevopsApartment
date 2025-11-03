@@ -59,8 +59,9 @@ public class MeterService {
                 String type = record.get("type");
                 int unit = Integer.parseInt(record.get("unit"));
                 LocalDate recordDate = LocalDate.parse(record.get("recordDate"));
+                String period = record.get("period");
 
-                addMeter(room, type, unit, recordDate);
+                addMeter(room, type, unit, recordDate, period);
             }
         }
     }
