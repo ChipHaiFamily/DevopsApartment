@@ -1,5 +1,6 @@
 package com.example.apartmentmanagement.repository;
 
+import aj.org.objectweb.asm.commons.Remapper;
 import com.example.apartmentmanagement.model.MaintenanceLog;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;

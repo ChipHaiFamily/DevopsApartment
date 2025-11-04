@@ -1,121 +1,89 @@
 package com.example.apartmentmanagement.service;
 
 import com.example.apartmentmanagement.dto.ReportDashboardDto;
+import com.example.apartmentmanagement.dto.RoomDto;
+import com.example.apartmentmanagement.model.*;
 import com.example.apartmentmanagement.repository.*;
+import com.example.apartmentmanagement.service.AuditLogService;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.time.YearMonth;
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
+import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-@Slf4j
 public class ReportDashboardService {
 
     private final RoomRepository roomRepository;
+    private final InvoiceRepository invoiceRepository;
     private final ContractRepository contractRepository;
-    private final PaymentRepository paymentRepository;
-    private final MaintenanceLogRepository maintenanceLogRepository;
+    private final MaintenanceLogRepository maintenanceRepository;
+    private final AuditLogService auditLogService;
 
-    public ReportDashboardDto getReportDashboard(String monthStr) {
-        YearMonth month = YearMonth.parse(monthStr);
-        LocalDate startDate = month.atDay(1);
-        LocalDate endDate = month.atEndOfMonth();
+    public ReportDashboardDto getReport(String month) {
+        List<Room> rooms = roomRepository.findAll();
 
-        int totalRooms = roomRepository.countAllRooms();
-        int occupiedRooms = contractRepository.countActiveContractsDuring(startDate, endDate);
-        int occupancyRate = totalRooms == 0 ? 0 : (occupiedRooms * 100 / totalRooms);
+        List<AuditLog> logs = auditLogService.getByPeriod(month);
 
-        BigDecimal totalRevenue = Optional.ofNullable(
-                paymentRepository.sumRevenueByDateBetween(startDate, endDate)
-        ).orElse(BigDecimal.ZERO);
+        Set<String> invoiceIds = extractIdsForTable(logs, "invoice");
+        Set<String> contractIds = extractIdsForTable(logs, "contract");
+        Set<String> maintenanceIds = extractIdsForTable(logs, "maintenance_log");
 
-        BigDecimal maintenanceCost = Optional.ofNullable(
-                maintenanceLogRepository.sumCostByDateBetween(startDate, endDate)
-        ).orElse(BigDecimal.ZERO);
+        List<Invoice> invoices = invoiceIds.isEmpty()
+                ? Collections.emptyList()
+                : invoiceRepository.findAllById(invoiceIds);
 
-        BigDecimal netProfit = totalRevenue.subtract(maintenanceCost);
-        ReportDashboardDto.SummaryDto summary = ReportDashboardDto.SummaryDto.builder()
-                .occupancyRate(occupancyRate)
-                .totalRevenue(totalRevenue)
-                .maintenanceCost(maintenanceCost)
-                .netProfit(netProfit)
-                .build();
+        List<Contract> contracts = contractIds.isEmpty()
+                ? Collections.emptyList()
+                : contractRepository.findAllById(contractIds);
 
-        List<ReportDashboardDto.MonthlyRevenueDto> monthlyRevenue = new ArrayList<>();
-        for (int i = 11; i >= 0; i--) {
-            YearMonth ym = month.minusMonths(i);
-            LocalDate mStart = ym.atDay(1);
-            LocalDate mEnd = ym.atEndOfMonth();
-            BigDecimal revenue = Optional.ofNullable(
-                    paymentRepository.sumRevenueByDateBetween(mStart, mEnd)
-            ).orElse(BigDecimal.ZERO);
+        List<MaintenanceLog> maintenances = maintenanceIds.isEmpty()
+                ? Collections.emptyList()
+                : maintenanceRepository.findAllById(maintenanceIds);
 
-            monthlyRevenue.add(ReportDashboardDto.MonthlyRevenueDto.builder()
-                    .month(ym.toString())
-                    .revenue(revenue)
-                    .build());
-        }
+        int totalRooms = rooms.size();
+        long occupiedRooms = rooms.stream()
+                .filter(r -> "Occupied".equalsIgnoreCase(r.getStatus()))
+                .count();
+        double occupancyRate = totalRooms == 0 ? 0 : (double) occupiedRooms / totalRooms * 100;
 
-        List<ReportDashboardDto.MonthlyOccupancyDto> monthlyOccupancy = new ArrayList<>();
-        for (int i = 11; i >= 0; i--) {
-            YearMonth ym = month.minusMonths(i);
-            LocalDate mStart = ym.atDay(1);
-            LocalDate mEnd = ym.atEndOfMonth();
+        double totalIncome = invoices.stream()
+                .map(Invoice::getTotalAmount)
+                .filter(Objects::nonNull)
+                .mapToDouble(BigDecimal::doubleValue)
+                .sum();
 
-            int total = roomRepository.countAllRooms();
-            int occupied = contractRepository.countActiveContractsDuring(mStart, mEnd);
-            int rate = total == 0 ? 0 : (occupied * 100 / total);
-
-            monthlyOccupancy.add(ReportDashboardDto.MonthlyOccupancyDto.builder()
-                    .month(ym.toString())
-                    .occupancyRate(rate)
-                    .build());
-        }
-
-        List<ReportDashboardDto.RoomEfficiencyDto> roomEfficiency =
-                roomRepository.findAllRoomTypeNames().stream().map(rt -> {
-                    int total = roomRepository.countByTypeName(rt);
-                    int occupied = contractRepository.countActiveContractsDuring(startDate, endDate);
-                    int rate = total == 0 ? 0 : (occupied * 100 / total);
-                    return ReportDashboardDto.RoomEfficiencyDto.builder()
-                            .type(rt)
-                            .total(total)
-                            .occupied(occupied)
-                            .rate(rate)
-                            .build();
-                }).collect(Collectors.toList());
-
-        List<ReportDashboardDto.MaintenanceWorkDto> maintenanceWorks =
-                maintenanceLogRepository.findMaintenanceSummaryByDateBetween(startDate, endDate)
-                        .stream()
-                        .map(obj -> {
-                            String type = (String) obj[0];
-                            int count = ((Number) obj[1]).intValue();
-                            Number n = (Number) obj[2]; // แก้ตรงนี้
-                            BigDecimal cost = n != null ? BigDecimal.valueOf(n.doubleValue()) : BigDecimal.ZERO;
-                            return ReportDashboardDto.MaintenanceWorkDto.builder()
-                                    .type(type)
-                                    .count(count)
-                                    .cost(cost)
-                                    .build();
-                        })
-                        .toList();
+        double maintenanceCost = maintenances.stream()
+                .mapToDouble(MaintenanceLog::getCost)
+                .sum();
 
         return ReportDashboardDto.builder()
-                .month(monthStr)
-                .summary(summary)
-                .monthlyRevenue(monthlyRevenue)
-                .monthlyOccupancy(monthlyOccupancy)
-                .roomEfficiency(roomEfficiency)
-                .maintenanceWorks(maintenanceWorks)
+                .occupancyRate(occupancyRate)
+                .totalIncome(totalIncome)
+                .maintenanceCost(maintenanceCost)
+                .profit(totalIncome - maintenanceCost)
+                .rooms(rooms)
+                .invoices(invoices)
+                .contracts(contracts)
+                .maintenances(maintenances)
                 .build();
     }
+
+    private Set<String> extractIdsForTable(List<AuditLog> logs, String tableName) {
+        return logs.stream()
+                .filter(l -> {
+                    String name = l.getTableName().toLowerCase();
+                    return name.equals(tableName.toLowerCase())
+                            || name.equals(tableName.toLowerCase() + "s");
+                })
+                .map(AuditLog::getRecordId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+    }
+
 }

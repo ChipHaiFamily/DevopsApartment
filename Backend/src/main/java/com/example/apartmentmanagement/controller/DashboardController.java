@@ -148,9 +148,9 @@ public class DashboardController {
     @GetMapping("/admin/report")
     public ResponseEntity<ReportDashboardDto> getReport(@RequestParam(required = false) String month) {
         if (month == null || month.isEmpty()) {
-            month = java.time.YearMonth.now().toString(); // ใช้เดือนปัจจุบัน
+            month = java.time.YearMonth.now().toString();
         }
-        ReportDashboardDto report = reportDashboardService.getReportDashboard(month);
+        ReportDashboardDto report = reportDashboardService.getReport(month);
         return ResponseEntity.ok(report);
     }
 }
