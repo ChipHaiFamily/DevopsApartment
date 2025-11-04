@@ -4,9 +4,9 @@ import jakarta.persistence.*;
 import lombok.Data;
 import java.time.LocalDateTime;
 
+@Data
 @Entity
 @Table(name = "audit_log")
-@Data
 public class AuditLog {
 
     @Id
@@ -21,6 +21,6 @@ public class AuditLog {
     @Column(name = "record_id")
     private String recordId;
 
-    @Column(name = "created_at")
-    private LocalDateTime createdAt;
+    @Column(name = "action_time")
+    private LocalDateTime actionTime;
 }
