@@ -63,6 +63,69 @@ export default function InvoiceFormModal({
     }
   }, [mode, invoice]);
 
+  // ============================ ดึงข้อมูลค่าน้ำค่าไฟจาก API ============================
+  useEffect(() => {
+    const fetchRoomMeters = async () => {
+      try {
+        // หา roomNum จาก tenant ที่เลือก
+        const tenant = tenants.find((t) => t.tenantId === form.tenantId);
+        const activeContract = tenant?.contract
+          ?.filter((c) => c.status === "active")
+          ?.sort((a, b) => new Date(b.startDate) - new Date(a.startDate))
+          ?.at(0);
+
+        const roomNum = activeContract?.room?.roomNum;
+        if (!roomNum) return; // ไม่มีห้องไม่ต้องโหลด
+
+        const res = await api.get(`/meters/room/${roomNum}`);
+        const data = res.data;
+
+        if (!data || !data.latestMeters) return;
+
+        // map ข้อมูลมาเติมในฟอร์ม
+        const meterItems = data.latestMeters.map((m) => {
+          const month = m.period;
+          const unitText = ` (${m.unit})`;
+          const label =
+            m.type === "water"
+              ? "ค่าน้ำ"
+              : m.type === "electricity"
+              ? "ค่าไฟฟ้า"
+              : "อื่น ๆ";
+
+          const descPrefix =
+            m.type === "water"
+              ? "Water Bill"
+              : m.type === "electricity"
+              ? "Electricity Bill"
+              : "Charge";
+
+          return {
+            type: label,
+            description: `${descPrefix} ${month}${unitText}`,
+            amount: m.totalBill || 0,
+          };
+        });
+
+        // เติมค่าห้องด้วย
+        const rentItem = {
+          type: "ค่าห้อง",
+          description: `Rent Bill ${new Date().toISOString().slice(0, 7)}`,
+          amount: data.roomPrice || 0,
+        };
+
+        setForm((prev) => ({
+          ...prev,
+          items: [...meterItems, rentItem],
+        }));
+      } catch (err) {
+        console.error("Error fetching meter data:", err);
+      }
+    };
+
+    if (form.tenantId) fetchRoomMeters();
+  }, [form.tenantId, tenants]);
+
   if (!open) return null;
 
   // ============================ Validation ============================
@@ -164,14 +227,7 @@ export default function InvoiceFormModal({
       totalAmount: total,
       tenant: { tenantId: form.tenantId },
       items: form.items.map((it) => ({
-        description:
-          it.type === "ค่าน้ำ"
-            ? "Water Bill"
-            : it.type === "ค่าไฟฟ้า"
-            ? "Electricity Bill"
-            : it.type === "ค่าห้อง"
-            ? "Rent Bill"
-            : it.description,
+        description: it.description,
         amount: Number(it.amount || 0),
       })),
     };
@@ -282,7 +338,7 @@ export default function InvoiceFormModal({
                             (a, b) =>
                               new Date(b.startDate) - new Date(a.startDate)
                           ) // เผื่อมีหลาย active เอาอันล่าสุด
-                          ?.at(0)?.room?.roomNum || "-"}
+                          ?.at(0)?.room?.roomNum || "ไม่พบห้อง"}
                         )
                       </option>
                     ))}
@@ -340,13 +396,8 @@ export default function InvoiceFormModal({
                   <div className="col-md-5">
                     <input
                       className="form-control"
-                      placeholder={
-                        item.type === "อื่น ๆ"
-                          ? "ระบุรายการอื่น ๆ"
-                          : item.description
-                      }
-                      value={item.type === "อื่น ๆ" ? item.description : ""}
-                      readOnly={item.type !== "อื่น ๆ"}
+                      placeholder="กรอกรายละเอียดค่าใช้จ่ายอื่น ๆ"
+                      value={item.description}
                       onChange={(e) =>
                         handleItemChange(index, "description", e.target.value)
                       }
