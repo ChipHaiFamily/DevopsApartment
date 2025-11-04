@@ -14,9 +14,6 @@ export default function AdminInvoicesPage() {
   const [creatingInvoice, setCreatingInvoice] = useState(false);
   const [bulkPrintOpen, setBulkPrintOpen] = useState(false);
 
-  const baseURL = import.meta.env.VITE_API_BASE_URL;
-  // console.log("Calling API:", `${baseURL}/invoices`);
-
   const fetchInvoices = async () => {
     setLoading(true);
     try {
@@ -33,9 +30,10 @@ export default function AdminInvoicesPage() {
       setLoading(false);
     }
   };
+
   useEffect(() => {
     fetchInvoices();
-  }, [baseURL]);
+  }, []);
 
   // Metrics
   const totalAmount = invoices.reduce(
@@ -238,40 +236,18 @@ export default function AdminInvoicesPage() {
           }}
         />
 
-        <InvoiceFormModal
+          <InvoiceFormModal
           open={editingInvoice != null}
           onClose={() => setEditingInvoice(null)}
           mode="update"
           invoice={editingInvoice}
           onSubmit={async (payload) => {
-            const url = `${baseURL}/invoices/${editingInvoice.invoiceId}`;
             try {
-              console.log("[AdminInvoicesPage] PUT", url);
-              console.log(
-                "[AdminInvoicesPage] PUT payload =",
-                JSON.stringify(payload, null, 2)
-              );
-              const res = await api.put(url, payload);
-              console.log(
-                "[AdminInvoicesPage] PUT response =",
-                res.status,
-                res.data
-              );
+              await api.put(`/invoices/${editingInvoice.invoiceId}`, payload);
               await fetchInvoices();
               setEditingInvoice(null);
             } catch (err) {
-              if (err?.response) {
-                console.error(
-                  "[AdminInvoicesPage] PUT error =",
-                  err.response.status,
-                  err.response.data
-                );
-              } else {
-                console.error(
-                  "[AdminInvoicesPage] PUT error (network?) =",
-                  err
-                );
-              }
+              console.error("Update invoice failed:", err);
               throw err;
             }
           }}
