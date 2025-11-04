@@ -11,6 +11,7 @@ import {
 } from "recharts";
 import StatCardBS from "../../components/admin/StatCardBS";
 import bgRoom from "../../assets/roomDetailBG.jpg";
+import api from "../../api/axiosConfig";
 
 export default function RoomDetailBS() {
   const { roomId } = useParams();
@@ -23,20 +24,22 @@ export default function RoomDetailBS() {
   const [startMonth, setStartMonth] = useState(1);
   const [endMonth, setEndMonth] = useState(new Date().getMonth() + 1);
 
-  const baseURL = import.meta.env.VITE_API_BASE_URL;
-
+  /** ดึงข้อมูลจริงจาก API */
   useEffect(() => {
-    fetch(`${baseURL}/dashboard/rooms/${roomId}`)
-      .then((res) => res.json())
-      .then((data) => {
-        setRoomData(data.data);
+    const startYM = `${year}-${String(startMonth).padStart(2, "0")}`;
+    const endYM = `${year}-${String(endMonth).padStart(2, "0")}`;
+
+    api
+      .get(`/dashboard/room/${roomId}?startMonth=${startYM}&endMonth=${endYM}`)
+      .then((res) => {
+        setRoomData(res.data.data);
         setLoading(false);
       })
       .catch((err) => {
         console.error("Error fetching room detail:", err);
         setLoading(false);
       });
-  }, [roomId, baseURL]);
+  }, [roomId, startMonth, endMonth, year]);
 
   const months = [
     "มกราคม",
@@ -53,8 +56,9 @@ export default function RoomDetailBS() {
     "ธันวาคม",
   ];
 
+  /** เตรียมข้อมูลกราฟจาก consumption */
   const chartData =
-    roomData?.last6Months.map((item) => {
+    roomData?.consumption?.map((item) => {
       const [y, m] = item.month.split("-");
       return {
         name: months[parseInt(m, 10) - 1],
@@ -66,11 +70,34 @@ export default function RoomDetailBS() {
       };
     }) ?? [];
 
-  // filter ข้อมูล
-  const filtered = chartData.filter(
-    (d) =>
-      d.year === year && d.monthIndex >= startMonth && d.monthIndex <= endMonth
-  );
+  const filledData = [];
+  for (let m = startMonth; m <= endMonth; m++) {
+    const existing = chartData.find(
+      (d) => d.year === year && d.monthIndex === m
+    );
+    filledData.push(
+      existing || {
+        name: months[m - 1],
+        water: 0,
+        electric: 0,
+        cost: 0,
+        year,
+        monthIndex: m,
+      }
+    );
+  }
+
+  /** filter ช่วงเดือน */
+  const filtered = filledData;
+
+  /**  แสดงระหว่างโหลด */
+  if (loading) {
+    return (
+      <div className="d-flex justify-content-center align-items-center py-5">
+        <div className="spinner-border text-primary" role="status"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="container py-3">
@@ -78,13 +105,12 @@ export default function RoomDetailBS() {
       <div
         className="p-4 rounded mb-4"
         style={{
-          backgroundImage: `url(${bgRoom})`, // ใส่ path ของรูปคุณ
+          backgroundImage: `url(${bgRoom})`,
           backgroundSize: "cover",
           backgroundPosition: "center",
           color: "white",
         }}
       >
-        {/* Header */}
         <div className="d-flex justify-content-between align-items-center mb-3">
           <h4 className="fw-bold mb-1">ห้องพักหมายเลข {roomId}</h4>
           <div>
@@ -96,9 +122,9 @@ export default function RoomDetailBS() {
         </div>
         <div className="mb-4">รายละเอียดภาพรวมของห้องพัก</div>
 
-        {/* สรุป Stat Cards */}
+        {/* Summary Stat Cards */}
         <div className="row g-3 mb-4">
-          <div className="col-12 col-md-4">
+          {/* <div className="col-12 col-md-4">
             <StatCardBS
               label="ยอดค้างชำระ"
               value={`฿${(roomData?.totalUnpaid ?? 0).toLocaleString()}`}
@@ -111,7 +137,7 @@ export default function RoomDetailBS() {
               value={`${roomData?.maintenanceCount ?? 0} รายการ`}
               icon={<i className="bi bi-tools text-warning"></i>}
             />
-          </div>
+          </div> */}
           <div className="col-12 col-md-4">
             <StatCardBS
               label="พักอาศัยแล้ว"
@@ -163,9 +189,11 @@ export default function RoomDetailBS() {
         </div>
       </div>
 
-      {/* Chart ค่าไฟ */}
+      {/* Chart การใช้ไฟ */}
       <div className="card card-soft mb-3">
-        <div className="card-header bg-white border-0 fw-bold">การใช้ไฟ</div>
+        <div className="card-header bg-white border-0 fw-bold">
+          การใช้ไฟฟ้า(หน่วย)
+        </div>
         <div className="card-body" style={{ height: "250px" }}>
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={filtered}>
@@ -179,9 +207,11 @@ export default function RoomDetailBS() {
         </div>
       </div>
 
-      {/* Chart ค่าน้ำ */}
+      {/* Chart การใช้น้ำ */}
       <div className="card card-soft mb-3">
-        <div className="card-header bg-white border-0 fw-bold">การใช้น้ำ</div>
+        <div className="card-header bg-white border-0 fw-bold">
+          การใช้น้ำ(หน่วย)
+        </div>
         <div className="card-body" style={{ height: "250px" }}>
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={filtered}>
@@ -198,7 +228,7 @@ export default function RoomDetailBS() {
       {/* Chart ค่าใช้จ่ายรวม */}
       <div className="card card-soft">
         <div className="card-header bg-white border-0 fw-bold">
-          ค่าใช้จ่ายรวม
+          ค่าใช้จ่ายรวม(บาท)
         </div>
         <div className="card-body" style={{ height: "300px" }}>
           <ResponsiveContainer width="100%" height="100%">
