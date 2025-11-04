@@ -1,6 +1,8 @@
 package com.example.apartmentmanagement.controller;
 
+import com.example.apartmentmanagement.dto.MeterInvoiceDto;
 import com.example.apartmentmanagement.model.Meter;
+import com.example.apartmentmanagement.model.Room;
 import com.example.apartmentmanagement.repository.MeterRepository;
 import com.example.apartmentmanagement.service.MeterService;
 import lombok.RequiredArgsConstructor;
@@ -31,6 +33,12 @@ public class MeterController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    @GetMapping("/room/{room}")
+    public ResponseEntity<MeterInvoiceDto> getLatestMetersWithRoomPrice(@PathVariable String room) {
+        MeterInvoiceDto dto = service.getLatestMetersWithRoomPrice(room);
+        return ResponseEntity.ok(dto);
+    }
+
     @PostMapping
     public ResponseEntity<Meter> create(@RequestBody Meter obj) {
         if (obj.getRecordDate() == null) {
@@ -40,7 +48,8 @@ public class MeterController {
                 obj.getRoom(),
                 obj.getType(),
                 obj.getUnit(),
-                obj.getRecordDate()
+                obj.getRecordDate(),
+                obj.getPeriod()
         );
         return ResponseEntity.ok(meter);
     }

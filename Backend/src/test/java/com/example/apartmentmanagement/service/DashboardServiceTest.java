@@ -12,6 +12,7 @@ import org.mockito.MockitoAnnotations;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.YearMonth;
 import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -29,6 +30,8 @@ class DashboardServiceTest {
     private MaintenanceLogRepository maintenanceRepo;
     @Mock
     private TenantRepository tenantRepo;
+    @Mock
+    private MeterRepository meterRepo;
 
     @InjectMocks
     private DashboardService dashboardService;
@@ -41,6 +44,9 @@ class DashboardServiceTest {
     @Test
     void getRoomDashboard_success_withMixedItems() {
         String roomNum = "101";
+        String startMonth = "2025-05";
+        String endMonth = "2025-05";
+
         Room room = new Room();
         room.setRoomNum(roomNum);
         room.setStatus("available");
@@ -53,30 +59,29 @@ class DashboardServiceTest {
         contract.setStatus("active");
         contract.setStartDate(LocalDate.now().minusDays(5));
 
-        InvoiceItem item1 = new InvoiceItem();
-        item1.setDescription("Water Fee");
-        item1.setAmount(BigDecimal.valueOf(100));
+        Meter waterMeter = new Meter();
+        waterMeter.setRoom(roomNum);
+        waterMeter.setType("water");
+        waterMeter.setUnit(100);
+        waterMeter.setRecordDate(LocalDate.of(2025, 5, 15));
 
-        InvoiceItem item2 = new InvoiceItem();
-        item2.setDescription("Electricity Charge");
-        item2.setAmount(BigDecimal.valueOf(200));
-
-        InvoiceItem item3 = new InvoiceItem();
-        item3.setDescription("อื่นๆ");
-        item3.setAmount(BigDecimal.valueOf(50));
-
-        Invoice invoice = new Invoice();
-        invoice.setIssueDate(LocalDate.now());
-        invoice.setItems(Arrays.asList(item1, item2, item3));
+        Meter electricMeter = new Meter();
+        electricMeter.setRoom(roomNum);
+        electricMeter.setType("electricity");
+        electricMeter.setUnit(200);
+        electricMeter.setRecordDate(LocalDate.of(2025, 5, 15));
 
         when(roomRepo.findById(roomNum)).thenReturn(Optional.of(room));
         when(contractRepo.findByRoomRoomNumAndStatus(roomNum, "active")).thenReturn(Optional.of(contract));
-        when(invoiceRepo.findTotalUnpaidByTenant("USR-001")).thenReturn(null); // test null unpaid
-        when(invoiceRepo.findTotalExpensesByTenant("USR-001")).thenReturn(null); // test null expenses
+        when(invoiceRepo.findTotalUnpaidByTenant("USR-001")).thenReturn(null);
+        when(invoiceRepo.findTotalExpensesByTenant("USR-001")).thenReturn(null);
         when(maintenanceRepo.countByRoomRoomNumAndStatus(roomNum, "pending")).thenReturn(0L);
-        when(invoiceRepo.findRecentInvoicesByTenant(eq("USR-001"), any(LocalDate.class))).thenReturn(List.of(invoice));
+        when(meterRepo.findByRoomAndRecordDateBetween(roomNum,
+                LocalDate.parse(startMonth + "-01"),
+                YearMonth.parse(endMonth).atEndOfMonth()))
+                .thenReturn(List.of(waterMeter, electricMeter));
 
-        RoomDashboardDto result = dashboardService.getRoomDashboard(roomNum);
+        RoomDashboardDto result = dashboardService.getRoomDashboard(roomNum, startMonth, endMonth);
 
         assertEquals("available", result.getStatus());
         assertEquals("USR-001", result.getTenantID());
@@ -85,12 +90,15 @@ class DashboardServiceTest {
         assertEquals(1, result.getLast6Months().size());
         assertEquals(BigDecimal.valueOf(100), result.getLast6Months().get(0).getWater());
         assertEquals(BigDecimal.valueOf(200), result.getLast6Months().get(0).getElectric());
-        assertEquals(BigDecimal.valueOf(350), result.getLast6Months().get(0).getTotal());
+        assertEquals(BigDecimal.valueOf(300), result.getLast6Months().get(0).getTotal());
     }
 
     @Test
     void getRoomDashboard_withNonNullTotals_success() {
         String roomNum = "101";
+        String startMonth = "2025-05";
+        String endMonth = "2025-05";
+
         Room room = new Room();
         room.setRoomNum(roomNum);
         room.setStatus("occupied");
@@ -103,69 +111,30 @@ class DashboardServiceTest {
         contract.setStatus("active");
         contract.setStartDate(LocalDate.now().minusDays(10));
 
-        Invoice invoice = new Invoice();
-        invoice.setIssueDate(LocalDate.now());
-        invoice.setItems(Collections.emptyList());
-
         when(roomRepo.findById(roomNum)).thenReturn(Optional.of(room));
         when(contractRepo.findByRoomRoomNumAndStatus(roomNum, "active")).thenReturn(Optional.of(contract));
         when(invoiceRepo.findTotalUnpaidByTenant("USR-001")).thenReturn(BigDecimal.valueOf(1234.0));
         when(invoiceRepo.findTotalExpensesByTenant("USR-001")).thenReturn(5678.0);
         when(maintenanceRepo.countByRoomRoomNumAndStatus(roomNum, "pending")).thenReturn(2L);
-        when(invoiceRepo.findRecentInvoicesByTenant(eq("USR-001"), any(LocalDate.class)))
-                .thenReturn(List.of(invoice));
+        when(meterRepo.findByRoomAndRecordDateBetween(roomNum,
+                LocalDate.parse(startMonth + "-01"),
+                YearMonth.parse(endMonth).atEndOfMonth()))
+                .thenReturn(Collections.emptyList());
 
-        RoomDashboardDto result = dashboardService.getRoomDashboard(roomNum);
+        RoomDashboardDto result = dashboardService.getRoomDashboard(roomNum, startMonth, endMonth);
 
         assertEquals(BigDecimal.valueOf(1234.0), result.getTotalUnpaid());
         assertEquals(BigDecimal.valueOf(5678.0), result.getTotalExpenses());
         assertEquals(2, result.getMaintenanceCount());
-    }
-
-    @Test
-    void getRoomDashboard_withThaiItems_success() {
-        String roomNum = "202";
-        Room room = new Room();
-        room.setRoomNum(roomNum);
-        room.setStatus("available");
-
-        Tenant tenant = new Tenant();
-        tenant.setTenantId("USR-TH");
-
-        Contract contract = new Contract();
-        contract.setTenant(tenant);
-        contract.setStatus("active");
-        contract.setStartDate(LocalDate.now().minusDays(2));
-
-        InvoiceItem item1 = new InvoiceItem();
-        item1.setDescription("ค่าน้ำ");
-        item1.setAmount(BigDecimal.valueOf(50));
-
-        InvoiceItem item2 = new InvoiceItem();
-        item2.setDescription("ค่าไฟ");
-        item2.setAmount(BigDecimal.valueOf(150));
-
-        Invoice invoice = new Invoice();
-        invoice.setIssueDate(LocalDate.now());
-        invoice.setItems(List.of(item1, item2));
-
-        when(roomRepo.findById(roomNum)).thenReturn(Optional.of(room));
-        when(contractRepo.findByRoomRoomNumAndStatus(roomNum, "active")).thenReturn(Optional.of(contract));
-        when(invoiceRepo.findTotalUnpaidByTenant("USR-TH")).thenReturn(BigDecimal.ZERO);
-        when(invoiceRepo.findTotalExpensesByTenant("USR-TH")).thenReturn(0.0);
-        when(maintenanceRepo.countByRoomRoomNumAndStatus(roomNum, "pending")).thenReturn(0L);
-        when(invoiceRepo.findRecentInvoicesByTenant(eq("USR-TH"), any(LocalDate.class)))
-                .thenReturn(List.of(invoice));
-
-        RoomDashboardDto result = dashboardService.getRoomDashboard(roomNum);
-
-        assertEquals(BigDecimal.valueOf(50), result.getLast6Months().get(0).getWater());
-        assertEquals(BigDecimal.valueOf(150), result.getLast6Months().get(0).getElectric());
+        assertEquals(0, result.getLast6Months().size());
     }
 
     @Test
     void getRoomDashboard_itemAmountIsNull_treatedAsZero() {
         String roomNum = "404";
+        String startMonth = "2025-05";
+        String endMonth = "2025-05";
+
         Room room = new Room();
         room.setRoomNum(roomNum);
         room.setStatus("available");
@@ -178,23 +147,23 @@ class DashboardServiceTest {
         contract.setStatus("active");
         contract.setStartDate(LocalDate.now().minusDays(5));
 
-        InvoiceItem nullAmountItem = new InvoiceItem();
-        nullAmountItem.setDescription("water fee");
-        nullAmountItem.setAmount(null);
-
-        Invoice invoice = new Invoice();
-        invoice.setIssueDate(LocalDate.now());
-        invoice.setItems(List.of(nullAmountItem));
+        Meter nullMeter = new Meter();
+        nullMeter.setRoom(roomNum);
+        nullMeter.setType("water");
+        nullMeter.setUnit(0);
+        nullMeter.setRecordDate(LocalDate.of(2025,5,15));
 
         when(roomRepo.findById(roomNum)).thenReturn(Optional.of(room));
         when(contractRepo.findByRoomRoomNumAndStatus(roomNum, "active")).thenReturn(Optional.of(contract));
         when(invoiceRepo.findTotalUnpaidByTenant("USR-NULL-AMT")).thenReturn(BigDecimal.ZERO);
         when(invoiceRepo.findTotalExpensesByTenant("USR-NULL-AMT")).thenReturn(0.0);
         when(maintenanceRepo.countByRoomRoomNumAndStatus(roomNum, "pending")).thenReturn(0L);
-        when(invoiceRepo.findRecentInvoicesByTenant(eq("USR-NULL-AMT"), any(LocalDate.class)))
-                .thenReturn(List.of(invoice));
+        when(meterRepo.findByRoomAndRecordDateBetween(roomNum,
+                LocalDate.parse(startMonth + "-01"),
+                YearMonth.parse(endMonth).atEndOfMonth()))
+                .thenReturn(List.of(nullMeter));
 
-        RoomDashboardDto result = dashboardService.getRoomDashboard(roomNum);
+        RoomDashboardDto result = dashboardService.getRoomDashboard(roomNum, startMonth, endMonth);
 
         assertEquals(BigDecimal.ZERO, result.getLast6Months().get(0).getTotal());
     }
@@ -202,7 +171,8 @@ class DashboardServiceTest {
     @Test
     void getRoomDashboard_roomNotFound() {
         when(roomRepo.findById("999")).thenReturn(Optional.empty());
-        assertThrows(ResourceNotFoundException.class, () -> dashboardService.getRoomDashboard("999"));
+        assertThrows(ResourceNotFoundException.class,
+                () -> dashboardService.getRoomDashboard("999", "2025-01", "2025-01"));
     }
 
     @Test
@@ -210,7 +180,8 @@ class DashboardServiceTest {
         String roomNum = "101";
         when(roomRepo.findById(roomNum)).thenReturn(Optional.of(new Room()));
         when(contractRepo.findByRoomRoomNumAndStatus(roomNum, "active")).thenReturn(Optional.empty());
-        assertThrows(ResourceNotFoundException.class, () -> dashboardService.getRoomDashboard(roomNum));
+        assertThrows(ResourceNotFoundException.class,
+                () -> dashboardService.getRoomDashboard(roomNum, "2025-01", "2025-01"));
     }
 
     @Test
