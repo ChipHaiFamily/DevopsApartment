@@ -29,12 +29,6 @@ public class InvoiceService {
     public Invoice save(Invoice obj) { return repository.save(obj); }
     public void deleteById(String id) { repository.deleteById(id); }
 
-    public Invoice create(Invoice obj) {
-        obj.setInvoiceId(idGenerationService.generateInvoiceId());
-        obj.setStatus("Pending");
-        return repository.save(obj);
-    }
-
     public int countOutstandingInvoices() {
         return (int) repository.findAll().stream()
                 .filter(i -> !"PAID".equalsIgnoreCase(i.getStatus()))
@@ -54,6 +48,7 @@ public class InvoiceService {
                 .map(Invoice::getTotalAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
+
 
     public Invoice updateFromDto(String id, InvoiceUpdateDTO dto) {
         Invoice invoice = repository.findById(id)
@@ -171,7 +166,6 @@ public class InvoiceService {
         var latestContract = invoice.getTenant().getContract().stream()
                 .max(Comparator.comparing(Contract::getStartDate))
                 .orElse(null);
-
         return InvoiceDetailDto.builder()
                 .invoiceId(invoice.getInvoiceId())
                 .issueDate(invoice.getIssueDate())
@@ -181,7 +175,6 @@ public class InvoiceService {
                 .tenantId(invoice.getTenant().getTenantId())
                 .contractStatus(latestContract != null ? latestContract.getStatus() : null)
                 .roomNum(latestContract != null ? latestContract.getRoom().getRoomNum() : null)
-                .floor(latestContract != null ? latestContract.getRoom().getFloor() : null)
                 .items(invoice.getItems().stream()
                         .map(i -> InvoiceDetailDto.ItemDto.builder()
                                 .itemId(i.getItemId())
@@ -198,6 +191,12 @@ public class InvoiceService {
                                 .build())
                         .toList())
                 .build();
+    }
+
+    public Invoice create(Invoice obj) {
+        obj.setInvoiceId(idGenerationService.generateInvoiceId());
+        obj.setStatus("Pending");
+        return repository.save(obj);
     }
 
     public List<Invoice> getAllInvoices() {

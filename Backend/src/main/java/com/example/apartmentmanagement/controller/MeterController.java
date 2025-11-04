@@ -1,6 +1,8 @@
 package com.example.apartmentmanagement.controller;
 
+import com.example.apartmentmanagement.dto.MeterInvoiceDto;
 import com.example.apartmentmanagement.model.Meter;
+import com.example.apartmentmanagement.model.Room;
 import com.example.apartmentmanagement.repository.MeterRepository;
 import com.example.apartmentmanagement.service.MeterService;
 import lombok.RequiredArgsConstructor;
@@ -29,6 +31,12 @@ public class MeterController {
         Optional<Meter> meter = repository.findById(id);
         return meter.map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/room/{room}")
+    public ResponseEntity<MeterInvoiceDto> getLatestMetersWithRoomPrice(@PathVariable String room) {
+        MeterInvoiceDto dto = service.getLatestMetersWithRoomPrice(room);
+        return ResponseEntity.ok(dto);
     }
 
     @PostMapping

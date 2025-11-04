@@ -19,7 +19,6 @@ public class InvoiceDetailDto {
     private String tenantId;
     private String contractStatus;
     private String roomNum;
-    private Integer floor;
 
     private List<ItemDto> items;
     private List<PaymentDto> payments;

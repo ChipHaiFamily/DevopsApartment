@@ -12,4 +12,5 @@ public interface MeterRepository extends JpaRepository<Meter, String> {
     List<Meter> findByRoomAndRecordDateBetween(String room, LocalDate startDate, LocalDate endDate);
     Meter findTopByPeriodAndRoomOrderByMeterIdDesc(String period, String room);
     Meter findByRoomAndPeriodAndTypeAndRecordDate(String room, String period, String type, LocalDate recordDate);
+    List<Meter> findByRoomOrderByRecordDateDesc(String room);
 }
