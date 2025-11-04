@@ -1,4 +1,3 @@
-// 📄 PaymentSlipService.java
 package com.example.apartmentmanagement.service;
 
 import com.example.apartmentmanagement.model.PaymentSlip;
@@ -16,6 +15,11 @@ public class PaymentSlipService {
     private final PaymentSlipRepository repository;
 
     public PaymentSlip uploadSlip(String paymentId, MultipartFile file) throws IOException {
+        List<PaymentSlip> existing = repository.findByPaymentId(paymentId);
+        if (!existing.isEmpty()) {
+            repository.delete(existing.get(0));
+        }
+
         PaymentSlip slip = PaymentSlip.builder()
                 .paymentId(paymentId)
                 .slipData(file.getBytes())
@@ -25,7 +29,12 @@ public class PaymentSlipService {
         return repository.save(slip);
     }
 
-    public List<PaymentSlip> getSlipsByPayment(String paymentId) {
-        return repository.findByPaymentId(paymentId);
+    public PaymentSlip getSlipByPayment(String paymentId) {
+        List<PaymentSlip> slips = repository.findByPaymentId(paymentId);
+        if (slips.isEmpty()) {
+            throw new RuntimeException("Slip not found for payment: " + paymentId);
+        }
+        return slips.get(0); // เอา slip ตัวแรก (ควรมีแค่ 1)
     }
+
 }
