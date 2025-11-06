@@ -29,4 +29,9 @@ public class ContractImageService {
     public List<ContractImage> getImagesByContract(String contractNum) {
         return repository.findByContractNum(contractNum);
     }
+
+    public ContractImage getImageById(Long imageId) {
+        return repository.findById(imageId)
+                .orElseThrow(() -> new RuntimeException("Image not found with id: " + imageId));
+    }
 }

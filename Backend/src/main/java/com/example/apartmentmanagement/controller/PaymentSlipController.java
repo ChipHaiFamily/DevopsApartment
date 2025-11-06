@@ -1,4 +1,3 @@
-// 📄 PaymentSlipController.java
 package com.example.apartmentmanagement.controller;
 
 import com.example.apartmentmanagement.model.PaymentSlip;
@@ -9,7 +8,6 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/payments/slips")
@@ -25,8 +23,22 @@ public class PaymentSlipController {
         return ResponseEntity.ok("Slip uploaded successfully");
     }
 
-    @GetMapping("/{paymentId}")
-    public ResponseEntity<List<PaymentSlip>> getSlipsByPayment(@PathVariable String paymentId) {
-        return ResponseEntity.ok(service.getSlipsByPayment(paymentId));
+    @GetMapping("/{paymentId}/view")
+    public ResponseEntity<byte[]> viewSlip(@PathVariable String paymentId) {
+        PaymentSlip slip = service.getSlipByPayment(paymentId);
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(slip.getMimeType()))
+                .header(HttpHeaders.CONTENT_DISPOSITION,
+                        "inline; filename=\"" + slip.getFileName() + "\"")
+                .body(slip.getSlipData());
+    }
+
+    @GetMapping("/{paymentId}/download")
+    public ResponseEntity<byte[]> downloadSlip(@PathVariable String paymentId) {
+        PaymentSlip slip = service.getSlipByPayment(paymentId);
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(slip.getMimeType()))
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + slip.getFileName() + "\"")
+                .body(slip.getSlipData());
     }
 }

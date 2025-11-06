@@ -21,16 +21,7 @@ public interface InvoiceRepository extends JpaRepository<Invoice, String> {
     @Query("SELECT SUM(i.totalAmount) FROM Invoice i WHERE i.tenant.tenantId = :tenantId AND i.status = 'unpaid'")
     BigDecimal findTotalUnpaidByTenant(@Param("tenantId") String tenantId);
 
-
-    @Query("SELECT i FROM Invoice i " +
-            "WHERE i.tenant.tenantId = :tenantId " +
-            "AND i.issueDate >= :startDate " +
-            "ORDER BY i.issueDate DESC")
-    List<Invoice> findRecentInvoicesByTenant(@Param("tenantId") String tenantId,
-                                             @Param("startDate") java.time.LocalDate startDate);
-
     @Query("SELECT COALESCE(SUM(i.totalAmount), 0) FROM Invoice i WHERE i.tenant.tenantId = :tenantId")
     Double findTotalExpensesByTenant(@Param("tenantId") String tenantId);
-
 
 }

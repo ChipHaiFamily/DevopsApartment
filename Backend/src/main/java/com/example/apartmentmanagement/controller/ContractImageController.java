@@ -15,6 +15,7 @@ import java.util.List;
 @RequestMapping("/api/contracts/images")
 @RequiredArgsConstructor
 public class ContractImageController {
+
     private final ContractImageService service;
 
     @PostMapping("/{contractNum}/upload")
@@ -31,9 +32,36 @@ public class ContractImageController {
         return ResponseEntity.ok(service.getImagesByContract(contractNum));
     }
 
-    @GetMapping("/download/{imageId}")
-    public ResponseEntity<byte[]> downloadImage(@PathVariable Long imageId) {
-        ContractImage image = service.getImagesByContract(imageId.toString()).get(0);
+    @GetMapping("/{contractNum}/view/{imageId}")
+    public ResponseEntity<byte[]> viewImage(
+            @PathVariable String contractNum,
+            @PathVariable Long imageId) {
+        ContractImage image = service.getImageById(imageId);
+        if (!image.getContractNum().equals(contractNum)) {
+            throw new RuntimeException("Image does not belong to this contract");
+        }
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(image.getMimeType()))
+                .body(image.getImageData());
+    }
+
+    @GetMapping("/{contractNum}/view-all")
+    public ResponseEntity<List<byte[]>> viewAllImages(@PathVariable String contractNum) {
+        List<ContractImage> images = service.getImagesByContract(contractNum);
+        List<byte[]> imageBytes = images.stream()
+                .map(ContractImage::getImageData)
+                .toList();
+        return ResponseEntity.ok(imageBytes);
+    }
+
+    @GetMapping("/{contractNum}/download/{imageId}")
+    public ResponseEntity<byte[]> downloadImage(
+            @PathVariable String contractNum,
+            @PathVariable Long imageId) {
+        ContractImage image = service.getImageById(imageId);
+        if (!image.getContractNum().equals(contractNum)) {
+            throw new RuntimeException("Image does not belong to this contract");
+        }
         return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType(image.getMimeType()))
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + image.getFileName() + "\"")

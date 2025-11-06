@@ -2,6 +2,8 @@ package com.example.apartmentmanagement.model;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDateTime;
 
@@ -23,6 +25,7 @@ public class ContractImage {
     private String imageType; // id_card, contract_scan, etc.
 
     @Lob
+    @JdbcTypeCode(SqlTypes.BINARY)
     @Column(nullable = false)
     private byte[] imageData;
 
