@@ -18,9 +18,20 @@ public class ReportDashboardDto {
     private double maintenanceCost;
     private double profit;
 
-    private List<Room> rooms;
+    private List<RoomDetailDto> roomDetails;
     private List<Invoice> invoices;
     private List<Contract> contracts;
     private List<MaintenanceLog> maintenances;
 
+    @Data
+    @Builder
+    public static class RoomDetailDto {
+        private String roomNum;
+        private String tenantName;
+        private String status;
+
+        private BigDecimal waterUsage;
+        private BigDecimal electricityUsage;
+        private Double maintenanceCost;
+    }
 }
