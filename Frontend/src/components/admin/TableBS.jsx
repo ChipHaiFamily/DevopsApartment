@@ -73,7 +73,7 @@ export default function TableBS({
       </div>
 
       {/* Table */}
-      <table className={["table", "table-striped", "table-hover", cyname].join(" ")}>
+      <table className={["table", "table-hover", cyname].join(" ")}>
         <thead>
           <tr>
             {columns.map((col) => (
