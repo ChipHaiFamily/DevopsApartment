@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 import ContractTemplate from "./ContractTemplate";
 import ReactDOM from "react-dom/client";
+import api from "../../../api/axiosConfig";
 
 export default function LeaseFormModal({
   open,
@@ -12,24 +12,29 @@ export default function LeaseFormModal({
   contract,
   mode = "create", // create | update | read
 }) {
+  if (!open) return null;
+
   const [tenants, setTenants] = useState([]);
   const [rooms, setRooms] = useState([]);
   const [error, setError] = useState("");
   const [errors, setErrors] = useState({}); // สำหรับเก็บ error ของแต่ละช่อง
+  const [file, setFile] = useState(null);
+  const [imageType, setImageType] = useState("");
+  const [uploadedImages, setUploadedImages] = useState([]);
 
   const isReadOnly = mode === "read";
   const isUpdateLimited = mode === "update";
 
   useEffect(() => {
-    axios
-      .get(`${import.meta.env.VITE_API_BASE_URL}/tenants`)
+    api
+      .get(`/tenants`)
       .then((res) =>
         setTenants(Array.isArray(res.data) ? res.data : res.data.data)
       )
       .catch((err) => console.error("Error fetching tenants:", err));
 
-    axios
-      .get(`${import.meta.env.VITE_API_BASE_URL}/rooms`)
+    api
+      .get(`/rooms`)
       .then((res) => setRooms(res.data?.data ?? []))
       .catch((err) => console.error("Error fetching rooms:", err));
   }, []);
@@ -76,8 +81,6 @@ export default function LeaseFormModal({
     }
   }, [mode, contract]);
 
-  if (!open) return null;
-
   // ========================== Validation ==========================
   const validateForm = () => {
     const newErrors = {};
@@ -99,14 +102,14 @@ export default function LeaseFormModal({
       newErrors.roomNum = "กรุณาเลือกห้อง ก่อนกดบันทึกข้อมูล";
     }
 
-    // ลิงก์สัญญา (optional แต่ถ้ามี ต้องเป็น URL ที่ถูกต้อง)
-    if (form.contractLink.trim() !== "") {
-      const urlRegex =
-        /^(https?:\/\/)([\w\-]+\.)+[a-z]{2,6}(:\d+)?(\/[\w\-._~:/?#[\]@!$&'()*+,;=]*)?$/i;
-      if (!urlRegex.test(form.contractLink.trim())) {
-        newErrors.contractLink = "กรุณากรอกลิ้งค์ที่ถูกต้อง";
-      }
-    }
+    // // ลิงก์สัญญา (optional แต่ถ้ามี ต้องเป็น URL ที่ถูกต้อง)
+    // if (form.contractLink.trim() !== "") {
+    //   const urlRegex =
+    //     /^(https?:\/\/)([\w\-]+\.)+[a-z]{2,6}(:\d+)?(\/[\w\-._~:/?#[\]@!$&'()*+,;=]*)?$/i;
+    //   if (!urlRegex.test(form.contractLink.trim())) {
+    //     newErrors.contractLink = "กรุณากรอกลิ้งค์ที่ถูกต้อง";
+    //   }
+    // }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -151,6 +154,46 @@ export default function LeaseFormModal({
     }
   };
 
+  const fetchUploadedImages = async () => {
+    if (!form.contractNum) return;
+    try {
+      const res = await api.get(`/contracts/images/${form.contractNum}`);
+      setUploadedImages(res.data || []);
+    } catch (err) {
+      console.error("Error fetching uploaded images:", err);
+    }
+  };
+
+  // ฟังก์ชันอัปโหลดไฟล์
+  const handleUploadFile = async () => {
+    if (!file) return alert("กรุณาเลือกไฟล์ก่อนอัปโหลด");
+    if (!form.contractNum) return alert("ไม่พบเลขที่สัญญา");
+    if (!imageType.trim()) return alert("กรุณากรอกประเภทเอกสารก่อนอัปโหลด");
+
+    try {
+      const formData = new FormData();
+      formData.append("imageType", imageType);
+      formData.append("file", file);
+
+      await api.post(`/contracts/images/${form.contractNum}/upload`, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+
+      alert("อัปโหลดสำเร็จ!");
+      setFile(null);
+      setImageType("");
+      fetchUploadedImages(); // refresh รายการไฟล์หลังอัปโหลด
+    } catch (err) {
+      console.error("Upload error:", err);
+      alert("ไม่สามารถอัปโหลดไฟล์ได้");
+    }
+  };
+
+  // โหลดรายการไฟล์เมื่อ modal เปิดหรืออัปเดตสัญญา
+  useEffect(() => {
+    if (open && form.contractNum) fetchUploadedImages();
+  }, [open, form.contractNum]);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
 
@@ -174,9 +217,7 @@ export default function LeaseFormModal({
     setForm((prev) => ({ ...prev, tenantId }));
 
     try {
-      const res = await axios.get(
-        `${import.meta.env.VITE_API_BASE_URL}/reservations`
-      );
+      const res = await api.get(`/reservations`);
       const reservations = res.data || [];
 
       const matched = reservations.find(
@@ -425,6 +466,85 @@ export default function LeaseFormModal({
                     <small className="text-danger">{errors.roomNum}</small>
                   )}
                 </div>
+
+                {/* Upload Document */}
+                <div className="col-md-12">
+                  <label className="form-label">อัปโหลดรูป / เอกสารสัญญา</label>
+
+                  <div className="row g-2 align-items-center">
+                    <div className="col-md-4">
+                      <input
+                        type="text"
+                        className="form-control"
+                        placeholder="ประเภทเอกสาร เช่น รูปบัตรประชาชน"
+                        value={imageType}
+                        onChange={(e) => setImageType(e.target.value)}
+                        disabled={isReadOnly}
+                      />
+                    </div>
+
+                    <div className="col-md-6">
+                      <input
+                        type="file"
+                        className="form-control"
+                        accept="image/*,.pdf"
+                        disabled={isReadOnly}
+                        onChange={(e) => setFile(e.target.files[0])}
+                      />
+                    </div>
+
+                    <div className="col-md-2">
+                      <button
+                        className="btn btn-outline-primary w-100"
+                        type="button"
+                        disabled={isReadOnly || !file}
+                        onClick={handleUploadFile}
+                      >
+                        <i className="bi bi-upload"></i> อัปโหลด
+                      </button>
+                    </div>
+                  </div>
+
+                  <small className="text-muted">
+                    รองรับไฟล์ .jpg, .png, .pdf (สูงสุด ~10MB)
+                  </small>
+
+                  {/* Uploaded Files List */}
+                  {uploadedImages.length > 0 && (
+                    <div className="mt-3">
+                      <label className="form-label fw-bold">
+                        ไฟล์ที่อัปโหลดแล้ว
+                      </label>
+                      <ul className="list-group">
+                        {uploadedImages.map((img, index) => (
+                          <li
+                            key={img.imageId || index}
+                            className="list-group-item d-flex justify-content-between align-items-center"
+                          >
+                            <div>
+                              <i className="bi bi-file-earmark-text me-2 text-primary"></i>
+                              {img.imageType || "ไม่ระบุประเภท"}
+                            </div>
+                            <div>
+                              <a
+                                href={`${
+                                  import.meta.env.VITE_API_BASE_URL
+                                }/contracts/images/${form.contractNum}/view/${
+                                  img.imageId
+                                }`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="btn btn-sm  me-2"
+                              >
+                                <i className="bi bi-eye"></i>
+                              </a>
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -439,7 +559,7 @@ export default function LeaseFormModal({
                   className="btn btn-outline-success"
                   onClick={handleExportPDF}
                 >
-                  <i className="bi bi-file-earmark-pdf"></i> ส่งออก PDF
+                  <i className="bi bi-file-earmark-pdf"></i> ส่งออกแบบร่างสัญญา
                 </button>
               )}
 
