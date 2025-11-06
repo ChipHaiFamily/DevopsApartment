@@ -189,6 +189,22 @@ export default function LeaseFormModal({
     }
   };
 
+  const handleDeleteImage = async (imageId) => {
+    if (!form.contractNum) return alert("ไม่พบเลขที่สัญญา");
+    if (!window.confirm("คุณต้องการลบไฟล์นี้หรือไม่?")) return;
+
+    try {
+      await api.delete(
+        `/contracts/images/${form.contractNum}/delete/${imageId}`
+      );
+      alert("ลบไฟล์สำเร็จ");
+      fetchUploadedImages(); // รีโหลดรายการไฟล์หลังลบ
+    } catch (err) {
+      console.error("Delete error:", err);
+      alert("ไม่สามารถลบไฟล์ได้");
+    }
+  };
+
   // โหลดรายการไฟล์เมื่อ modal เปิดหรืออัปเดตสัญญา
   useEffect(() => {
     if (open && form.contractNum) fetchUploadedImages();
@@ -525,7 +541,9 @@ export default function LeaseFormModal({
                               <i className="bi bi-file-earmark-text me-2 text-primary"></i>
                               {img.imageType || "ไม่ระบุประเภท"}
                             </div>
-                            <div>
+
+                            <div className="d-flex align-items-center gap-2">
+                              {/* ปุ่มดูไฟล์ */}
                               <a
                                 href={`${
                                   import.meta.env.VITE_API_BASE_URL
@@ -534,10 +552,22 @@ export default function LeaseFormModal({
                                 }`}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="btn btn-sm  me-2"
+                                className="btn btn-sm d-flex align-items-center justify-content-center"
+                                style={{ width: "32px", height: "32px" }}
+                                title="ดูไฟล์"
                               >
                                 <i className="bi bi-eye"></i>
                               </a>
+
+                              {/* ปุ่มลบรูป */}
+                              <button
+                                className="btn text-danger btn-sm d-flex align-items-center justify-content-center"
+                                style={{ width: "32px", height: "32px" }}
+                                onClick={() => handleDeleteImage(img.imageId)}
+                                title="ลบไฟล์"
+                              >
+                                <i className="bi bi-trash"></i>
+                              </button>
                             </div>
                           </li>
                         ))}
