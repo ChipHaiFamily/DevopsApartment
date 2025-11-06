@@ -228,6 +228,41 @@ public class InvoiceService {
     public Invoice create(Invoice obj) {
         obj.setInvoiceId(idGenerationService.generateInvoiceId());
         obj.setStatus("Pending");
+
+        Optional<Invoice> lastInvoiceOpt = repository.findAll().stream()
+                .filter(i -> i.getTenant().getTenantId().equals(obj.getTenant().getTenantId()))
+                .filter(i -> !"PAID".equalsIgnoreCase(i.getStatus()))
+                .max(Comparator.comparing(Invoice::getIssueDate));
+
+        if (lastInvoiceOpt.isPresent()) {
+            Invoice lastInvoice = lastInvoiceOpt.get();
+
+            BigDecimal totalItemsOld = lastInvoice.getItems().stream()
+                    .map(InvoiceItem::getAmount)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+            BigDecimal totalPaidOld = lastInvoice.getPayments().stream()
+                    .map(Payment::getAmount)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+            BigDecimal outstandingOld = totalItemsOld.subtract(totalPaidOld);
+
+            if (outstandingOld.compareTo(BigDecimal.ZERO) > 0) {
+                lastInvoice.setStatus("Carry_forward");
+                repository.save(lastInvoice);
+
+                InvoiceItem carryItem = new InvoiceItem();
+                carryItem.setDescription("Carry Forward from " + lastInvoice.getInvoiceId());
+                carryItem.setAmount(outstandingOld);
+                carryItem.setInvoice(obj);
+                obj.setItems(Optional.ofNullable(obj.getItems()).orElseGet(ArrayList::new));
+                obj.getItems().add(carryItem);
+
+                BigDecimal totalAmount = obj.getItems().stream()
+                        .map(InvoiceItem::getAmount)
+                        .reduce(BigDecimal.ZERO, BigDecimal::add);
+                obj.setTotalAmount(totalAmount);
+            }
+        }
+
         return repository.save(obj);
     }
 
