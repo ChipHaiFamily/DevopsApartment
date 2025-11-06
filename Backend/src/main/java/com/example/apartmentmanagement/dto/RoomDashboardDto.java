@@ -16,6 +16,5 @@ public class RoomDashboardDto {
     private long daysStayed;
     private BigDecimal totalUnpaid;
     private long maintenanceCount;
-    private BigDecimal totalExpenses;
     private List<ConsumptionDto> consumption;
 }

@@ -39,10 +39,7 @@ public class DashboardService {
         BigDecimal totalUnpaid = invoiceRepo.findTotalUnpaidByTenant(tenantID);
         if (totalUnpaid == null) totalUnpaid = BigDecimal.ZERO;
 
-        Double totalExpensesDouble = invoiceRepo.findTotalExpensesByTenant(tenantID);
-        BigDecimal totalExpenses = totalExpensesDouble != null ? BigDecimal.valueOf(totalExpensesDouble) : BigDecimal.ZERO;
-
-        long maintenanceCount = maintenanceRepo.countByRoomRoomNumAndStatus(roomNum, "pending");
+        long maintenanceCount = maintenanceRepo.countByRoomRoomNum(roomNum);
 
         LocalDate startDate = LocalDate.parse(startMonth + "-01");
         LocalDate endDate = YearMonth.parse(endMonth).atEndOfMonth();
@@ -83,7 +80,6 @@ public class DashboardService {
                 .daysStayed(daysStayed)
                 .totalUnpaid(totalUnpaid)
                 .maintenanceCount(maintenanceCount)
-                .totalExpenses(totalExpenses)
                 .consumption(monthlyConsumption)
                 .build();
     }
