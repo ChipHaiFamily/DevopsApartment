@@ -297,4 +297,27 @@ public class InvoiceService {
                 .map(InvoiceItem::getAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
+
+    public int countPaidRoomsThisMonth() {
+        LocalDate start = LocalDate.now().withDayOfMonth(1);
+        LocalDate end = start.plusMonths(1).minusDays(1);
+
+        Set<String> paidRoomNums = repository.findAll().stream()
+                .filter(i -> "PAID".equalsIgnoreCase(i.getStatus()))
+                .filter(i -> i.getIssueDate() != null &&
+                        !i.getIssueDate().isBefore(start) &&
+                        !i.getIssueDate().isAfter(end))
+                .map(i -> {
+                    Contract c = i.getTenant().getContract().stream()
+                            .filter(ct -> "active".equalsIgnoreCase(ct.getStatus()))
+                            .findFirst()
+                            .orElse(null);
+                    return c != null && c.getRoom() != null ? c.getRoom().getRoomNum() : null;
+                })
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+
+        return paidRoomNums.size();
+    }
+
 }

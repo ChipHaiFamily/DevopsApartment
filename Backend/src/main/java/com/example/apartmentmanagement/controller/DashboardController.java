@@ -3,7 +3,6 @@ package com.example.apartmentmanagement.controller;
 import com.example.apartmentmanagement.dto.*;
 import com.example.apartmentmanagement.model.Invoice;
 import com.example.apartmentmanagement.model.MaintenanceLog;
-import com.example.apartmentmanagement.model.Room;
 import com.example.apartmentmanagement.model.RoomType;
 import com.example.apartmentmanagement.service.*;
 import lombok.RequiredArgsConstructor;
@@ -12,6 +11,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestController
@@ -25,6 +25,7 @@ public class DashboardController {
     private final InvoiceService invoiceService;
     private final PaymentService paymentService;
     private final MaintenanceLogService maintenanceService;
+    private final MaintenanceScheduleService maintenanceScheduleService;
     private final TenantService tenantService;
     private final RoomTypeService roomTypeService;
 
@@ -77,10 +78,19 @@ public class DashboardController {
         int openMaintenance = maintenanceService.countOpenTasks();
 
         List<RoomDto> rooms = roomService.getRoomStatuses();
-        double occupancyRate = rentedRooms * 100.0 / totalRooms;
-        BigDecimal revenue = invoiceService.getRevenueThisMonth();
-        List<MaintenanceLog> maintenanceTasks = maintenanceService.getOpenTasks();
+        double occupancyRate = totalRooms > 0 ? rentedRooms * 100.0 / totalRooms : 0;
+        BigDecimal monthlyRevenue = invoiceService.getRevenueThisMonth();
+        int paidRoomsCount = invoiceService.countPaidRoomsThisMonth();
+
+        Map<String, BigDecimal> electricityUsage = dashboardService.getElectricityUsageByMonth();
+        Map<String, BigDecimal> waterUsage = dashboardService.getWaterUsageByMonth();
+
+        List<MaintenanceLog> maintenanceTasks = maintenanceService.getRecentTasks();
         List<Invoice> outstandingList = invoiceService.getOutstandingInvoices();
+
+        List<DashboardDto.ScheduleDto> maintenanceSchedule = maintenanceScheduleService.getUpcomingSchedule();
+
+        List<DashboardDto.SupplyDto> supplyItems = dashboardService.getAllSupplies();
 
         DashboardDto dashboard = DashboardDto.builder()
                 .totalRooms(totalRooms)
@@ -89,9 +99,14 @@ public class DashboardController {
                 .openMaintenance(openMaintenance)
                 .rooms(rooms)
                 .occupancyRate(occupancyRate)
-                .monthlyRevenue(revenue)
+                .monthlyRevenue(monthlyRevenue)
+                .paidRoomsCount(paidRoomsCount)
+                .electricityUsage(electricityUsage)
+                .waterUsage(waterUsage)
                 .maintenanceTasks(maintenanceTasks)
                 .outstandingInvoicesList(outstandingList)
+                .maintenanceSchedule(maintenanceSchedule)
+                .supplyItems(supplyItems)
                 .build();
 
         return ResponseEntity.ok(dashboard);
