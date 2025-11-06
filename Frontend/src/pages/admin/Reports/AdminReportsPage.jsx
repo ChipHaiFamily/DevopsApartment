@@ -3,6 +3,7 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import api from "../../../api/axiosConfig";
 import StatCardBS from "../../../components/admin/StatCardBS";
+import exportReportPDF from "./exportReportPDF";
 
 export default function AdminReportsPage() {
   const [selectedMonth, setSelectedMonth] = useState("");
@@ -23,7 +24,9 @@ export default function AdminReportsPage() {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const res = await api.get(`/dashboard/admin/report?month=${selectedMonth}`);
+        const res = await api.get(
+          `/dashboard/admin/report?month=${selectedMonth}`
+        );
         setReport(res.data);
       } catch (err) {
         console.error("โหลดข้อมูลรายงานล้มเหลว:", err);
@@ -34,52 +37,6 @@ export default function AdminReportsPage() {
     fetchData();
   }, [selectedMonth]);
 
-  const exportCSV = () => {
-    if (!report) return;
-    let csv = "ประเภท,ค่า\n";
-    csv += `อัตราการเข้าพัก,${report.occupancyRate}%\n`;
-    csv += `รายได้รวม,${report.totalIncome}\n`;
-    csv += `ค่าซ่อมบำรุง,${report.maintenanceCost}\n`;
-    csv += `กำไรสุทธิ,${report.profit}\n`;
-
-    const blob = new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.setAttribute("download", `report_${selectedMonth}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
-  const exportPDF = () => {
-    if (!report) return;
-    const doc = new jsPDF();
-    doc.setFontSize(16);
-    doc.text(`รายงานเดือน ${selectedMonth}`, 14, 20);
-
-    doc.setFontSize(12);
-    doc.text(`อัตราการเข้าพัก: ${report.occupancyRate.toFixed(2)}%`, 14, 30);
-    doc.text(`รายได้รวม: ฿${report.totalIncome}`, 14, 38);
-    doc.text(`ค่าซ่อมบำรุง: ฿${report.maintenanceCost}`, 14, 46);
-    doc.text(`กำไรสุทธิ: ฿${report.profit}`, 14, 54);
-
-    autoTable(doc, {
-      startY: 65,
-      head: [["ห้องพัก", "ผู้เช่า", "สถานะ", "ใช้น้ำ", "ใช้ไฟ", "งานซ่อม"]],
-      body: report.roomDetails.map((r) => [
-        r.roomNum,
-        r.tenantName || "-",
-        r.status,
-        r.waterUsage,
-        r.electricityUsage,
-        r.maintenanceCount,
-      ]),
-    });
-
-    doc.save(`report_${selectedMonth}.pdf`);
-  };
-
   return (
     <div className="container py-3">
       {/* Header */}
@@ -89,18 +46,18 @@ export default function AdminReportsPage() {
           <p className="text-muted mb-0">รายงานและสถิติการดำเนินงาน</p>
         </div>
         <div>
-          <button
+          {/* <button
             type="button"
             className="btn btn-light text-primary me-2"
             onClick={exportCSV}
             disabled={loading}
           >
             ส่งออก CSV
-          </button>
+          </button> */}
           <button
             type="button"
             className="btn btn-primary"
-            onClick={exportPDF}
+            onClick={() => exportReportPDF(report, selectedMonth)}
             disabled={loading}
           >
             ส่งออก PDF
@@ -151,7 +108,9 @@ export default function AdminReportsPage() {
             </div>
             <div className="col-md-3">
               <StatCardBS
-                icon={<i className="bi bi-graph-up-arrow text-warning fs-3"></i>}
+                icon={
+                  <i className="bi bi-graph-up-arrow text-warning fs-3"></i>
+                }
                 label="กำไรสุทธิ"
                 value={`฿${report.profit.toLocaleString()}`}
               />
@@ -165,7 +124,7 @@ export default function AdminReportsPage() {
               {report.roomDetails.length === 0 ? (
                 <div className="p-3 text-muted">ไม่มีข้อมูลห้องพัก</div>
               ) : (
-                <table className="table table-striped mb-0">
+                <table className="table mb-0">
                   <thead>
                     <tr>
                       <th>ห้องพัก</th>
@@ -200,7 +159,7 @@ export default function AdminReportsPage() {
               {report.invoices.length === 0 ? (
                 <div className="p-3 text-muted">ไม่มีข้อมูลใบแจ้งหนี้</div>
               ) : (
-                <table className="table table-striped mb-0">
+                <table className="table mb-0">
                   <thead>
                     <tr>
                       <th>หมายเลข</th>
@@ -233,7 +192,7 @@ export default function AdminReportsPage() {
                   {report.contracts.length === 0 ? (
                     <div className="p-3 text-muted">ไม่มีข้อมูลสัญญาเช่า</div>
                   ) : (
-                    <table className="table table-striped mb-0">
+                    <table className="table mb-0">
                       <thead>
                         <tr>
                           <th>ห้องพัก</th>
@@ -263,7 +222,7 @@ export default function AdminReportsPage() {
                   {report.maintenances.length === 0 ? (
                     <div className="p-3 text-muted">ไม่มีข้อมูลงานซ่อม</div>
                   ) : (
-                    <table className="table table-striped mb-0">
+                    <table className="table  mb-0">
                       <thead>
                         <tr>
                           <th>รหัสงาน</th>
