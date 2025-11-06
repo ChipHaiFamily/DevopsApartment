@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 import ContractTemplate from "./ContractTemplate";
@@ -21,9 +21,15 @@ export default function LeaseFormModal({
   const [file, setFile] = useState(null);
   const [imageType, setImageType] = useState("");
   const [uploadedImages, setUploadedImages] = useState([]);
+  const [confirmDelete, setConfirmDelete] = useState({
+    show: false,
+    imageId: null,
+  });
 
   const isReadOnly = mode === "read";
   const isUpdateLimited = mode === "update";
+
+  const toastRef = useRef(null);
 
   useEffect(() => {
     api
@@ -48,6 +54,18 @@ export default function LeaseFormModal({
   };
 
   const getDefaultDeposit = (price) => price * 2;
+
+  const showToast = (message, type = "success") => {
+    const toastEl = toastRef.current;
+    if (!toastEl) return;
+    const toastBody = toastEl.querySelector(".toast-body");
+    toastBody.textContent = message;
+    toastEl.classList.remove("bg-success", "bg-danger");
+    toastEl.classList.add(type === "success" ? "bg-success" : "bg-danger");
+
+    const bsToast = new window.bootstrap.Toast(toastEl);
+    bsToast.show();
+  };
 
   // ฟอร์มเริ่มต้น
   const [form, setForm] = useState({
@@ -166,9 +184,9 @@ export default function LeaseFormModal({
 
   // ฟังก์ชันอัปโหลดไฟล์
   const handleUploadFile = async () => {
-    if (!file) return alert("กรุณาเลือกไฟล์ก่อนอัปโหลด");
-    if (!form.contractNum) return alert("ไม่พบเลขที่สัญญา");
-    if (!imageType.trim()) return alert("กรุณากรอกประเภทเอกสารก่อนอัปโหลด");
+    if (!file) return showToast("กรุณาเลือกไฟล์ก่อนอัปโหลด", "danger");
+    if (!form.contractNum) return showToast("ไม่พบเลขที่สัญญา", "danger");
+    if (!imageType.trim()) return showToast("กรุณากรอกประเภทเอกสาร", "danger");
 
     try {
       const formData = new FormData();
@@ -179,29 +197,29 @@ export default function LeaseFormModal({
         headers: { "Content-Type": "multipart/form-data" },
       });
 
-      alert("อัปโหลดสำเร็จ!");
       setFile(null);
       setImageType("");
-      fetchUploadedImages(); // refresh รายการไฟล์หลังอัปโหลด
+      fetchUploadedImages();
+      showToast("อัปโหลดไฟล์สำเร็จ!", "success");
     } catch (err) {
       console.error("Upload error:", err);
-      alert("ไม่สามารถอัปโหลดไฟล์ได้");
+      showToast("ไม่สามารถอัปโหลดไฟล์ได้", "danger");
     }
   };
 
-  const handleDeleteImage = async (imageId) => {
-    if (!form.contractNum) return alert("ไม่พบเลขที่สัญญา");
-    if (!window.confirm("คุณต้องการลบไฟล์นี้หรือไม่?")) return;
+  const handleDeleteImage = async () => {
+    if (!form.contractNum || !confirmDelete.imageId) return;
 
     try {
       await api.delete(
-        `/contracts/images/${form.contractNum}/delete/${imageId}`
+        `/contracts/images/${form.contractNum}/delete/${confirmDelete.imageId}`
       );
-      alert("ลบไฟล์สำเร็จ");
-      fetchUploadedImages(); // รีโหลดรายการไฟล์หลังลบ
+      setConfirmDelete({ show: false, imageId: null });
+      fetchUploadedImages();
+      showToast("ลบไฟล์สำเร็จ", "success");
     } catch (err) {
       console.error("Delete error:", err);
-      alert("ไม่สามารถลบไฟล์ได้");
+      showToast("ไม่สามารถลบไฟล์ได้", "danger");
     }
   };
 
@@ -559,11 +577,31 @@ export default function LeaseFormModal({
                                 <i className="bi bi-eye"></i>
                               </a>
 
+                              {/* ปุ่มดาวน์โหลดไฟล์ */}
+                              <a
+                                href={`${
+                                  import.meta.env.VITE_API_BASE_URL
+                                }/contracts/images/${
+                                  form.contractNum
+                                }/download/${img.imageId}`}
+                                className="btn btn-sm d-flex text-primary align-items-center justify-content-center"
+                                style={{ width: "32px", height: "32px" }}
+                                title="ดาวน์โหลดไฟล์"
+                                download
+                              >
+                                <i className="bi bi-download"></i>
+                              </a>
+
                               {/* ปุ่มลบรูป */}
                               <button
                                 className="btn text-danger btn-sm d-flex align-items-center justify-content-center"
                                 style={{ width: "32px", height: "32px" }}
-                                onClick={() => handleDeleteImage(img.imageId)}
+                                onClick={() =>
+                                  setConfirmDelete({
+                                    show: true,
+                                    imageId: img.imageId,
+                                  })
+                                }
                                 title="ลบไฟล์"
                               >
                                 <i className="bi bi-trash"></i>
@@ -601,6 +639,62 @@ export default function LeaseFormModal({
             </div>
           </div>
         </div>
+
+        {/* Toast Notification */}
+        <div
+          className="toast position-fixed top-0 end-0 m-3 text-white"
+          role="alert"
+          aria-live="assertive"
+          aria-atomic="true"
+          ref={toastRef}
+          style={{ zIndex: 2000 }}
+        >
+          <div className="toast-body">แจ้งเตือน</div>
+        </div>
+
+        {/* Delete Confirmation Modal */}
+        {confirmDelete.show && (
+          <div
+            className="modal fade show d-block"
+            tabIndex="-1"
+            role="dialog"
+            aria-modal="true"
+            style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
+          >
+            <div className="modal-dialog modal-dialog-centered">
+              <div className="modal-content border-0 shadow">
+                <div className="modal-header bg-danger text-white">
+                  <h5 className="modal-title">
+                    <i className="bi bi-exclamation-triangle me-2"></i>
+                    ยืนยันการลบไฟล์
+                  </h5>
+                </div>
+                <div className="modal-body">
+                  <p className="mb-0">
+                    คุณต้องการลบไฟล์นี้หรือไม่?
+                    การดำเนินการนี้ไม่สามารถย้อนกลับได้
+                  </p>
+                </div>
+                <div className="modal-footer">
+                  <button
+                    className="btn btn-outline-secondary"
+                    onClick={() =>
+                      setConfirmDelete({ show: false, imageId: null })
+                    }
+                  >
+                    ยกเลิก
+                  </button>
+                  <button
+                    className="btn btn-danger"
+                    onClick={handleDeleteImage}
+                  >
+                    <i className="bi"></i> ลบไฟล์
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </>
   );
