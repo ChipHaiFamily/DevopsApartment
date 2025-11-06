@@ -45,6 +45,8 @@ public class ReportDashboardService {
                 ? Collections.emptyList()
                 : maintenanceRepository.findAllById(maintenanceIds);
 
+        List<Contract> allContracts = contractRepository.findAll();
+
         int totalRooms = rooms.size();
         long occupiedRooms = rooms.stream()
                 .filter(r -> "Occupied".equalsIgnoreCase(r.getStatus()))
@@ -65,8 +67,8 @@ public class ReportDashboardService {
 
             String roomNum = room.getRoomNum();
 
-            String tenantName = contracts.stream()
-                    .filter(c -> c.getRoom().getRoomNum().equals(roomNum))
+            String tenantName = allContracts.stream()
+                    .filter(c -> c.getRoom() != null && roomNum.equals(c.getRoom().getRoomNum()))
                     .map(c -> c.getTenant().getUser().getFullName())
                     .findFirst()
                     .orElse(null);
@@ -86,7 +88,7 @@ public class ReportDashboardService {
             }
 
             long roomMaintenanceCount = maintenances.stream()
-                    .filter(m -> m.getRoom().getRoomNum().equals(roomNum))
+                    .filter(m -> m.getRoom() != null && roomNum.equals(m.getRoom().getRoomNum()))
                     .count();
 
             return ReportDashboardDto.RoomDetailDto.builder()
