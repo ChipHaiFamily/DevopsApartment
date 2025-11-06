@@ -15,7 +15,7 @@ import java.util.List;
 public class ContractImageService {
     private final ContractImageRepository repository;
 
-    public ContractImage uploadContractImage(String contractNum, String imageType, MultipartFile file) throws IOException {
+    public void uploadContractImage(String contractNum, String imageType, MultipartFile file) throws IOException {
         ContractImage image = ContractImage.builder()
                 .contractNum(contractNum)
                 .imageType(imageType)
@@ -23,7 +23,7 @@ public class ContractImageService {
                 .fileName(file.getOriginalFilename())
                 .mimeType(file.getContentType())
                 .build();
-        return repository.save(image);
+        repository.save(image);
     }
 
     public List<ContractImage> getImagesByContract(String contractNum) {
@@ -33,5 +33,35 @@ public class ContractImageService {
     public ContractImage getImageById(Long imageId) {
         return repository.findById(imageId)
                 .orElseThrow(() -> new RuntimeException("Image not found with id: " + imageId));
+    }
+
+    public void updateContractImage(String contractNum, Long imageId, String imageType, MultipartFile file) throws IOException {
+        ContractImage existing = getImageById(imageId);
+
+        if (!existing.getContractNum().equals(contractNum)) {
+            throw new RuntimeException("Image does not belong to this contract");
+        }
+
+        if (imageType != null && !imageType.isBlank()) {
+            existing.setImageType(imageType);
+        }
+
+        if (file != null && !file.isEmpty()) {
+            existing.setImageData(file.getBytes());
+            existing.setFileName(file.getOriginalFilename());
+            existing.setMimeType(file.getContentType());
+        }
+
+        repository.save(existing);
+    }
+
+    public void deleteContractImage(String contractNum, Long imageId) {
+        ContractImage existing = getImageById(imageId);
+
+        if (!existing.getContractNum().equals(contractNum)) {
+            throw new RuntimeException("Image does not belong to this contract");
+        }
+
+        repository.delete(existing);
     }
 }
