@@ -2,10 +2,8 @@ package com.example.apartmentmanagement.service;
 
 import com.example.apartmentmanagement.dto.MeterInvoiceDto;
 import com.example.apartmentmanagement.dto.ReportDashboardDto;
-import com.example.apartmentmanagement.dto.RoomDto;
 import com.example.apartmentmanagement.model.*;
 import com.example.apartmentmanagement.repository.*;
-import com.example.apartmentmanagement.service.AuditLogService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -87,11 +85,9 @@ public class ReportDashboardService {
                 }
             }
 
-            // --- รวมค่าใช้จ่ายซ่อมของห้องนี้ทั้งหมด ---
-            double roomMaintenanceCost = maintenances.stream()
+            long roomMaintenanceCount = maintenances.stream()
                     .filter(m -> m.getRoom().getRoomNum().equals(roomNum))
-                    .mapToDouble(MaintenanceLog::getCost)
-                    .sum();
+                    .count();
 
             return ReportDashboardDto.RoomDetailDto.builder()
                     .roomNum(roomNum)
@@ -99,7 +95,7 @@ public class ReportDashboardService {
                     .status(room.getStatus())
                     .waterUsage(waterUsage)
                     .electricityUsage(electricityUsage)
-                    .maintenanceCost(roomMaintenanceCost)
+                    .maintenanceCount(roomMaintenanceCount)
                     .build();
         }).toList();
 
