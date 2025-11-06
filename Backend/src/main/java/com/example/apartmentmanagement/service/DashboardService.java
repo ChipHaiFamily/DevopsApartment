@@ -39,7 +39,10 @@ public class DashboardService {
         BigDecimal totalUnpaid = invoiceRepo.findTotalUnpaidByTenant(tenantID);
         if (totalUnpaid == null) totalUnpaid = BigDecimal.ZERO;
 
-        long maintenanceCount = maintenanceRepo.countByRoomRoomNum(roomNum);
+        long inProgressCount = maintenanceRepo.countByRoomRoomNumAndStatus(roomNum, "in_progress");
+        long scheduleCount   = maintenanceRepo.countByRoomRoomNumAndStatus(roomNum, "schedule");
+
+        long maintenanceCount = inProgressCount + scheduleCount;
 
         LocalDate startDate = LocalDate.parse(startMonth + "-01");
         LocalDate endDate = YearMonth.parse(endMonth).atEndOfMonth();

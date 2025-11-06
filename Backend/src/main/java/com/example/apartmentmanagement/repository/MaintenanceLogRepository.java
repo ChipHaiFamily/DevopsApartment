@@ -13,7 +13,7 @@ import java.util.Optional;
 public interface MaintenanceLogRepository extends JpaRepository<MaintenanceLog, String> {
     Optional<MaintenanceLog> findTopByOrderByLogIdDesc();
 
-    Long countByRoomRoomNum(String roomNum);
+    Long countByRoomRoomNumAndStatus(String roomNum, String status);
 
     List<MaintenanceLog> findByRoomRoomNumOrderByRequestDateDesc(String roomNum);
 
