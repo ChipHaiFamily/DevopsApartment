@@ -101,6 +101,7 @@ export default function AdminInvoicesPage() {
         { value: "Pending", label: "รอดำเนินการ" },
         { value: "Overdue", label: "เกินกำหนด" },
         { value: "Partial", label: "เกินกำหนด" },
+        { value: "Carry_forward", label: "ทบยอด" },
       ],
     },
   ];
@@ -200,6 +201,8 @@ export default function AdminInvoicesPage() {
                   </span>
                 ) : value === "Partial" ? (
                   <span className="badge bg-info rounded-pill">แบ่งจ่าย</span>
+                ): value === "Carry_forward" ? (
+                  <span className="badge bg-primary rounded-pill">ทบยอด</span>
                 ) : (
                   <span className="badge bg-white text-black rounded-pill">
                     ???
