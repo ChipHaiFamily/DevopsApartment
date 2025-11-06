@@ -124,14 +124,14 @@ export default function RoomDetailBS() {
 
         {/* Summary Stat Cards */}
         <div className="row g-3 mb-4">
-          {/* <div className="col-12 col-md-4">
+          <div className="col-12 col-md-4">
             <StatCardBS
               label="ยอดค้างชำระ"
               value={`฿${(roomData?.totalUnpaid ?? 0).toLocaleString()}`}
               icon={<i className="bi bi-cash-stack text-danger"></i>}
             />
           </div>
-          <div className="col-12 col-md-4">
+          {/* <div className="col-12 col-md-4">
             <StatCardBS
               label="คำขอรอการซ่อมแซม"
               value={`${roomData?.maintenanceCount ?? 0} รายการ`}
