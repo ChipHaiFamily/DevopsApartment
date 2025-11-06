@@ -1,6 +1,5 @@
 package com.example.apartmentmanagement.repository;
 
-import aj.org.objectweb.asm.commons.Remapper;
 import com.example.apartmentmanagement.model.MaintenanceLog;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -14,7 +13,7 @@ import java.util.Optional;
 public interface MaintenanceLogRepository extends JpaRepository<MaintenanceLog, String> {
     Optional<MaintenanceLog> findTopByOrderByLogIdDesc();
 
-    Long countByRoomRoomNumAndStatus(String roomNum, String status);
+    Long countByRoomRoomNum(String roomNum);
 
     List<MaintenanceLog> findByRoomRoomNumOrderByRequestDateDesc(String roomNum);
 
