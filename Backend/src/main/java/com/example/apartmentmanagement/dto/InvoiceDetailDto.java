@@ -14,11 +14,13 @@ public class InvoiceDetailDto {
     private LocalDate issueDate;
     private LocalDate dueDate;
     private BigDecimal totalAmount;
+    private BigDecimal outstanding;
     private String status;
 
     private String tenantId;
     private String contractStatus;
     private String roomNum;
+
 
     private List<ItemDto> items;
     private List<PaymentDto> payments;
