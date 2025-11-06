@@ -52,7 +52,6 @@ public class ContractService {
         return repository.save(obj);
     }
 
-    // ใช้สำหรับ update (หรือ save ตรง ๆ)
     public Contract save(Contract obj) {
         return repository.save(obj);
     }
