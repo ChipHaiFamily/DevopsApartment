@@ -66,13 +66,14 @@ export default function AdminReportsPage() {
 
     autoTable(doc, {
       startY: 65,
-      head: [["ห้องพัก", "ชั้น", "ประเภท", "ราคา", "สถานะ"]],
-      body: report.rooms.map((r) => [
+      head: [["ห้องพัก", "ผู้เช่า", "สถานะ", "ใช้น้ำ", "ใช้ไฟ", "งานซ่อม"]],
+      body: report.roomDetails.map((r) => [
         r.roomNum,
-        r.floor,
-        r.roomType?.name || "-",
-        r.roomType?.price || "-",
+        r.tenantName || "-",
         r.status,
+        r.waterUsage,
+        r.electricityUsage,
+        r.maintenanceCount,
       ]),
     });
 
@@ -161,27 +162,29 @@ export default function AdminReportsPage() {
           <div className="card mb-4 shadow-sm">
             <div className="card-header bg-white fw-bold">ข้อมูลห้องพัก</div>
             <div className="card-body p-0">
-              {report.rooms.length === 0 ? (
+              {report.roomDetails.length === 0 ? (
                 <div className="p-3 text-muted">ไม่มีข้อมูลห้องพัก</div>
               ) : (
                 <table className="table table-striped mb-0">
                   <thead>
                     <tr>
                       <th>ห้องพัก</th>
-                      <th>ชั้น</th>
-                      <th>ประเภทห้อง</th>
-                      <th>ราคา (บาท)</th>
+                      <th>ผู้เช่า</th>
                       <th>สถานะ</th>
+                      <th>ใช้น้ำ (หน่วย)</th>
+                      <th>ใช้ไฟฟ้า (หน่วย)</th>
+                      <th>จำนวนงานซ่อม</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {report.rooms.map((r, i) => (
+                    {report.roomDetails.map((r, i) => (
                       <tr key={i}>
                         <td>{r.roomNum}</td>
-                        <td>{r.floor}</td>
-                        <td>{r.roomType?.name}</td>
-                        <td>{r.roomType?.price.toLocaleString()}</td>
+                        <td>{r.tenantName || "-"}</td>
                         <td className="text-capitalize">{r.status}</td>
+                        <td>{r.waterUsage}</td>
+                        <td>{r.electricityUsage}</td>
+                        <td>{r.maintenanceCount}</td>
                       </tr>
                     ))}
                   </tbody>
