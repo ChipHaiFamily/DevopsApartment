@@ -32,6 +32,6 @@ public class ReportDashboardDto {
 
         private BigDecimal waterUsage;
         private BigDecimal electricityUsage;
-        private Double maintenanceCost;
+        private long maintenanceCount;
     }
 }
