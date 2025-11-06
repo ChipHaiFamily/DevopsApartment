@@ -12,9 +12,7 @@ import java.time.LocalDate;
 import java.time.YearMonth;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
-import java.util.Comparator;
 import java.util.stream.Collectors;
-
 
 @Service
 @RequiredArgsConstructor
@@ -26,6 +24,7 @@ public class DashboardService {
     private final MeterRepository meterRepo;
     private final MaintenanceLogRepository maintenanceRepo;
     private final TenantRepository tenantRepo;
+    private final SuppliesRepository suppliesRepo;
 
     public RoomDashboardDto getRoomDashboard(String roomNum, String startMonth, String endMonth) {
         Room room = roomRepo.findById(roomNum)
@@ -125,7 +124,7 @@ public class DashboardService {
     }
 
     public List<MaintenanceLog> getMaintenanceLogsByRoom(String roomNum) {
-        Room room = roomRepo.findById(roomNum)
+        roomRepo.findById(roomNum)
                 .orElseThrow(() -> new ResourceNotFoundException("Room not found"));
 
         return maintenanceRepo.findByRoomRoomNumOrderByRequestDateDesc(roomNum);
@@ -179,4 +178,40 @@ public class DashboardService {
                 .collect(Collectors.toList());
     }
 
+    public Map<String, BigDecimal> getWaterUsageByMonth() {
+        return meterRepo.findAll().stream()
+                .filter(m -> "water".equalsIgnoreCase(m.getType()))
+                .collect(Collectors.groupingBy(
+                        m -> m.getRecordDate().getYear() + "-" +
+                                String.format("%02d", m.getRecordDate().getMonthValue()),
+                        TreeMap::new,
+                        Collectors.reducing(BigDecimal.ZERO,
+                                m -> BigDecimal.valueOf(m.getUnit()),
+                                BigDecimal::add)
+                ));
+    }
+
+    public Map<String, BigDecimal> getElectricityUsageByMonth() {
+        return meterRepo.findAll().stream()
+                .filter(m -> "electricity".equalsIgnoreCase(m.getType()))
+                .collect(Collectors.groupingBy(
+                        m -> m.getRecordDate().getYear() + "-" +
+                                String.format("%02d", m.getRecordDate().getMonthValue()),
+                        TreeMap::new,
+                        Collectors.reducing(BigDecimal.ZERO,
+                                m -> BigDecimal.valueOf(m.getUnit()),
+                                BigDecimal::add)
+                ));
+    }
+
+    public List<DashboardDto.SupplyDto> getAllSupplies() {
+        return suppliesRepo.findAll().stream()
+                .map(s -> DashboardDto.SupplyDto.builder()
+                        .itemId(s.getItemId())
+                        .name(s.getItem_Name())
+                        .quantity(s.getQuantity() != null ? s.getQuantity() : 0)
+                        .status(s.getStatus())
+                        .build())
+                .collect(Collectors.toList());
+    }
 }
