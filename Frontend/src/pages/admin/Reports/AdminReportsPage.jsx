@@ -212,9 +212,9 @@ export default function AdminReportsPage() {
                   <tbody>
                     {report.invoices.map((inv, i) => (
                       <tr key={i}>
-                        <td>{inv.invoiceNum}</td>
-                        <td>{inv.tenantName}</td>
-                        <td>{inv.amount}</td>
+                        <td>{inv.invoiceId}</td>
+                        <td>{inv.tenant.user.fullName}</td>
+                        <td>{inv.totalAmount}</td>
                         <td>{inv.status}</td>
                       </tr>
                     ))}
@@ -244,8 +244,8 @@ export default function AdminReportsPage() {
                       <tbody>
                         {report.contracts.map((c, i) => (
                           <tr key={i}>
-                            <td>{c.roomNum}</td>
-                            <td>{c.tenantName}</td>
+                            <td>{c.room.roomNum}</td>
+                            <td>{c.tenant.user.fullName}</td>
                             <td>{c.status}</td>
                           </tr>
                         ))}
@@ -274,8 +274,8 @@ export default function AdminReportsPage() {
                       <tbody>
                         {report.maintenances.map((m, i) => (
                           <tr key={i}>
-                            <td>{m.maintenanceId}</td>
-                            <td>{m.roomNum}</td>
+                            <td>{m.logId}</td>
+                            <td>{m.room.roomNum}</td>
                             <td>{m.status}</td>
                           </tr>
                         ))}
