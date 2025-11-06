@@ -1,4 +1,3 @@
-// 📄 ContractImageController.java
 package com.example.apartmentmanagement.controller;
 
 import com.example.apartmentmanagement.model.ContractImage;
@@ -66,5 +65,23 @@ public class ContractImageController {
                 .contentType(MediaType.parseMediaType(image.getMimeType()))
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + image.getFileName() + "\"")
                 .body(image.getImageData());
+    }
+
+    @PutMapping("/{contractNum}/update/{imageId}")
+    public ResponseEntity<String> updateContractImage(
+            @PathVariable String contractNum,
+            @PathVariable Long imageId,
+            @RequestParam(required = false) String imageType,
+            @RequestParam(required = false) MultipartFile file) throws IOException {
+        service.updateContractImage(contractNum, imageId, imageType, file);
+        return ResponseEntity.ok("Image updated successfully");
+    }
+
+    @DeleteMapping("/{contractNum}/delete/{imageId}")
+    public ResponseEntity<String> deleteContractImage(
+            @PathVariable String contractNum,
+            @PathVariable Long imageId) {
+        service.deleteContractImage(contractNum, imageId);
+        return ResponseEntity.ok("Image deleted successfully");
     }
 }

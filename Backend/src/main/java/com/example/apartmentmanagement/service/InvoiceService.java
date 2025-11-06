@@ -56,14 +56,13 @@ public class InvoiceService {
 
         invoice.setIssueDate(dto.getIssueDate());
         invoice.setDueDate(dto.getDueDate());
-        invoice.setTotalAmount(dto.getTotalAmount());
 
         Tenant tenant = tenantRepository.findById(dto.getTenant().getTenantId())
                 .orElseThrow(() -> new ResourceNotFoundException("Tenant not found"));
         invoice.setTenant(tenant);
 
         invoice.setItems(Optional.ofNullable(invoice.getItems()).orElseGet(ArrayList::new));
-        invoice.getItems().clear();
+        invoice.getItems().removeIf(i -> !i.getDescription().toLowerCase().startsWith("interest"));
         for (InvoiceUpdateDTO.ItemDTO itemDto : dto.getItems()) {
             InvoiceItem item = new InvoiceItem();
             item.setItemId(itemDto.getItemId());
@@ -78,103 +77,136 @@ public class InvoiceService {
                 .collect(Collectors.toMap(Payment::getPaymentId, p -> p));
         invoice.getPayments().clear();
         for (InvoiceUpdateDTO.PaymentDTO payDto : dto.getPayments()) {
-            Payment payment;
-            if (payDto.getPaymentId() != null && existingPayments.containsKey(payDto.getPaymentId())) {
-                payment = existingPayments.get(payDto.getPaymentId());
-            } else {
-                payment = new Payment();
-                payment.setPaymentId(idGenerationService.generatePaymentId());
-            }
+            Payment payment = existingPayments.getOrDefault(payDto.getPaymentId(), new Payment());
+            if (payment.getPaymentId() == null) payment.setPaymentId(idGenerationService.generatePaymentId());
             payment.setInvoice(invoice);
             payment.setPaymentDate(LocalDate.parse(payDto.getPaymentDate()));
             payment.setMethod(payDto.getMethod());
             payment.setAmount(payDto.getAmount());
-
             invoice.getPayments().add(payment);
         }
+
+        BigDecimal totalItems = invoice.getItems().stream()
+                .filter(i -> !i.getDescription().toLowerCase().startsWith("interest"))
+                .map(InvoiceItem::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        invoice.setTotalAmount(totalItems);
+
+        BigDecimal totalInterest = applyLateInterest(invoice);
 
         BigDecimal totalPaid = invoice.getPayments().stream()
                 .map(Payment::getAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
+        BigDecimal outstanding = totalItems.add(totalInterest).subtract(totalPaid);
+
         if (totalPaid.compareTo(BigDecimal.ZERO) == 0) {
             invoice.setStatus("Pending");
-        } else if (totalPaid.compareTo(invoice.getTotalAmount()) >= 0) {
+        } else if (outstanding.compareTo(BigDecimal.ZERO) <= 0) {
             invoice.setStatus("Paid");
         } else {
             invoice.setStatus("Partial");
         }
 
-        applyLateInterest(invoice);
-
         return repository.save(invoice);
     }
 
-    private void applyLateInterest(Invoice invoice) {
+    private BigDecimal applyLateInterest(Invoice invoice) {
         LocalDate today = LocalDate.now();
         LocalDate dueDate = invoice.getDueDate();
 
         if (dueDate == null || !today.isAfter(dueDate)) {
-            return;
+            return BigDecimal.ZERO;
         }
 
-        long daysLate = java.time.temporal.ChronoUnit.DAYS.between(dueDate, today);
+        long monthsLate = java.time.temporal.ChronoUnit.MONTHS.between(
+                dueDate.withDayOfMonth(1),
+                today.withDayOfMonth(1)
+        );
+
+        if (monthsLate <= 0) {
+            return BigDecimal.ZERO;
+        }
 
         BigDecimal totalPaid = invoice.getPayments().stream()
                 .map(Payment::getAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        BigDecimal remaining = invoice.getTotalAmount().subtract(totalPaid);
+        BigDecimal totalItems = calculateTotalItems(invoice);
+
+        BigDecimal totalInterestBefore = invoice.getItems().stream()
+                .filter(i -> i.getDescription().toLowerCase().startsWith("interest"))
+                .map(InvoiceItem::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal remaining = totalItems.add(totalInterestBefore).subtract(totalPaid);
         if (remaining.compareTo(BigDecimal.ZERO) <= 0) {
-            return;
+            return totalInterestBefore;
         }
 
         String rateType = invoice.getStatus().equalsIgnoreCase("Partial") ? "partial" : "unpaid";
-
         InterestRate rate = interestRateRepository.findTopByTypeOrderByTimestampDesc(rateType);
         if (rate == null) {
-            return;
+            return totalInterestBefore;
         }
 
-        BigDecimal interestRatePerDay = BigDecimal.valueOf(rate.getPercentage() / 100.0 / 30.0);
-        BigDecimal interestAmount = remaining
-                .multiply(interestRatePerDay.multiply(BigDecimal.valueOf(daysLate)))
-                .setScale(2, RoundingMode.HALF_UP);
+        BigDecimal monthlyRate = BigDecimal.valueOf(rate.getPercentage() / 100.0);
+        BigDecimal currentOutstanding = remaining;
+        long existingInterestCount = invoice.getItems().stream()
+                .filter(i -> i.getDescription().toLowerCase().startsWith("interest"))
+                .count();
 
-        Optional<InvoiceItem> existingInterest = invoice.getItems().stream()
-                .filter(i -> i.getDescription().equalsIgnoreCase("Interest"))
-                .findFirst();
+        for (long i = existingInterestCount; i < monthsLate; i++) {
+            BigDecimal interestAmount = currentOutstanding
+                    .multiply(monthlyRate)
+                    .setScale(2, RoundingMode.HALF_UP);
 
-        if (existingInterest.isPresent()) {
-            existingInterest.get().setAmount(interestAmount);
-        } else {
+            currentOutstanding = currentOutstanding.add(interestAmount); // ทบต้นเข้าไป
+
             InvoiceItem interestItem = new InvoiceItem();
-            interestItem.setDescription("Interest");
+            interestItem.setDescription("Interest " + (i + 1));
             interestItem.setAmount(interestAmount);
             interestItem.setInvoice(invoice);
             invoice.getItems().add(interestItem);
         }
 
-        BigDecimal newTotal = invoice.getItems().stream()
+        return invoice.getItems().stream()
+                .filter(i -> i.getDescription().toLowerCase().startsWith("interest"))
                 .map(InvoiceItem::getAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-        invoice.setTotalAmount(newTotal);
     }
 
     public InvoiceDetailDto toInvoiceDetailDto(Invoice invoice) {
+        BigDecimal totalItems = calculateTotalItems(invoice);
+
+        BigDecimal totalInterestItems = invoice.getItems().stream()
+                .filter(i -> i.getDescription().toLowerCase().startsWith("interest"))
+                .map(InvoiceItem::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal totalPaid = invoice.getPayments().stream()
+                .map(Payment::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal outstanding = totalItems.add(totalInterestItems).subtract(totalPaid);
+
+        invoice.setTotalAmount(totalItems);
+
         var latestContract = invoice.getTenant().getContract().stream()
                 .max(Comparator.comparing(Contract::getStartDate))
                 .orElse(null);
+
         return InvoiceDetailDto.builder()
                 .invoiceId(invoice.getInvoiceId())
                 .issueDate(invoice.getIssueDate())
                 .dueDate(invoice.getDueDate())
-                .totalAmount(invoice.getTotalAmount())
+                .totalAmount(totalItems)
                 .status(invoice.getStatus())
                 .tenantId(invoice.getTenant().getTenantId())
                 .contractStatus(latestContract != null ? latestContract.getStatus() : null)
                 .roomNum(latestContract != null ? latestContract.getRoom().getRoomNum() : null)
+                .outstanding(outstanding)
                 .items(invoice.getItems().stream()
                         .map(i -> InvoiceDetailDto.ItemDto.builder()
                                 .itemId(i.getItemId())
@@ -196,6 +228,41 @@ public class InvoiceService {
     public Invoice create(Invoice obj) {
         obj.setInvoiceId(idGenerationService.generateInvoiceId());
         obj.setStatus("Pending");
+
+        Optional<Invoice> lastInvoiceOpt = repository.findAll().stream()
+                .filter(i -> i.getTenant().getTenantId().equals(obj.getTenant().getTenantId()))
+                .filter(i -> !"PAID".equalsIgnoreCase(i.getStatus()))
+                .max(Comparator.comparing(Invoice::getIssueDate));
+
+        if (lastInvoiceOpt.isPresent()) {
+            Invoice lastInvoice = lastInvoiceOpt.get();
+
+            BigDecimal totalItemsOld = lastInvoice.getItems().stream()
+                    .map(InvoiceItem::getAmount)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+            BigDecimal totalPaidOld = lastInvoice.getPayments().stream()
+                    .map(Payment::getAmount)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+            BigDecimal outstandingOld = totalItemsOld.subtract(totalPaidOld);
+
+            if (outstandingOld.compareTo(BigDecimal.ZERO) > 0) {
+                lastInvoice.setStatus("Carry_forward");
+                repository.save(lastInvoice);
+
+                InvoiceItem carryItem = new InvoiceItem();
+                carryItem.setDescription("Carry Forward from " + lastInvoice.getInvoiceId());
+                carryItem.setAmount(outstandingOld);
+                carryItem.setInvoice(obj);
+                obj.setItems(Optional.ofNullable(obj.getItems()).orElseGet(ArrayList::new));
+                obj.getItems().add(carryItem);
+
+                BigDecimal totalAmount = obj.getItems().stream()
+                        .map(InvoiceItem::getAmount)
+                        .reduce(BigDecimal.ZERO, BigDecimal::add);
+                obj.setTotalAmount(totalAmount);
+            }
+        }
+
         return repository.save(obj);
     }
 
@@ -204,7 +271,30 @@ public class InvoiceService {
     }
 
     public Invoice getInvoiceById(String id) {
-        return repository.findById(id)
+        Invoice invoice = repository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Invoice not found: " + id));
+
+        if (!"PAID".equalsIgnoreCase(invoice.getStatus())) {
+            BigDecimal interest = applyLateInterest(invoice);
+
+            BigDecimal totalPaid = invoice.getPayments().stream()
+                    .map(Payment::getAmount)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+            BigDecimal outstanding = invoice.getTotalAmount().subtract(totalPaid);
+
+            repository.save(invoice);
+
+            System.out.println("Interest added: " + interest);
+            System.out.println("Outstanding: " + outstanding);
+        }
+
+        return invoice;
+    }
+
+    private BigDecimal calculateTotalItems(Invoice invoice) {
+        return invoice.getItems().stream()
+                .filter(i -> !i.getDescription().toLowerCase().startsWith("interest"))
+                .map(InvoiceItem::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 }

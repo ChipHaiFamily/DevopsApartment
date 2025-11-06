@@ -41,4 +41,18 @@ public class PaymentSlipController {
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + slip.getFileName() + "\"")
                 .body(slip.getSlipData());
     }
+
+    @PutMapping("/{paymentId}/update")
+    public ResponseEntity<PaymentSlip> updateSlip(
+            @PathVariable String paymentId,
+            @RequestParam MultipartFile file) throws IOException {
+        PaymentSlip updated = service.updateSlip(paymentId, file);
+        return ResponseEntity.ok(updated);
+    }
+
+    @DeleteMapping("/{paymentId}/delete")
+    public ResponseEntity<String> deleteSlip(@PathVariable String paymentId) {
+        service.deleteSlip(paymentId);
+        return ResponseEntity.ok("Slip deleted successfully");
+    }
 }

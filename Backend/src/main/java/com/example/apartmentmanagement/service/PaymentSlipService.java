@@ -14,7 +14,7 @@ import java.util.List;
 public class PaymentSlipService {
     private final PaymentSlipRepository repository;
 
-    public PaymentSlip uploadSlip(String paymentId, MultipartFile file) throws IOException {
+    public void uploadSlip(String paymentId, MultipartFile file) throws IOException {
         List<PaymentSlip> existing = repository.findByPaymentId(paymentId);
         if (!existing.isEmpty()) {
             repository.delete(existing.get(0));
@@ -26,7 +26,7 @@ public class PaymentSlipService {
                 .fileName(file.getOriginalFilename())
                 .mimeType(file.getContentType())
                 .build();
-        return repository.save(slip);
+        repository.save(slip);
     }
 
     public PaymentSlip getSlipByPayment(String paymentId) {
@@ -37,4 +37,24 @@ public class PaymentSlipService {
         return slips.get(0); // เอา slip ตัวแรก (ควรมีแค่ 1)
     }
 
+    public PaymentSlip updateSlip(String paymentId, MultipartFile file) throws IOException {
+        PaymentSlip existing = getSlipByPayment(paymentId);
+
+        if (file == null || file.isEmpty()) {
+            throw new RuntimeException("File must not be empty");
+        }
+
+        existing.setSlipData(file.getBytes());
+        existing.setFileName(file.getOriginalFilename());
+        existing.setMimeType(file.getContentType());
+
+        return repository.save(existing);
+    }
+    public void deleteSlip(String paymentId) {
+        List<PaymentSlip> slips = repository.findByPaymentId(paymentId);
+        if (slips.isEmpty()) {
+            throw new RuntimeException("No slip found for payment: " + paymentId);
+        }
+        repository.delete(slips.get(0));
+    }
 }
