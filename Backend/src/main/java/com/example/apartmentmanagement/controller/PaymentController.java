@@ -13,7 +13,7 @@ public class PaymentController {
     public PaymentController(PaymentService service) { this.service = service; }
     @GetMapping public List<Payment> getAll() { return service.findAll(); }
     @GetMapping("/{id}") public Optional<Payment> getById(@PathVariable String id) { return service.findById(id); }
-    @PostMapping public Payment create(@RequestBody Payment obj) { return service.save(obj); }
+    @PostMapping public Payment create(@RequestBody Payment obj) { return service.create(obj); }
     @PutMapping("/{id}") public Payment update(@PathVariable String id, @RequestBody Payment obj) { obj.setPaymentId(id); return service.save(obj); }
     @DeleteMapping("/{id}") public void delete(@PathVariable String id) { service.deleteById(id); }
 }
