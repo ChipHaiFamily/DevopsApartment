@@ -71,7 +71,11 @@ public class DashboardController {
     }
 
     @GetMapping("/admin")
-    public ResponseEntity<DashboardDto> getDashboardAdmin() {
+    public ResponseEntity<DashboardDto> getDashboardAdmin(
+            @RequestParam(required = false) String startMonth,
+            @RequestParam(required = false) String endMonth,
+            @RequestParam(defaultValue = "all") String floor) {
+
         int totalRooms = roomService.countRooms();
         int rentedRooms = roomService.countRentedRooms();
         int outstandingInvoices = invoiceService.countOutstandingInvoices();
@@ -82,8 +86,16 @@ public class DashboardController {
         BigDecimal monthlyRevenue = invoiceService.getRevenueThisMonth();
         int paidRoomsCount = invoiceService.countPaidRoomsThisMonth();
 
-        Map<String, BigDecimal> electricityUsage = dashboardService.getElectricityUsageByMonth();
-        Map<String, BigDecimal> waterUsage = dashboardService.getWaterUsageByMonth();
+        Map<String, BigDecimal> electricityUsage;
+        Map<String, BigDecimal> waterUsage;
+
+        if (startMonth != null || endMonth != null || !"all".equalsIgnoreCase(floor)) {
+            electricityUsage = dashboardService.getElectricityUsageByMonth(startMonth, endMonth, floor);
+            waterUsage = dashboardService.getWaterUsageByMonth(startMonth, endMonth, floor);
+        } else {
+            electricityUsage = dashboardService.getElectricityUsageByMonth();
+            waterUsage = dashboardService.getWaterUsageByMonth();
+        }
 
         List<MaintenanceLog> maintenanceTasks = maintenanceService.getRecentTasks();
         List<Invoice> outstandingList = invoiceService.getOutstandingInvoices();
