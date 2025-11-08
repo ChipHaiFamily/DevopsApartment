@@ -52,8 +52,13 @@ const AdminLayout = () => {
         />
 
         {/* Routed content */}
-        <main className="flex-1 relative overflow-y-auto focus:outline-none">
-          <div className="py-6">
+        <main
+          className="flex-1 overflow-y-auto bg-gray-50"
+          style={{
+            height: "calc(100vh - 64px)", // ลบความสูง Navbar ออก
+          }}
+        >
+          <div className="py-6 px-4 md:px-8 overflow-y-auto h-full">
             <Outlet />
           </div>
         </main>
