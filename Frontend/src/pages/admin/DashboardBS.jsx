@@ -213,11 +213,13 @@ export default function DashboardBS() {
                   value={floor}
                   onChange={(e) => setFloor(Number(e.target.value))}
                 >
-                  {[1, 2, 3, 4, 5].map((f) => (
-                    <option key={f} value={f}>
-                      {f}
-                    </option>
-                  ))}
+                  {Array.from(new Set(data?.rooms?.map((r) => r.floor)))
+                    .sort((a, b) => a - b)
+                    .map((f) => (
+                      <option key={f} value={f}>
+                        {f}
+                      </option>
+                    ))}
                 </select>
 
                 <label className="small fw-semibold ms-2 me-1">ช่วง:</label>
