@@ -1,6 +1,7 @@
 package com.example.apartmentmanagement.service;
 
 import com.example.apartmentmanagement.dto.PaymentDashboardDto;
+import com.example.apartmentmanagement.exception.ResourceNotFoundException;
 import com.example.apartmentmanagement.model.Invoice;
 import com.example.apartmentmanagement.model.Payment;
 import com.example.apartmentmanagement.model.PaymentSlip;
@@ -20,6 +21,8 @@ public class PaymentService {
     private final PaymentRepository repository;
     private final ContractRepository contractRepo;
     private final PaymentSlipRepository slipRepository;
+    private final InvoiceRepository invoiceRepo;
+    private final IdGenerationService idGenerationService;
 
     public List<Payment> findAll() {
         return repository.findAll();
@@ -32,6 +35,42 @@ public class PaymentService {
     public Payment save(Payment obj) {
         return repository.save(obj);
     }
+
+    public Payment create(Payment payment) {
+        String invoiceId = payment.getInvoice().getInvoiceId();
+        Invoice invoice = invoiceRepo.findById(invoiceId)
+                .orElseThrow(() -> new ResourceNotFoundException("Invoice not found: " + invoiceId));
+
+        payment.setPaymentId(idGenerationService.generatePaymentId());
+        payment.setInvoice(invoice);
+
+        Payment saved = repository.save(payment);
+
+        updateInvoiceStatus(invoice);
+
+        return saved;
+    }
+
+    private void updateInvoiceStatus(Invoice invoice) {
+        BigDecimal totalItems = invoice.getItems().stream()
+                .map(i -> i.getAmount())
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal totalPaid = invoice.getPayments().stream()
+                .map(Payment::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        if (totalPaid.compareTo(BigDecimal.ZERO) == 0) {
+            invoice.setStatus("Pending");
+        } else if (totalPaid.compareTo(totalItems) >= 0) {
+            invoice.setStatus("Paid");
+        } else {
+            invoice.setStatus("Partial");
+        }
+
+        invoiceRepo.save(invoice);
+    }
+
 
     public void deleteById(String id) {
         repository.deleteById(id);

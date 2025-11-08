@@ -177,6 +177,7 @@ public class DashboardService {
                 .collect(Collectors.toList());
     }
 
+    // --- เมธอดเดิม (ไม่กรอง) ---
     public Map<String, BigDecimal> getWaterUsageByMonth() {
         return meterRepo.findAll().stream()
                 .filter(m -> "water".equalsIgnoreCase(m.getType()))
@@ -193,6 +194,42 @@ public class DashboardService {
     public Map<String, BigDecimal> getElectricityUsageByMonth() {
         return meterRepo.findAll().stream()
                 .filter(m -> "electricity".equalsIgnoreCase(m.getType()))
+                .collect(Collectors.groupingBy(
+                        m -> m.getRecordDate().getYear() + "-" +
+                                String.format("%02d", m.getRecordDate().getMonthValue()),
+                        TreeMap::new,
+                        Collectors.reducing(BigDecimal.ZERO,
+                                m -> BigDecimal.valueOf(m.getUnit()),
+                                BigDecimal::add)
+                ));
+    }
+
+    public Map<String, BigDecimal> getWaterUsageByMonth(String startMonth, String endMonth, String floor) {
+        return getUsageByMonth("water", startMonth, endMonth, floor);
+    }
+
+    public Map<String, BigDecimal> getElectricityUsageByMonth(String startMonth, String endMonth, String floor) {
+        return getUsageByMonth("electricity", startMonth, endMonth, floor);
+    }
+
+    private Map<String, BigDecimal> getUsageByMonth(String type, String startMonth, String endMonth, String floor) {
+        List<Meter> meters = meterRepo.findAll();
+
+        LocalDate startDate = (startMonth != null) ? LocalDate.parse(startMonth + "-01") : LocalDate.MIN;
+        LocalDate endDate = (endMonth != null) ? YearMonth.parse(endMonth).atEndOfMonth() : LocalDate.MAX;
+
+        return meters.stream()
+                .filter(m -> type.equalsIgnoreCase(m.getType()))
+                .filter(m -> !m.getRecordDate().isBefore(startDate) && !m.getRecordDate().isAfter(endDate))
+                .filter(m -> {
+                    if ("all".equalsIgnoreCase(floor)) return true;
+                    try {
+                        int roomFloor = Integer.parseInt(m.getRoom().substring(0, 1));
+                        return roomFloor == Integer.parseInt(floor);
+                    } catch (Exception e) {
+                        return false;
+                    }
+                })
                 .collect(Collectors.groupingBy(
                         m -> m.getRecordDate().getYear() + "-" +
                                 String.format("%02d", m.getRecordDate().getMonthValue()),
