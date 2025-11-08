@@ -10,8 +10,6 @@ export default function AdminLeasesPage() {
   const [selectedLease, setSelectedLease] = useState(null);
   const [showContractModal, setShowContractModal] = useState(false);
 
-  const baseURL = import.meta.env.VITE_API_BASE_URL;
-
   const fetchLeases = async () => {
     try {
       const res = await api.get("/contracts");
