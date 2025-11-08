@@ -16,7 +16,7 @@ export default function MaintenanceListBS({ logs }) {
   return (
     <div
       className="vstack gap-2 p-2 rounded-3 bg-body custom-scroll"
-      style={{ maxHeight: 200, overflowY: 'auto' }}  //  กล่อง scroll
+      style={{ height: 180, overflowY: 'auto' }}  //  กล่อง scroll
     >
       {logs.map(item => (
         <div
@@ -27,7 +27,7 @@ export default function MaintenanceListBS({ logs }) {
             <i className="bi bi-tools text-secondary" />
             <div>
               <div className="fw-semibold">ห้อง {item.room?.roomNum || "-"}</div>
-              <div className="text-secondary small">{item.description}</div>
+              <div className="text-secondary small">{item.logType}</div>
             </div>
           </div>
           <span className={chip(item.status)}>{text(item.status)}</span>
