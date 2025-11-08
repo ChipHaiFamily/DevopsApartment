@@ -4,6 +4,7 @@ import TableBS from "../../../components/admin/TableBS";
 import api from "../../../api/axiosConfig";
 import PaymentFormModal from "./PaymentFormModal";
 import InterestSettingModal from "./InterestSettingModal";
+import PaymentDetailModal from "./PaymentDetailModal";
 
 export default function AdminPaymentPage() {
   const [payments, setPayments] = useState([]);
@@ -13,6 +14,8 @@ export default function AdminPaymentPage() {
   const [interestModalOpen, setInterestModalOpen] = useState(false);
   const [ratePartial, setRatePartial] = useState(0);
   const [rateUnpaid, setRateUnpaid] = useState(0);
+  const [selectedPayment, setSelectedPayment] = useState(null);
+  const [detailOpen, setDetailOpen] = useState(false);
 
   const toastRef = useRef(null);
 
@@ -216,7 +219,10 @@ export default function AdminPaymentPage() {
             renderActions={(row) => (
               <button
                 className="btn btn-sm"
-                onClick={() => alert(`ดูรายละเอียด ${row.paymentId}`)}
+                onClick={() => {
+                  setSelectedPayment(row.paymentId);
+                  setDetailOpen(true);
+                }}
               >
                 <i className="bi bi-search"></i>
               </button>
@@ -241,6 +247,14 @@ export default function AdminPaymentPage() {
           fetchInterestRates();
           showToast("อัปเดตดอกเบี้ยเรียบร้อย!", "success");
         }}
+      />
+
+      <PaymentDetailModal
+        open={detailOpen}
+        onClose={() => setDetailOpen(false)}
+        paymentId={selectedPayment}
+        onToast={showToast}
+        onUpdated={fetchPayments}
       />
 
       {/*  Bootstrap Toast Container */}
