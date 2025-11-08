@@ -6,7 +6,7 @@ export default function TableBS({
   filters = [],
   renderCell,
   renderActions,
-  cyname="" 
+  cyname = "",
 }) {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedFilters, setSelectedFilters] = useState(
@@ -73,43 +73,48 @@ export default function TableBS({
       </div>
 
       {/* Table */}
-      <table className={["table", "table-hover", cyname].join(" ")}>
-        <thead>
-          <tr>
-            {columns.map((col) => (
-              <th key={col.key}>{col.label}</th>
-            ))}
-            {renderActions && <th className="text-end"></th>}
-          </tr>
-        </thead>
-        <tbody>
-          {filteredData.length > 0 ? (
-            filteredData.map((row, idx) => (
-              <tr key={idx}>
-                {columns.map((col) => (
-                  <td key={col.key}>
-                    {renderCell
-                      ? renderCell(col.key, row[col.key], row)
-                      : row[col.key]}
-                  </td>
-                ))}
-                {renderActions && (
-                  <td className="text-end">{renderActions(row)}</td>
-                )}
-              </tr>
-            ))
-          ) : (
+      <div
+        style={{ maxHeight: "750px", overflowY: "auto" }}
+        className="custom-scroll"
+      >
+        <table className={["table", "table-hover", cyname].join(" ")}>
+          <thead>
             <tr>
-              <td
-                colSpan={columns.length + (renderActions ? 1 : 0)}
-                className="text-center text-muted"
-              >
-                ไม่มีข้อมูล
-              </td>
+              {columns.map((col) => (
+                <th key={col.key}>{col.label}</th>
+              ))}
+              {renderActions && <th className="text-end"></th>}
             </tr>
-          )}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {filteredData.length > 0 ? (
+              filteredData.map((row, idx) => (
+                <tr key={idx}>
+                  {columns.map((col) => (
+                    <td key={col.key}>
+                      {renderCell
+                        ? renderCell(col.key, row[col.key], row)
+                        : row[col.key]}
+                    </td>
+                  ))}
+                  {renderActions && (
+                    <td className="text-end">{renderActions(row)}</td>
+                  )}
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td
+                  colSpan={columns.length + (renderActions ? 1 : 0)}
+                  className="text-center text-muted"
+                >
+                  ไม่มีข้อมูล
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
     </>
   );
 }
