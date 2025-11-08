@@ -14,6 +14,8 @@ export default function PaymentFormModal({ open, onClose, onSubmit }) {
     receiptFile: null,
     previewUrl: null,
   });
+  const [errors, setErrors] = useState({});
+  const [error, setError] = useState("");
 
   // ดึงใบแจ้งหนี้ที่ยังไม่ชำระ
   useEffect(() => {
@@ -32,6 +34,21 @@ export default function PaymentFormModal({ open, onClose, onSubmit }) {
         .catch((err) => console.error("Error fetching invoices:", err));
     }
   }, [open]);
+
+  const validateForm = () => {
+    const newErrors = {};
+
+    if (!selectedInvoice) newErrors.invoice = "กรุณาเลือกใบแจ้งหนี้";
+    if (!form.paymentDate) newErrors.paymentDate = "กรุณาระบุวันที่ชำระ";
+    if (!form.method) newErrors.method = "กรุณาเลือกรูปแบบการจ่าย";
+    if (form.amount === "" || form.amount === null)
+      newErrors.amount = "กรุณากรอกจำนวนเงิน";
+    else if (isNaN(form.amount) || Number(form.amount) <= 0)
+      newErrors.amount = "จำนวนเงินต้องมากกว่า 0";
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   // ฟังก์ชันช่วยคำนวณยอดรวมที่จ่ายไปแล้ว
   const getPaidTotal = (invoice) => {
@@ -66,26 +83,23 @@ export default function PaymentFormModal({ open, onClose, onSubmit }) {
       setForm((prev) => ({ ...prev, receiptFile: null, previewUrl: null }));
     }
   };
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError(""); // เคลียร์ error เดิม
 
-  const handleSubmit = async () => {
-    if (!selectedInvoice) return alert("กรุณาเลือกใบแจ้งหนี้ก่อน");
-    if (!form.method) return alert("กรุณาเลือกวิธีการชำระเงิน");
+    if (!validateForm()) return;
 
     const payload = {
       paymentDate: form.paymentDate,
       amount: Number(form.amount || 0),
       method: form.method,
-      invoice: {
-        invoiceId: selectedInvoice.invoiceId,
-      },
+      invoice: { invoiceId: selectedInvoice.invoiceId },
     };
 
     try {
-      // สร้างการชำระเงิน
       const res = await api.post("/payments", payload);
       const paymentId = res.data?.paymentId;
 
-      // ถ้ามีไฟล์ -> อัปโหลด
       if (form.receiptFile && paymentId) {
         const fd = new FormData();
         fd.append("file", form.receiptFile);
@@ -94,13 +108,12 @@ export default function PaymentFormModal({ open, onClose, onSubmit }) {
         });
       }
 
-      alert("บันทึกการชำระเงินสำเร็จ!");
-      onClose();
-
-      onSubmit?.();
+      setError("");
+      onSubmit?.(); // ← ให้ parent refresh
+      onClose(); // ← ปิด modal หลังส่งเสร็จ
     } catch (err) {
       console.error("Error creating payment:", err);
-      alert("เกิดข้อผิดพลาดในการบันทึกการชำระเงิน");
+      setError(err?.response?.data?.message || "ไม่สามารถบันทึกการชำระได้");
     }
   };
 
@@ -126,9 +139,13 @@ export default function PaymentFormModal({ open, onClose, onSubmit }) {
             <div className="modal-body">
               {/* Dropdown เลือกใบแจ้งหนี้ */}
               <div className="mb-3">
-                <label className="form-label">เลขที่ใบแจ้งหนี้</label>
+                <label className="form-label fw-semibold">
+                  เลขที่ใบแจ้งหนี้
+                </label>
                 <select
-                  className="form-select"
+                  className={`form-select ${
+                    errors.invoice ? "is-invalid" : ""
+                  }`}
                   onChange={(e) => handleSelectInvoice(e.target.value)}
                 >
                   <option value="">-- เลือกใบแจ้งหนี้ที่ยังไม่ชำระ --</option>
@@ -139,6 +156,9 @@ export default function PaymentFormModal({ open, onClose, onSubmit }) {
                     </option>
                   ))}
                 </select>
+                {errors.invoice && (
+                  <small className="text-danger">{errors.invoice}</small>
+                )}
               </div>
 
               {/* รายละเอียดใบแจ้งหนี้ */}
@@ -230,19 +250,31 @@ export default function PaymentFormModal({ open, onClose, onSubmit }) {
                 {/* ช่องกรอกข้อมูลเพิ่มเติม */}
                 <div className="row g-3 mt-3">
                   <div className="col-md-4">
-                    <label className="form-label">วันที่ชำระ</label>
+                    <label className="form-label fw-semibold">วันที่ชำระ</label>
                     <input
                       type="date"
                       name="paymentDate"
-                      className="form-control"
+                      className={`form-control ${
+                        errors.paymentDate ? "is-invalid" : ""
+                      }`}
                       value={form.paymentDate}
                       onChange={handleChange}
                     />
+                    {errors.paymentDate && (
+                      <small className="text-danger">
+                        {errors.paymentDate}
+                      </small>
+                    )}
                   </div>
+
                   <div className="col-md-4">
-                    <label className="form-label">รูปแบบการจ่าย</label>
+                    <label className="form-label fw-semibold">
+                      รูปแบบการจ่าย
+                    </label>
                     <select
-                      className="form-select"
+                      className={`form-select ${
+                        errors.method ? "is-invalid" : ""
+                      }`}
                       name="method"
                       value={form.method}
                       onChange={handleChange}
@@ -253,16 +285,25 @@ export default function PaymentFormModal({ open, onClose, onSubmit }) {
                       <option value="PromptPay">พร้อมเพย์</option>
                       <option value="Credit Card">บัตรเครดิต</option>
                     </select>
+                    {errors.method && (
+                      <small className="text-danger">{errors.method}</small>
+                    )}
                   </div>
+
                   <div className="col-md-4">
-                    <label className="form-label">จำนวนเงิน</label>
+                    <label className="form-label fw-semibold">จำนวนเงิน</label>
                     <input
                       type="number"
-                      className="form-control text-end"
+                      className={`form-control text-end ${
+                        errors.amount ? "is-invalid" : ""
+                      }`}
                       name="amount"
                       value={form.amount}
                       onChange={handleChange}
                     />
+                    {errors.amount && (
+                      <small className="text-danger">{errors.amount}</small>
+                    )}
                   </div>
 
                   <div className="col-12">

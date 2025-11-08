@@ -33,21 +33,6 @@ export default function AdminPaymentPage() {
     bsToast.show();
   };
 
-  // เมื่อบันทึกใน modal เสร็จ
-  const handlePaymentSubmit = async (payload) => {
-    console.log("📦 ข้อมูลที่ได้จาก PaymentFormModal:", payload);
-
-    try {
-      // สามารถต่อ API จริงได้ในภายหลัง เช่น:
-      // await api.post("/payments", payload);
-
-      alert("บันทึกการชำระเงินสำเร็จ!");
-      setPaymentModalOpen(false);
-    } catch (err) {
-      console.error("Error creating payment:", err);
-    }
-  };
-
   /**  ดึงข้อมูลการชำระเงินจาก API */
   const fetchPayments = async () => {
     try {
@@ -245,6 +230,7 @@ export default function AdminPaymentPage() {
         onClose={() => setPaymentModalOpen(false)}
         onSubmit={() => {
           fetchPayments(); // โหลดตารางใหม่หลังบันทึกสำเร็จ
+          showToast("บันทึกการชำระเงินสำเร็จ!", "success");
         }}
       />
 
