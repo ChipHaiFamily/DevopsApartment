@@ -124,7 +124,7 @@ export default function AdminSupplyPage() {
   // ฟิลเตอร์ฝั่งรายการสิ่งของ
   const listFilters = [
     {
-      key: "status",
+      key: "statusRaw",
       label: "ทุกสถานะ",
       options: [
         { value: "หมด", label: "หมด" },
@@ -216,6 +216,7 @@ export default function AdminSupplyPage() {
                 itemId: s.itemId,
                 name: s.item_Name,
                 quantity: s.quantity ?? "-",
+                statusRaw: translateStatus(s.status),
                 status: renderStatusBadge(translateStatus(s.status)),
               }))}
               filters={listFilters}
