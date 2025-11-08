@@ -243,7 +243,9 @@ export default function AdminPaymentPage() {
       <PaymentFormModal
         open={paymentModalOpen}
         onClose={() => setPaymentModalOpen(false)}
-        onSubmit={handlePaymentSubmit}
+        onSubmit={() => {
+          fetchPayments(); // โหลดตารางใหม่หลังบันทึกสำเร็จ
+        }}
       />
 
       <InterestSettingModal
