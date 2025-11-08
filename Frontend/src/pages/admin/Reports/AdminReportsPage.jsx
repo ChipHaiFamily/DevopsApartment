@@ -120,7 +120,10 @@ export default function AdminReportsPage() {
           {/* ตารางข้อมูลห้องพัก */}
           <div className="card mb-4 shadow-sm">
             <div className="card-header bg-white fw-bold">ข้อมูลห้องพัก</div>
-            <div className="card-body p-0">
+            <div
+              className="card-body p-0 custom-scroll"
+              style={{ maxHeight: "400px", overflowY: "auto" }}
+            >
               {report.roomDetails.length === 0 ? (
                 <div className="p-3 text-muted">ไม่มีข้อมูลห้องพัก</div>
               ) : (
@@ -155,7 +158,10 @@ export default function AdminReportsPage() {
           {/* ใบแจ้งหนี้ */}
           <div className="card mb-4 shadow-sm">
             <div className="card-header bg-white fw-bold">ใบแจ้งหนี้</div>
-            <div className="card-body p-0">
+            <div
+              className="card-body p-0 custom-scroll"
+              style={{ maxHeight: "260px", overflowY: "auto" }}
+            >
               {report.invoices.length === 0 ? (
                 <div className="p-3 text-muted">ไม่มีข้อมูลใบแจ้งหนี้</div>
               ) : (
@@ -188,7 +194,10 @@ export default function AdminReportsPage() {
             <div className="col-md-6">
               <div className="card shadow-sm">
                 <div className="card-header bg-white fw-bold">สัญญาเช่า</div>
-                <div className="card-body p-0">
+                <div
+                  className="card-body p-0 custom-scroll"
+                  style={{ maxHeight: "240px", overflowY: "auto" }}
+                >
                   {report.contracts.length === 0 ? (
                     <div className="p-3 text-muted">ไม่มีข้อมูลสัญญาเช่า</div>
                   ) : (
@@ -218,7 +227,10 @@ export default function AdminReportsPage() {
             <div className="col-md-6">
               <div className="card shadow-sm">
                 <div className="card-header bg-white fw-bold">งานซ่อมบำรุง</div>
-                <div className="card-body p-0">
+                <div
+                  className="card-body p-0 custom-scroll"
+                  style={{ maxHeight: "240px", overflowY: "auto" }}
+                >
                   {report.maintenances.length === 0 ? (
                     <div className="p-3 text-muted">ไม่มีข้อมูลงานซ่อม</div>
                   ) : (
