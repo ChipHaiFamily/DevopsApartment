@@ -138,7 +138,7 @@ export default function InvoiceDetailModal({ open, onClose, invoice, onEdit }) {
                   <label className="form-label">ห้อง</label>
                   <input
                     className="form-control"
-                    value={invoice.tenant?.contract?.room?.roomNum || "-"}
+                    value={invoice.tenant?.contract?.[0]?.room?.roomNum || "-"}
                     readOnly
                   />
                 </div>
