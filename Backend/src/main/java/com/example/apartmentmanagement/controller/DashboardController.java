@@ -17,7 +17,7 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping("/api/dashboard")
 @RequiredArgsConstructor
-public class DashboardController {
+public class    DashboardController {
 
     private final DashboardService dashboardService;
     private final ReportDashboardService reportDashboardService;
