@@ -109,7 +109,7 @@ describe(' Admin Invoices Page (fixed disabled + close)', () => {
 
     // ถ้ามีช่องคำอธิบายแบบพิมพ์ได้ (ไม่ readonly) ก็กรอก
     cy.get('@modal')
-      .find('input[placeholder="ระบุรายการอื่น ๆ"]')
+      .find('input[placeholder="กรอกรายละเอียดค่าใช้จ่ายอื่น ๆ"]')
       .then($els => {
         const editable = [...$els].find(el => !el.hasAttribute('readonly'));
         if (editable) {
