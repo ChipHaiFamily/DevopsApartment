@@ -1,18 +1,16 @@
 import React, { useState, useEffect } from "react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
-import axios from "axios";
+import api from "../../../api/axiosConfig";
 import StatCardBS from "../../../components/admin/StatCardBS";
-import ProgressBarBS from "../../../components/admin/ProgressBarBS";
-import MaintenanceListBS from "../../../components/admin/MaintenanceListBS";
-
-const baseURL = import.meta.env.VITE_API_BASE_URL;
+import exportReportPDF from "./exportReportPDF";
 
 export default function AdminReportsPage() {
   const [selectedMonth, setSelectedMonth] = useState("");
   const [report, setReport] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  // ==== ตั้งค่า default เป็นเดือนปัจจุบัน ====
+  // ตั้งค่า default เป็นเดือนปัจจุบัน
   useEffect(() => {
     const now = new Date();
     const y = now.getFullYear();
@@ -20,80 +18,24 @@ export default function AdminReportsPage() {
     setSelectedMonth(`${y}-${m}`);
   }, []);
 
-  // ==== โหลดข้อมูลจาก API ====
+  // โหลดข้อมูลจาก API
   useEffect(() => {
     if (!selectedMonth) return;
     const fetchData = async () => {
       try {
-        const res = await axios.get(
-          `${baseURL}/dashboard/admin/report?month=${selectedMonth}`
+        setLoading(true);
+        const res = await api.get(
+          `/dashboard/admin/report?month=${selectedMonth}`
         );
         setReport(res.data);
       } catch (err) {
-        console.error("โหลดข้อมูลล้มเหลว:", err);
+        console.error("โหลดข้อมูลรายงานล้มเหลว:", err);
+      } finally {
+        setLoading(false);
       }
     };
     fetchData();
   }, [selectedMonth]);
-
-  const exportCSV = () => {
-    if (!report) return;
-    let csv = "ประเภท,จำนวน,เข้าพัก,อัตรา\n";
-    report.roomEfficiency.forEach((r) => {
-      csv += `${r.type},${r.total},${r.occupied},${r.rate}%\n`;
-    });
-    csv += "\nเดือน,รายได้\n";
-    report.monthlyRevenue.forEach((r) => {
-      csv += `${r.month},${r.revenue}\n`;
-    });
-
-    // ใส่ BOM "\ufeff" เพื่อบอก Excel ว่าเป็น UTF-8
-    const blob = new Blob(["\ufeff" + csv], {
-      type: "text/csv;charset=utf-8;",
-    });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.setAttribute("download", `report_${selectedMonth}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
-  const exportPDF = () => {
-    if (!report) return;
-
-    const doc = new jsPDF();
-    doc.setFontSize(16);
-    doc.text(`Report for ${selectedMonth}`, 14, 20);
-
-    doc.setFontSize(12);
-    doc.text(`Occupancy Rate: ${report.summary.occupancyRate}%`, 14, 30);
-    doc.text(`Total Revenue: ${report.summary.totalRevenue} THB`, 14, 38);
-    doc.text(`Maintenance Cost: ${report.summary.maintenanceCost} THB`, 14, 46);
-    doc.text(`Net Profit: ${report.summary.netProfit} THB`, 14, 54);
-
-    // Room Efficiency Table
-    autoTable(doc, {
-      startY: 65,
-      head: [["Room Type", "Total", "Occupied", "Rate"]],
-      body: report.roomEfficiency.map((r) => [
-        r.type,
-        r.total,
-        r.occupied,
-        `${r.rate}%`,
-      ]),
-    });
-
-    // Monthly Revenue Table
-    autoTable(doc, {
-      startY: doc.lastAutoTable.finalY + 10,
-      head: [["Month", "Revenue (THB)"]],
-      body: report.monthlyRevenue.map((r) => [r.month, r.revenue]),
-    });
-
-    doc.save(`report_${selectedMonth}.pdf`);
-  };
 
   return (
     <div className="container py-3">
@@ -104,21 +46,27 @@ export default function AdminReportsPage() {
           <p className="text-muted mb-0">รายงานและสถิติการดำเนินงาน</p>
         </div>
         <div>
-          <button
+          {/* <button
             type="button"
             className="btn btn-light text-primary me-2"
             onClick={exportCSV}
+            disabled={loading}
           >
             ส่งออก CSV
-          </button>
-          <button type="button" className="btn btn-primary" onClick={exportPDF}>
+          </button> */}
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={() => exportReportPDF(report, selectedMonth)}
+            disabled={loading}
+          >
             ส่งออก PDF
           </button>
         </div>
       </div>
 
       {/* Month Picker */}
-      <div className="mb-3">
+      <div className="mb-4">
         <label className="form-label small fw-bold me-2">เลือกช่วงเวลา</label>
         <input
           type="month"
@@ -129,134 +77,187 @@ export default function AdminReportsPage() {
         />
       </div>
 
-      {report ? (
+      {loading ? (
+        <div>กำลังโหลดข้อมูล...</div>
+      ) : !report ? (
+        <div className="text-muted">ไม่พบข้อมูล</div>
+      ) : (
         <>
-          {/* Stat Cards */}
-          <div className="row g-3 mb-3">
-            <div className="col-12 col-md-6 col-lg-3">
+          {/* Summary Cards */}
+          <div className="row g-3 mb-4">
+            <div className="col-md-3">
               <StatCardBS
+                icon={<i className="bi bi-people-fill text-primary fs-3"></i>}
                 label="อัตราการเข้าพัก"
-                value={`${report.summary.occupancyRate}%`}
-                icon={<i className="bi bi-bar-chart"></i>}
+                value={`${report.occupancyRate.toFixed(2)}%`}
               />
             </div>
-            <div className="col-12 col-md-6 col-lg-3">
+            <div className="col-md-3">
               <StatCardBS
+                icon={<i className="bi bi-cash-stack text-success fs-3"></i>}
                 label="รายได้รวม"
-                value={`฿${report.summary.totalRevenue.toLocaleString()}`}
-                icon={<i className="bi bi-cash-stack text-success"></i>}
+                value={`฿${report.totalIncome.toLocaleString()}`}
               />
             </div>
-            <div className="col-12 col-md-6 col-lg-3">
+            <div className="col-md-3">
               <StatCardBS
-                label="ค่าส่วนบำรุง"
-                value={`฿${report.summary.maintenanceCost}`}
-                icon={<i className="bi bi-wrench-adjustable text-danger"></i>}
+                icon={<i className="bi bi-tools text-danger fs-3"></i>}
+                label="ค่าซ่อมบำรุง"
+                value={`฿${report.maintenanceCost.toLocaleString()}`}
               />
             </div>
-            <div className="col-12 col-md-6 col-lg-3">
+            <div className="col-md-3">
               <StatCardBS
+                icon={
+                  <i className="bi bi-graph-up-arrow text-warning fs-3"></i>
+                }
                 label="กำไรสุทธิ"
-                value={`฿${report.summary.netProfit}`}
-                icon={<i className="bi bi-graph-up-arrow text-warning"></i>}
+                value={`฿${report.profit.toLocaleString()}`}
               />
             </div>
           </div>
 
-          {/* รายได้ / เข้าพัก */}
-          <div className="row g-3 mb-3">
-            <div className="col-lg-6">
-              <div className="card card-soft">
-                <div className="card-header bg-white border-0 fw-bold">
-                  รายได้
-                </div>
-                <div className="card-body">
-                  {report.monthlyRevenue
-                    .slice()
-                    .reverse() // เรียงใหม่: เดือนล่าสุด -> ย้อนหลัง
-                    .map((r) => (
-                      <div
-                        key={r.month}
-                        className="d-flex justify-content-between mb-2"
-                      >
-                        <span>{r.month}</span>
-                        <span className="fw-bold">฿{r.revenue}</span>
-                      </div>
+          {/* ตารางข้อมูลห้องพัก */}
+          <div className="card mb-4 shadow-sm">
+            <div className="card-header bg-white fw-bold">ข้อมูลห้องพัก</div>
+            <div
+              className="card-body p-0 custom-scroll"
+              style={{ maxHeight: "400px", overflowY: "auto" }}
+            >
+              {report.roomDetails.length === 0 ? (
+                <div className="p-3 text-muted">ไม่มีข้อมูลห้องพัก</div>
+              ) : (
+                <table className="table mb-0">
+                  <thead>
+                    <tr>
+                      <th>ห้องพัก</th>
+                      <th>ผู้เช่า</th>
+                      <th>สถานะ</th>
+                      <th>ใช้น้ำ (หน่วย)</th>
+                      <th>ใช้ไฟฟ้า (หน่วย)</th>
+                      <th>จำนวนงานซ่อม</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {report.roomDetails.map((r, i) => (
+                      <tr key={i}>
+                        <td>{r.roomNum}</td>
+                        <td>{r.tenantName || "-"}</td>
+                        <td className="text-capitalize">{r.status}</td>
+                        <td>{r.waterUsage}</td>
+                        <td>{r.electricityUsage}</td>
+                        <td>{r.maintenanceCount}</td>
+                      </tr>
                     ))}
-                </div>
-              </div>
-            </div>
-
-            <div className="col-lg-6">
-              <div className="card card-soft">
-                <div className="card-header bg-white border-0 fw-bold">
-                  อัตราการเข้าพัก
-                </div>
-                <div className="card-body">
-                  {report.monthlyOccupancy
-                    .slice()
-                    .reverse() // เรียงใหม่
-                    .map((o) => (
-                      <div key={o.month} className="mb-2">
-                        <div className="d-flex justify-content-between small">
-                          <span>{o.month}</span>
-                          <span>{o.occupancyRate}%</span>
-                        </div>
-                        <ProgressBarBS value={o.occupancyRate} />
-                      </div>
-                    ))}
-                </div>
-              </div>
+                  </tbody>
+                </table>
+              )}
             </div>
           </div>
 
-          {/* ประสิทธิภาพห้องพัก */}
-          <div className="row g-3">
-            <div className="col-lg-6">
-              <div className="card card-soft">
-                <div className="card-header bg-white border-0 fw-bold">
-                  ประสิทธิภาพห้องพัก
-                </div>
-                <div className="card-body">
-                  <table className="table table-sm">
-                    <thead>
-                      <tr>
-                        <th>ประเภท</th>
-                        <th>จำนวน</th>
-                        <th>เข้าพัก</th>
-                        <th>อัตรา</th>
+          {/* ใบแจ้งหนี้ */}
+          <div className="card mb-4 shadow-sm">
+            <div className="card-header bg-white fw-bold">ใบแจ้งหนี้</div>
+            <div
+              className="card-body p-0 custom-scroll"
+              style={{ maxHeight: "260px", overflowY: "auto" }}
+            >
+              {report.invoices.length === 0 ? (
+                <div className="p-3 text-muted">ไม่มีข้อมูลใบแจ้งหนี้</div>
+              ) : (
+                <table className="table mb-0">
+                  <thead>
+                    <tr>
+                      <th>หมายเลข</th>
+                      <th>ผู้เช่า</th>
+                      <th>ยอดชำระ (บาท)</th>
+                      <th>สถานะ</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {report.invoices.map((inv, i) => (
+                      <tr key={i}>
+                        <td>{inv.invoiceId}</td>
+                        <td>{inv.tenant.user.fullName}</td>
+                        <td>{inv.totalAmount}</td>
+                        <td>{inv.status}</td>
                       </tr>
-                    </thead>
-                    <tbody>
-                      {report.roomEfficiency.map((r, idx) => (
-                        <tr key={idx}>
-                          <td>{r.type}</td>
-                          <td>{r.total}</td>
-                          <td>{r.occupied}</td>
-                          <td>{r.rate}%</td>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          </div>
+
+          {/* สัญญา & งานซ่อม */}
+          <div className="row g-3">
+            <div className="col-md-6">
+              <div className="card shadow-sm">
+                <div className="card-header bg-white fw-bold">สัญญาเช่า</div>
+                <div
+                  className="card-body p-0 custom-scroll"
+                  style={{ maxHeight: "240px", overflowY: "auto" }}
+                >
+                  {report.contracts.length === 0 ? (
+                    <div className="p-3 text-muted">ไม่มีข้อมูลสัญญาเช่า</div>
+                  ) : (
+                    <table className="table mb-0">
+                      <thead>
+                        <tr>
+                          <th>ห้องพัก</th>
+                          <th>ผู้เช่า</th>
+                          <th>สถานะ</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody>
+                        {report.contracts.map((c, i) => (
+                          <tr key={i}>
+                            <td>{c.room.roomNum}</td>
+                            <td>{c.tenant.user.fullName}</td>
+                            <td>{c.status}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
                 </div>
               </div>
             </div>
 
-            {/* งานซ่อม */}
-            <div className="col-lg-6">
-              <div className="card card-soft">
-                <div className="card-header bg-white border-0 d-flex justify-content-between align-items-center">
-                  <div className="fw-bold">งานซ่อมบำรุง</div>
-                </div>
-                <div className="card-body pt-0">
-                  <MaintenanceListBS logs={report.maintenanceWorks} />
+            <div className="col-md-6">
+              <div className="card shadow-sm">
+                <div className="card-header bg-white fw-bold">งานซ่อมบำรุง</div>
+                <div
+                  className="card-body p-0 custom-scroll"
+                  style={{ maxHeight: "240px", overflowY: "auto" }}
+                >
+                  {report.maintenances.length === 0 ? (
+                    <div className="p-3 text-muted">ไม่มีข้อมูลงานซ่อม</div>
+                  ) : (
+                    <table className="table  mb-0">
+                      <thead>
+                        <tr>
+                          <th>รหัสงาน</th>
+                          <th>ห้องพัก</th>
+                          <th>สถานะ</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {report.maintenances.map((m, i) => (
+                          <tr key={i}>
+                            <td>{m.logId}</td>
+                            <td>{m.room.roomNum}</td>
+                            <td>{m.status}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
                 </div>
               </div>
             </div>
           </div>
         </>
-      ) : (
-        <div>กำลังโหลดข้อมูล...</div>
       )}
     </div>
   );

@@ -7,6 +7,8 @@ import com.example.apartmentmanagement.model.Tenant;
 import com.example.apartmentmanagement.repository.ContractRepository;
 import com.example.apartmentmanagement.repository.RoomRepository;
 import com.example.apartmentmanagement.exception.ResourceNotFoundException;
+import com.example.apartmentmanagement.repository.RoomTypeRepository;
+import com.example.apartmentmanagement.repository.TenantRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -18,6 +20,7 @@ public class RoomService {
 
     private final RoomRepository repository;
     private final ContractRepository contractRepo;
+    private final RoomTypeRepository roomTypeRepo;
 
     private RoomDto mapToDto(Room r) {
         String tenantFullName = contractRepo
@@ -78,6 +81,12 @@ public class RoomService {
 
         room.setFloor(dto.getFloor());
         room.setStatus(dto.getStatus());
+
+        if (dto.getRoomTypeId() != null) {
+            RoomType roomType = roomTypeRepo.findById(dto.getRoomTypeId())
+                    .orElseThrow(() -> new ResourceNotFoundException("RoomType not found"));
+            room.setRoomType(roomType);
+        }
 
         Room updated = repository.save(room);
         return mapToDto(updated);

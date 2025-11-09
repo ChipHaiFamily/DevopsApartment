@@ -97,8 +97,8 @@ class MaintenanceLogRepositoryIntegrationTest {
     @Test
     @DisplayName("Should count logs by room number and status")
     void testCountByRoomRoomNumAndStatus() {
-        Long countDone = maintenanceLogRepository.countByRoomRoomNumAndStatus("101", "done");
-        Long countPending = maintenanceLogRepository.countByRoomRoomNumAndStatus("101", "pending");
+        Long countDone = maintenanceLogRepository.countByRoomRoomNum("101");
+        Long countPending = maintenanceLogRepository.countByRoomRoomNum("101");
 
         assertEquals(2L, countDone);
         assertEquals(1L, countPending);

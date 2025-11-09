@@ -1,6 +1,7 @@
 package com.example.apartmentmanagement.repository;
 
 import com.example.apartmentmanagement.model.Contract;
+import com.example.apartmentmanagement.model.Room;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -16,7 +17,7 @@ public interface ContractRepository extends JpaRepository<Contract, String> {
     List<Contract> findActiveContractsByTenant(@Param("tenantId") String tenantId);
 
     Optional<Contract> findByRoomRoomNumAndStatus(String roomNum, String status);
-
+    Contract findByRoom_RoomNumOrderByEndDateDesc(String roomNum);
     Optional<Contract> findTopByOrderByContractNumDesc();
 
     @Query("SELECT c FROM Contract c " +

@@ -4,6 +4,7 @@ import TableBS from "../../../components/admin/TableBS";
 import api from "../../../api/axiosConfig";
 import PaymentFormModal from "./PaymentFormModal";
 import InterestSettingModal from "./InterestSettingModal";
+import PaymentDetailModal from "./PaymentDetailModal";
 
 export default function AdminPaymentPage() {
   const [payments, setPayments] = useState([]);
@@ -13,9 +14,73 @@ export default function AdminPaymentPage() {
   const [interestModalOpen, setInterestModalOpen] = useState(false);
   const [ratePartial, setRatePartial] = useState(0);
   const [rateUnpaid, setRateUnpaid] = useState(0);
+  const [selectedPayment, setSelectedPayment] = useState(null);
+  const [detailOpen, setDetailOpen] = useState(false);
 
   const toastRef = useRef(null);
 
+  // เรียกตอนเริ่มโหลด
+  useEffect(() => {
+    fetchInterestRates();
+  }, []);
+
+  const showToast = (message, type = "success") => {
+    const toastEl = toastRef.current;
+    if (!toastEl) return;
+    const toastBody = toastEl.querySelector(".toast-body");
+    toastBody.textContent = message;
+    toastEl.classList.remove("bg-success", "bg-danger");
+    toastEl.classList.add(type === "success" ? "bg-success" : "bg-danger");
+
+    const bsToast = new window.bootstrap.Toast(toastEl);
+    bsToast.show();
+  };
+
+  /**  ดึงข้อมูลการชำระเงินจาก API */
+  const fetchPayments = async () => {
+    try {
+      const res = await api.get("/dashboard/admin/payment");
+      const data = Array.isArray(res.data) ? res.data : res.data.data;
+
+      const formatted = data.map((p) => ({
+        paymentId: p.paymentId,
+        invoiceId: p.invoiceId,
+        tenantName: p.tenantName,
+        room: p.roomNum || "-",
+        date: p.paymentDate,
+        method: p.method,
+        amount: Number(p.amount || 0),
+      }));
+
+      setPayments(formatted);
+    } catch (err) {
+      console.error("Error fetching payments:", err);
+      showToast("โหลดข้อมูลการชำระเงินไม่สำเร็จ", "danger");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  /**  ดึงข้อมูลห้อง (ใช้ใน filter) */
+  const fetchRooms = async () => {
+    try {
+      const res = await api.get("/rooms");
+      const roomsData = Array.isArray(res.data?.data) ? res.data.data : [];
+      const sortedRooms = roomsData.sort(
+        (a, b) => Number(a.roomNum) - Number(b.roomNum)
+      );
+      setRooms(
+        sortedRooms.map((r) => ({
+          value: r.roomNum?.toString() || "-",
+          label: r.roomNum?.toString() || "-",
+        }))
+      );
+    } catch (err) {
+      console.error("Error fetching rooms:", err);
+    }
+  };
+
+  /**  ดึงอัตราดอกเบี้ย */
   const fetchInterestRates = async () => {
     try {
       const res = await api.get("/interest-rate/latest");
@@ -31,142 +96,24 @@ export default function AdminPaymentPage() {
     }
   };
 
-  // เรียกตอนเริ่มโหลด
   useEffect(() => {
-    fetchInterestRates();
+    Promise.all([fetchPayments(), fetchRooms(), fetchInterestRates()]);
   }, []);
 
-   const showToast = (message, type = "success") => {
-    const toastEl = toastRef.current;
-    if (!toastEl) return;
-    const toastBody = toastEl.querySelector(".toast-body");
-    toastBody.textContent = message;
-    toastEl.classList.remove("bg-success", "bg-danger");
-    toastEl.classList.add(type === "success" ? "bg-success" : "bg-danger");
+  const now = new Date();
+  const currentMonth = now.getMonth();
+  const currentYear = now.getFullYear();
 
-    const bsToast = new window.bootstrap.Toast(toastEl);
-    bsToast.show();
-  };
-
-  // เมื่อบันทึกใน modal เสร็จ
-  const handlePaymentSubmit = async (payload) => {
-    console.log("📦 ข้อมูลที่ได้จาก PaymentFormModal:", payload);
-
-    try {
-      // สามารถต่อ API จริงได้ในภายหลัง เช่น:
-      // await api.post("/payments", payload);
-
-      alert("บันทึกการชำระเงินสำเร็จ!");
-      setPaymentModalOpen(false);
-    } catch (err) {
-      console.error("Error creating payment:", err);
-    }
-  };
-
-  // mock data (แทนการเรียก API จริง)
-  useEffect(() => {
-    const mock = [
-      {
-        paymentId: "PMT-2025-08-01",
-        invoiceId: "INV-2025-08-01",
-        room: "107",
-        tenantName: "Somsak Jaidee",
-        date: "2025-08-25",
-        method: "Bank Transfer",
-        amount: 5800,
-      },
-      {
-        paymentId: "PMT-2025-08-02",
-        invoiceId: "INV-2025-08-02",
-        room: "104",
-        tenantName: "Mana Chujai",
-        date: "2025-08-25",
-        method: "Credit Card",
-        amount: 5800,
-      },
-      {
-        paymentId: "PMT-2025-08-03",
-        invoiceId: "INV-2025-08-03",
-        room: "101",
-        tenantName: "Warin Inthira",
-        date: "2025-08-25",
-        method: "Cash",
-        amount: 5800,
-      },
-      {
-        paymentId: "PMT-2025-08-04",
-        invoiceId: "INV-2025-08-04",
-        room: "109",
-        tenantName: "Suda Maneerat",
-        date: "2025-08-25",
-        method: "PromptPay",
-        amount: 5800,
-      },
-    ];
-    setTimeout(() => {
-      setPayments(mock);
-      setLoading(false);
-    }, 400);
-  }, []);
-
-  // ดึงข้อมูลห้องจาก API
-  useEffect(() => {
-    const fetchRooms = async () => {
-      try {
-        const res = await api.get("/rooms");
-        const roomsData = Array.isArray(res.data?.data) ? res.data.data : [];
-
-        // แปลง roomNum เป็นตัวเลข (กรณีเป็น string) แล้ว sort
-        const sortedRooms = roomsData.sort(
-          (a, b) => Number(a.roomNum) - Number(b.roomNum)
-        );
-
-        // map เป็น options
-        const list = sortedRooms.map((r) => ({
-          value: r.roomNum?.toString() || "-",
-          label: r.roomNum?.toString() || "-",
-        }));
-
-        setRooms(list);
-      } catch (err) {
-        console.error("Error fetching rooms:", err);
-      }
-    };
-    fetchRooms();
-  }, []);
-
-  useEffect(() => {
-    const fetchInterestRates = async () => {
-      try {
-        const res = await api.get("/interest-rate/latest");
-        const data = Array.isArray(res.data) ? res.data : res.data.data || [];
-
-        const partial = data.find((r) => r.type === "partial");
-        const unpaid = data.find((r) => r.type === "unpaid");
-
-        setRatePartial(partial?.percentage ?? 0);
-        setRateUnpaid(unpaid?.percentage ?? 0);
-      } catch (err) {
-        console.error("Error fetching interest rates:", err);
-      }
-    };
-    fetchInterestRates();
-  }, []);
-
-  // Metrics
-  const totalIncome = payments.reduce(
-    (sum, p) => sum + Number(p.amount || 0),
-    0
-  );
+  const totalIncome = payments
+    .filter((p) => {
+      const d = new Date(p.date);
+      return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+    })
+    .reduce((sum, p) => sum + p.amount, 0);
 
   // Normalize
   const normalizedPayments = payments.map((p) => ({
-    paymentId: p.paymentId,
-    invoiceId: p.invoiceId,
-    tenantName: p.tenantName,
-    room: p.room,
-    date: p.date,
-    method: p.method,
+    ...p,
     amount: `฿${p.amount.toLocaleString()}`,
   }));
 
@@ -197,7 +144,6 @@ export default function AdminPaymentPage() {
       options: rooms, // เอามาจาก API /api/rooms
     },
   ];
-  
 
   if (loading) {
     return (
@@ -273,7 +219,10 @@ export default function AdminPaymentPage() {
             renderActions={(row) => (
               <button
                 className="btn btn-sm"
-                onClick={() => alert(`ดูรายละเอียด ${row.paymentId}`)}
+                onClick={() => {
+                  setSelectedPayment(row.paymentId);
+                  setDetailOpen(true);
+                }}
               >
                 <i className="bi bi-search"></i>
               </button>
@@ -285,7 +234,10 @@ export default function AdminPaymentPage() {
       <PaymentFormModal
         open={paymentModalOpen}
         onClose={() => setPaymentModalOpen(false)}
-        onSubmit={handlePaymentSubmit}
+        onSubmit={() => {
+          fetchPayments(); // โหลดตารางใหม่หลังบันทึกสำเร็จ
+          showToast("บันทึกการชำระเงินสำเร็จ!", "success");
+        }}
       />
 
       <InterestSettingModal
@@ -297,7 +249,15 @@ export default function AdminPaymentPage() {
         }}
       />
 
-       {/*  Bootstrap Toast Container */}
+      <PaymentDetailModal
+        open={detailOpen}
+        onClose={() => setDetailOpen(false)}
+        paymentId={selectedPayment}
+        onToast={showToast}
+        onUpdated={fetchPayments}
+      />
+
+      {/*  Bootstrap Toast Container */}
       <div
         className="toast position-fixed top-0 end-0 m-3 text-white"
         role="alert"

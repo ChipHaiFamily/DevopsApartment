@@ -18,8 +18,24 @@ export default function MaintenancePage() {
 
   const baseURL = import.meta.env.VITE_API_BASE_URL;
 
-  useEffect(() => { reloadLogs(); }, [baseURL]);
-  useEffect(() => { reloadSchedules(); }, [baseURL]);
+  const filters = [
+    {
+      key: "status",
+      label: "ทุกสถานะ",
+      options: [
+        { value: "completed", label: "เสร็จแล้ว" },
+        { value: "in_progress", label: "กำลังดำเนินการ" },
+        { value: "scheduled", label: "วางแผน" },
+      ],
+    },
+  ];
+
+  useEffect(() => {
+    reloadLogs();
+  }, [baseURL]);
+  useEffect(() => {
+    reloadSchedules();
+  }, [baseURL]);
 
   const reloadLogs = async () => {
     try {
@@ -75,7 +91,10 @@ export default function MaintenancePage() {
         nextDue: next,
       };
 
-      await axios.put(`${baseURL}/maintenance-schedules/${row.scheduleId}`, payload);
+      await axios.put(
+        `${baseURL}/maintenance-schedules/${row.scheduleId}`,
+        payload
+      );
       await reloadSchedules();
     } catch (err) {
       console.error("Error updating schedule (Do Now):", err);
@@ -96,7 +115,10 @@ export default function MaintenancePage() {
         nextDue: next,
       };
 
-      await axios.put(`${baseURL}/maintenance-schedules/${row.scheduleId}`, payload);
+      await axios.put(
+        `${baseURL}/maintenance-schedules/${row.scheduleId}`,
+        payload
+      );
       await reloadSchedules();
     } catch (err) {
       console.error("Error updating schedule (Skip):", err);
@@ -129,7 +151,9 @@ export default function MaintenancePage() {
 
   // ===== Normalize schedules (เก็บ raw + display แยก) =====
   const normalizedSchedules = schedules.map((s) => {
-    const prettyCycle = s?.cycleInterval ? String(s.cycleInterval).replace(/_/g, " ") : "-";
+    const prettyCycle = s?.cycleInterval
+      ? String(s.cycleInterval).replace(/_/g, " ")
+      : "-";
     return {
       // raw fields (ใช้ส่งกลับ backend)
       scheduleId: s.scheduleId,
@@ -175,7 +199,9 @@ export default function MaintenancePage() {
         <ul className="nav nav-tabs mb-3">
           <li className="nav-item">
             <button
-              className={`nav-link ${tab === "tickets" ? "active" : ""} cy_maintainance_tab_1`}
+              className={`nav-link ${
+                tab === "tickets" ? "active" : ""
+              } cy_maintainance_tab_1`}
               onClick={() => setTab("tickets")}
             >
               งานซ่อม
@@ -183,7 +209,9 @@ export default function MaintenancePage() {
           </li>
           <li className="nav-item">
             <button
-              className={`nav-link ${tab === "plan" ? "active" : ""} cy_maintainance_tab_2`}
+              className={`nav-link ${
+                tab === "plan" ? "active" : ""
+              } cy_maintainance_tab_2`}
               onClick={() => setTab("plan")}
             >
               ตารางซ่อมบำรุง
@@ -194,11 +222,14 @@ export default function MaintenancePage() {
         {/* Content */}
         {tab === "tickets" ? (
           <div className="card shadow-sm">
-            <div className="card-header no-bg bg-light p-3 fw-bold">รายการงานซ่อม</div>
+            <div className="card-header no-bg bg-light p-3 fw-bold">
+              รายการงานซ่อม
+            </div>
             <div className="card-body">
               <TableBS
                 columns={logColumns}
                 data={normalizedLogs}
+                filters={filters}
                 renderCell={(key, value) => {
                   if (key === "status") {
                     return value === "completed" ? (
@@ -211,7 +242,8 @@ export default function MaintenancePage() {
                       value
                     );
                   }
-                  if (key === "cost") return `฿${value?.toLocaleString?.() ?? value}`;
+                  if (key === "cost")
+                    return `฿${value?.toLocaleString?.() ?? value}`;
                   return value;
                 }}
                 renderActions={(row) => (
@@ -231,7 +263,9 @@ export default function MaintenancePage() {
           </div>
         ) : (
           <div className="card shadow-sm">
-            <div className="card-header no-bg bg-light p-3 fw-bold ">ตารางซ่อมบำรุง</div>
+            <div className="card-header no-bg bg-light p-3 fw-bold ">
+              ตารางซ่อมบำรุง
+            </div>
             <div className="card-body">
               <div className="table-responsive">
                 <table className="table align-middle">
@@ -253,10 +287,16 @@ export default function MaintenancePage() {
                         <td>{s.display.last_completed}</td>
                         <td>
                           <div className="btn-group">
-                            <button className="btn btn-sm btn-primary" onClick={() => handleDoNow(s)}>
+                            <button
+                              className="btn btn-sm btn-primary"
+                              onClick={() => handleDoNow(s)}
+                            >
                               ทำงานตอนนี้
                             </button>
-                            <button className="btn btn-sm btn-outline-primary" onClick={() => handleSkip(s)}>
+                            <button
+                              className="btn btn-sm btn-outline-primary"
+                              onClick={() => handleSkip(s)}
+                            >
                               ข้ามครั้งนี้
                             </button>
                           </div>
@@ -264,7 +304,11 @@ export default function MaintenancePage() {
                       </tr>
                     ))}
                     {normalizedSchedules.length === 0 && (
-                      <tr><td colSpan={5} className="text-center text-muted">ยังไม่มีตารางซ่อมบำรุง</td></tr>
+                      <tr>
+                        <td colSpan={5} className="text-center text-muted">
+                          ยังไม่มีตารางซ่อมบำรุง
+                        </td>
+                      </tr>
                     )}
                   </tbody>
                 </table>

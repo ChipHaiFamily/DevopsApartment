@@ -7,10 +7,13 @@ import org.springframework.data.repository.query.Param;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 
 public interface PaymentRepository extends JpaRepository<Payment, String> {
     Optional<Payment> findTopByOrderByPaymentIdDesc();
+
+    List<Payment> findAllByOrderByPaymentDateDesc();
 
     @Query("SELECT COALESCE(SUM(p.amount), 0) FROM Payment p WHERE p.paymentDate BETWEEN :start AND :end")
     BigDecimal sumRevenueByDateBetween(@Param("start") LocalDate start, @Param("end") LocalDate end);

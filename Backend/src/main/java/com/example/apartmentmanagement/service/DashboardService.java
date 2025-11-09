@@ -9,11 +9,10 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.YearMonth;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
-import java.util.Comparator;
 import java.util.stream.Collectors;
-
 
 @Service
 @RequiredArgsConstructor
@@ -22,10 +21,12 @@ public class DashboardService {
     private final RoomRepository roomRepo;
     private final ContractRepository contractRepo;
     private final InvoiceRepository invoiceRepo;
+    private final MeterRepository meterRepo;
     private final MaintenanceLogRepository maintenanceRepo;
     private final TenantRepository tenantRepo;
+    private final SuppliesRepository suppliesRepo;
 
-    public RoomDashboardDto getRoomDashboard(String roomNum) {
+    public RoomDashboardDto getRoomDashboard(String roomNum, String startMonth, String endMonth) {
         Room room = roomRepo.findById(roomNum)
                 .orElseThrow(() -> new ResourceNotFoundException("Room not found"));
 
@@ -33,25 +34,27 @@ public class DashboardService {
                 .orElseThrow(() -> new ResourceNotFoundException("No active contract"));
 
         String tenantID = contract.getTenant().getTenantId();
-
         long daysStayed = ChronoUnit.DAYS.between(contract.getStartDate(), LocalDate.now());
 
-        BigDecimal totalUnpaid = invoiceRepo.findTotalUnpaidByTenant(contract.getTenant().getTenantId());
+        BigDecimal totalUnpaid = invoiceRepo.findTotalUnpaidByTenant(tenantID);
         if (totalUnpaid == null) totalUnpaid = BigDecimal.ZERO;
 
-        Double totalExpensesDouble = invoiceRepo.findTotalExpensesByTenant(tenantID);
-        BigDecimal totalExpenses = totalExpensesDouble != null ? BigDecimal.valueOf(totalExpensesDouble) : BigDecimal.ZERO;
+        long inProgressCount = maintenanceRepo.countByRoomRoomNumAndStatus(roomNum, "in_progress");
+        long scheduleCount   = maintenanceRepo.countByRoomRoomNumAndStatus(roomNum, "schedule");
 
-        long maintenanceCount = maintenanceRepo.countByRoomRoomNumAndStatus(roomNum, "pending");
+        long maintenanceCount = inProgressCount + scheduleCount;
 
-        LocalDate sixMonthsAgo = LocalDate.now().minusMonths(6);
-        List<Invoice> invoices = invoiceRepo.findRecentInvoicesByTenant(tenantID, sixMonthsAgo);
+        LocalDate startDate = LocalDate.parse(startMonth + "-01");
+        LocalDate endDate = YearMonth.parse(endMonth).atEndOfMonth();
+
+        List<Meter> meters = meterRepo.findByRoomAndRecordDateBetween(roomNum, startDate, endDate);
 
         Map<String, ConsumptionDto> monthMap = new LinkedHashMap<>();
 
-        invoices.forEach(invoice -> {
-            String ym = invoice.getIssueDate().getYear() + "-" +
-                    String.format("%02d", invoice.getIssueDate().getMonthValue());
+        meters.forEach(meter -> {
+            String ym = meter.getPeriod() != null
+                    ? meter.getPeriod()
+                    : meter.getRecordDate().getYear() + "-" + String.format("%02d", meter.getRecordDate().getMonthValue());
 
             monthMap.putIfAbsent(ym, ConsumptionDto.builder()
                     .month(ym)
@@ -60,21 +63,18 @@ public class DashboardService {
                     .total(BigDecimal.ZERO)
                     .build());
 
-            for (InvoiceItem item : invoice.getItems()) {
-                BigDecimal amount = item.getAmount() != null ? item.getAmount() : BigDecimal.ZERO;
+            BigDecimal unitValue = BigDecimal.valueOf(meter.getUnit());
 
-                if (item.getDescription().toLowerCase().contains("water") ||
-                        item.getDescription().contains("น้ำ")) {
-                    monthMap.get(ym).setWater(monthMap.get(ym).getWater().add(amount));
-                } else if (item.getDescription().toLowerCase().contains("electricity") ||
-                        item.getDescription().contains("ไฟ")) {
-                    monthMap.get(ym).setElectric(monthMap.get(ym).getElectric().add(amount));
-                }
-                monthMap.get(ym).setTotal(monthMap.get(ym).getTotal().add(amount));
+            if (meter.getType().equalsIgnoreCase("water")) {
+                monthMap.get(ym).setWater(monthMap.get(ym).getWater().add(unitValue));
+            } else if (meter.getType().equalsIgnoreCase("electricity")) {
+                monthMap.get(ym).setElectric(monthMap.get(ym).getElectric().add(unitValue));
             }
+
+            monthMap.get(ym).setTotal(monthMap.get(ym).getTotal().add(unitValue));
         });
 
-        List<ConsumptionDto> last6Months = new ArrayList<>(monthMap.values());
+        List<ConsumptionDto> monthlyConsumption = new ArrayList<>(monthMap.values());
 
         return RoomDashboardDto.builder()
                 .roomNum(room.getRoomNum())
@@ -83,8 +83,7 @@ public class DashboardService {
                 .daysStayed(daysStayed)
                 .totalUnpaid(totalUnpaid)
                 .maintenanceCount(maintenanceCount)
-                .totalExpenses(totalExpenses)
-                .last6Months(last6Months)
+                .consumption(monthlyConsumption)
                 .build();
     }
 
@@ -124,7 +123,7 @@ public class DashboardService {
     }
 
     public List<MaintenanceLog> getMaintenanceLogsByRoom(String roomNum) {
-        Room room = roomRepo.findById(roomNum)
+        roomRepo.findById(roomNum)
                 .orElseThrow(() -> new ResourceNotFoundException("Room not found"));
 
         return maintenanceRepo.findByRoomRoomNumOrderByRequestDateDesc(roomNum);
@@ -134,7 +133,6 @@ public class DashboardService {
         Tenant tenant = tenantRepo.findById(tenantId)
                 .orElseThrow(() -> new RuntimeException("Tenant not found: " + tenantId));
 
-        // map contracts
         List<TenantsManagement.ContractDto> contracts = tenant.getContract().stream()
                 .map(c -> TenantsManagement.ContractDto.builder()
                         .contractNum(c.getContractNum())
@@ -179,4 +177,77 @@ public class DashboardService {
                 .collect(Collectors.toList());
     }
 
+    // --- เมธอดเดิม (ไม่กรอง) ---
+    public Map<String, BigDecimal> getWaterUsageByMonth() {
+        return meterRepo.findAll().stream()
+                .filter(m -> "water".equalsIgnoreCase(m.getType()))
+                .collect(Collectors.groupingBy(
+                        m -> m.getRecordDate().getYear() + "-" +
+                                String.format("%02d", m.getRecordDate().getMonthValue()),
+                        TreeMap::new,
+                        Collectors.reducing(BigDecimal.ZERO,
+                                m -> BigDecimal.valueOf(m.getUnit()),
+                                BigDecimal::add)
+                ));
+    }
+
+    public Map<String, BigDecimal> getElectricityUsageByMonth() {
+        return meterRepo.findAll().stream()
+                .filter(m -> "electricity".equalsIgnoreCase(m.getType()))
+                .collect(Collectors.groupingBy(
+                        m -> m.getRecordDate().getYear() + "-" +
+                                String.format("%02d", m.getRecordDate().getMonthValue()),
+                        TreeMap::new,
+                        Collectors.reducing(BigDecimal.ZERO,
+                                m -> BigDecimal.valueOf(m.getUnit()),
+                                BigDecimal::add)
+                ));
+    }
+
+    public Map<String, BigDecimal> getWaterUsageByMonth(String startMonth, String endMonth, String floor) {
+        return getUsageByMonth("water", startMonth, endMonth, floor);
+    }
+
+    public Map<String, BigDecimal> getElectricityUsageByMonth(String startMonth, String endMonth, String floor) {
+        return getUsageByMonth("electricity", startMonth, endMonth, floor);
+    }
+
+    private Map<String, BigDecimal> getUsageByMonth(String type, String startMonth, String endMonth, String floor) {
+        List<Meter> meters = meterRepo.findAll();
+
+        LocalDate startDate = (startMonth != null) ? LocalDate.parse(startMonth + "-01") : LocalDate.MIN;
+        LocalDate endDate = (endMonth != null) ? YearMonth.parse(endMonth).atEndOfMonth() : LocalDate.MAX;
+
+        return meters.stream()
+                .filter(m -> type.equalsIgnoreCase(m.getType()))
+                .filter(m -> !m.getRecordDate().isBefore(startDate) && !m.getRecordDate().isAfter(endDate))
+                .filter(m -> {
+                    if ("all".equalsIgnoreCase(floor)) return true;
+                    try {
+                        int roomFloor = Integer.parseInt(m.getRoom().substring(0, 1));
+                        return roomFloor == Integer.parseInt(floor);
+                    } catch (Exception e) {
+                        return false;
+                    }
+                })
+                .collect(Collectors.groupingBy(
+                        m -> m.getRecordDate().getYear() + "-" +
+                                String.format("%02d", m.getRecordDate().getMonthValue()),
+                        TreeMap::new,
+                        Collectors.reducing(BigDecimal.ZERO,
+                                m -> BigDecimal.valueOf(m.getUnit()),
+                                BigDecimal::add)
+                ));
+    }
+
+    public List<DashboardDto.SupplyDto> getAllSupplies() {
+        return suppliesRepo.findAll().stream()
+                .map(s -> DashboardDto.SupplyDto.builder()
+                        .itemId(s.getItemId())
+                        .name(s.getItem_Name())
+                        .quantity(s.getQuantity() != null ? s.getQuantity() : 0)
+                        .status(s.getStatus())
+                        .build())
+                .collect(Collectors.toList());
+    }
 }

@@ -6,6 +6,8 @@ import com.example.apartmentmanagement.repository.MaintenanceLogRepository;
 import com.example.apartmentmanagement.repository.PaymentRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -34,6 +36,16 @@ public class MaintenanceLogService {
     public List<MaintenanceLog> getOpenTasks() {
         return repository.findAll().stream()
                 .filter(m -> !"COMPLETED".equalsIgnoreCase(m.getStatus()))
+                .toList();
+    }
+
+    public List<MaintenanceLog> getRecentTasks() {
+        LocalDate thirtyDaysAgo = LocalDate.now().minusDays(30);
+        return repository.findAll().stream()
+                .filter(task -> task.getRequestDate() != null &&
+                        !task.getRequestDate().isBefore(thirtyDaysAgo))
+                .sorted((a, b) -> b.getRequestDate().compareTo(a.getRequestDate()))
+                .limit(5)
                 .toList();
     }
 }
