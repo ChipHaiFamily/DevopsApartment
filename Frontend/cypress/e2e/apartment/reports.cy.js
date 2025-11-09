@@ -19,7 +19,7 @@ describe('Admin Reports Page', () => {
     cy.get('input[type="month"]').as('monthInput');
     cy.get('@monthInput').should('exist').and('have.value', '2025-11');
 
-    // เปลี่ยนเดือนเป็นเดือนก่อนหน้า แล้วกลับ
+    // เปลี่ยนเดือนเป็นเดือนก่อนหน้า แล้วกลับ 
     cy.get('@monthInput').clear().type('2025-10');
     cy.wait(200);
     cy.get('@monthInput').clear().type('2025-11');
