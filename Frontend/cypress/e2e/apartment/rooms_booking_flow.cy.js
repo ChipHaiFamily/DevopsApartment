@@ -8,7 +8,7 @@ describe('Full E2E – Room Booking Flow (User + Admin)', () => {
     cy.clearLocalStorage();
   });
 
-  context('🔹 Visitor (Guest) flow', () => {
+  context('Visitor (Guest) flow', () => {
     it('visits all room types with delay 500ms each', () => {
       cy.visit('http://localhost:3000/rooms/undefined');
 
