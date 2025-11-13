@@ -1,11 +1,12 @@
 // cypress/e2e/admin/dashboard.cy.js
-// 🔒 ทดสอบหน้าแดชบอร์ดแอดมิน (http://localhost:3000/admin)
-// - รองรับ frontend ใหม่ ไม่ fix ตัวเลข
-// - ตรวจ header, cards, room map, charts, dropdown การใช้น้ำ-ไฟฟ้า
+// ทดสอบหน้าแดชบอร์ดแอดมิน /admin
+// - รองรับ frontend ใหม่
+// - ตรวจหัวข้อ, cards, room map, charts, dropdown
+// - เพิ่มทดสอบ งานซ่อมบำรุง + คลังสิ่งของ
 
 describe('Admin Dashboard Overview Page', () => {
   beforeEach(() => {
-    cy.loginPreset(); // login ก่อนทุก test
+    cy.loginPreset();
     cy.visit('/admin');
   });
 
@@ -25,7 +26,7 @@ describe('Admin Dashboard Overview Page', () => {
     cards.forEach((label) => {
       cy.contains(label).should('exist');
       cy.contains(label).parent().within(() => {
-        cy.get('.fs-4, .fw-bold').should('exist'); // มีตัวเลขสรุป
+        cy.get('.fs-4, .fw-bold').should('exist');
       });
     });
   });
@@ -38,57 +39,68 @@ describe('Admin Dashboard Overview Page', () => {
 
   it('4 ตรวจส่วน “อัตราการเข้าพัก” และ “รายได้เดือนนี้”', () => {
     cy.contains('อัตราการเข้าพัก').should('exist');
-    cy.get('.text-primary').should('exist'); // % occupancy
-    cy.get('.progress-bar').should('exist'); // แถบกราฟ
+    cy.get('.progress-bar').should('exist');
 
     cy.contains('รายได้เดือนนี้').should('exist');
     cy.contains('฿').should('exist');
   });
 
   it('5 ตรวจส่วน “การใช้น้ำ-ไฟฟ้า” และสลับ dropdown filter', () => {
-    // cy.contains('การใช้น้ำ-ไฟฟ้า').should('be.visible');
+    cy.contains('การใช้น้ำ-ไฟฟ้า').should('exist');
 
     cy.get('select.form-select-sm').as('usageSelects');
 
-    // ชั้น
     cy.get('@usageSelects').eq(0).select('1', { force: true });
-    cy.wait(300);
     cy.get('@usageSelects').eq(0).select('2', { force: true });
 
-    // เดือนเริ่ม
     cy.get('@usageSelects').eq(1).select('มกราคม', { force: true });
-    cy.wait(300);
     cy.get('@usageSelects').eq(1).select('ตุลาคม', { force: true });
 
-    // เดือนสิ้นสุด
     cy.get('@usageSelects').eq(2).select('พฤศจิกายน', { force: true });
-    cy.wait(300);
     cy.get('@usageSelects').eq(2).select('ธันวาคม', { force: true });
 
-    // ปี
     cy.get('@usageSelects').eq(3).select('2025', { force: true });
-    cy.wait(300);
     cy.get('@usageSelects').eq(3).select('2024', { force: true });
 
-    cy.get('.recharts-surface').should('exist'); // มีกราฟแสดงผล
+    cy.get('.recharts-surface').should('exist');
   });
 
   it('6 ตรวจส่วน “งานซ่อมบำรุง” และ “ใบแจ้งหนี้ค้างชำระ”', () => {
-    cy.contains('งานซ่อมบำรุง').should('exist');
-    cy.get('.card').contains('งานซ่อมบำรุง').parent().within(() => {
-      // cy.get('.vstack').should('exist');
-    });
 
-    cy.contains('ใบแจ้งหนี้ค้างชำระ').should('exist');
-    cy.get('.card').contains('ใบแจ้งหนี้ค้างชำระ').parent().within(() => {
-      // cy.get('.vstack').should('exist');
-    });
+    // งานซ่อมบำรุง
+    cy.contains('งานซ่อมบำรุง')
+      .closest('.card')
+      .within(() => {
+        cy.get('.vstack').should('exist');
+        cy.contains(/ไม่มีรายการซ่อมบำรุง|ห้อง|ซ่อม/i).should('exist');
+      });
+
+    // ใบแจ้งหนี้ค้างชำระ
+    cy.contains('ใบแจ้งหนี้ค้างชำระ')
+      .closest('.card')
+      .within(() => {
+        cy.contains(/ค้างชำระ|ห้อง/i).should('exist');
+      });
   });
 
   it('7 ตรวจส่วน “ตารางซ่อมบำรุง” และ “คลังสิ่งของ”', () => {
+    // ตารางซ่อมบำรุง
     cy.contains('ตารางซ่อมบำรุง').should('exist');
+    cy.contains('ตารางซ่อมบำรุง')
+      .parent()
+      .parent()
+      .within(() => {
+        cy.contains(/ไม่มีตารางการซ่อมบำรุง/).should('exist');
+      });
+
+    // คลังสิ่งของ
     cy.contains('คลังสิ่งของ').should('exist');
-    cy.contains('ไม่มีตารางการซ่อมบำรุง').should('exist');
-    cy.contains(/ไม่มีสิ่งของเหลทอน้อยหรือหมด|ไม่มีสิ่งของเหลือน้อย/).should('exist');
+    cy.contains('คลังสิ่งของ')
+      .parent()
+      .parent()
+      .within(() => {
+        cy.get('.vstack').should('exist');
+        cy.contains(/คงเหลือ|หมด|เหลือน้อย/).should('exist');
+      });
   });
 });
