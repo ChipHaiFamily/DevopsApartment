@@ -136,7 +136,7 @@ describe(' Admin Invoices Page (fixed disabled + close)', () => {
   });
 
   // 4) รายละเอียดใบแจ้งหนี้
-  it('4️⃣ เปิด "รายละเอียดใบแจ้งหนี้" แล้วปิดได้', () => {
+  it('4 เปิด "รายละเอียดใบแจ้งหนี้" แล้วปิดได้', () => {
     cy.get('table tbody tr').first().within(() => {
       cy.get('button i.bi-search').parents('button').click({ force: true });
     });
@@ -160,7 +160,7 @@ describe(' Admin Invoices Page (fixed disabled + close)', () => {
   });
 
   // 5) ส่งออกหลายชุด
-  it('5️⃣ เปิด "ส่งออกใบแจ้งหนี้หลายชุด" แล้วปิดได้', () => {
+  it('5 เปิด "ส่งออกใบแจ้งหนี้หลายชุด" แล้วปิดได้', () => {
     cy.contains('button', 'ส่งออกหลายชุด').click();
     getOpenModal().as('bulkModal');
 

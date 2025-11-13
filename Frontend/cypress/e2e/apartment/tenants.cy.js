@@ -96,7 +96,7 @@ describe('Admin Tenants Page', () => {
 const openVisibleModal = () =>
   cy.get('.modal.fade.show,[aria-modal="true"],.modal.d-block:visible', { timeout: 8000 }).first();
 
-describe('🧾 Admin Tenant Page', () => {
+describe('Admin Tenant Page', () => {
   beforeEach(() => {
     cy.loginPreset();
     cy.visit('/admin/tenants');
