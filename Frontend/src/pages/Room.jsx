@@ -207,7 +207,7 @@ export default function Room() {
           style={{ fontFamily: "Kanit, system-ui, sans-serif" }}
         >
           {/* ปุ่มสลับชนิดห้อง */}
-          <div className="mb-3">
+          {/* <div className="mb-3">
             <div className="btn-group">
               <Link
                 to="/rooms/small"
@@ -234,7 +234,7 @@ export default function Room() {
                 ห้องใหญ่
               </Link>
             </div>
-          </div>
+          </div> */}
 
           {/* HERO ราคา + ชื่อ + bullets */}
           <div

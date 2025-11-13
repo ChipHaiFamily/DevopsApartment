@@ -8,22 +8,24 @@ const Icon = ({ path }) => (
   </div>
 );
 
-export default function Stats() {
+export default function Stats({ dashboard }) {
+  if (!dashboard) return null; // ยังโหลดไม่เสร็จ
+
   const stats = [
     {
       label: "ห้องทั้งหมด",
-      value: 24,
-      icon: "M3 3h18v2H3V3zm2 5h14v13H5V8zm3 3v7h2v-7H8zm4 0v7h2v-7h-2zm4 0v7h2v-7h-2z"
+      value: dashboard.countRooms,
+      icon: "M3 3h18v2H3V3zm2 5h14v13H5V8zm3 3v7h2v-7H8zm4 0v7h2v-7h-2zm4 0v7h2v-7h-2z",
     },
     {
       label: "ห้องว่าง",
-      value: 18,
-      icon: "M4 7h16v10H4V7zm2 2v6h12V9H6zM3 5h18V3H3v2z"
+      value: dashboard.countRooms - dashboard.countRentedRooms,
+      icon: "M4 7h16v10H4V7zm2 2v6h12V9H6zM3 5h18V3H3v2z",
     },
     {
       label: "ผู้เช่าปัจจุบัน",
-      value: 6,
-      icon: "M12 12a5 5 0 100-10 5 5 0 000 10zm-9 9a9 9 0 1118 0H3z"
+      value: dashboard.countTenants,
+      icon: "M12 12a5 5 0 100-10 5 5 0 000 10zm-9 9a9 9 0 1118 0H3z",
     },
   ];
 
