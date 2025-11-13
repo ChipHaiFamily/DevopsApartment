@@ -40,11 +40,7 @@ export default function Home() {
     <div
       style={{ minHeight: "100dvh", display: "flex", flexDirection: "column" }}
     >
-      <Navbar
-        mode={role === "USER" ? "tenant" : "public"}
-        userName={userName}
-        onLogout={logout}
-      />
+      <Navbar onLogout={logout} />
 
       <main style={{ flex: 1 }}>
         <Hero />
