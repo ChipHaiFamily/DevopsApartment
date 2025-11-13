@@ -1,42 +1,42 @@
 import React from "react";
 import RoomCard from "./RoomCard";
 
-export default function RoomTypes() {
-  const rooms = [
-    {
-      title: "ห้องเล็ก",
-      desc: "ห้องขนาด 20 ตร.ม. เหมาะสำหรับ 1–2 คน",
-      price: 8000,
-      available: 3,
-      image:
-        "https://images.unsplash.com/photo-1737737196308-e5b848160b78?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=1171",
-    },
-    {
-      title: "ห้องกลาง",
-      desc: "ห้องขนาด 40 ตร.ม. เหมาะสำหรับ 2–4 คน",
-      price: 14000,
-      available: 1,
-      image:
-        "https://plus.unsplash.com/premium_photo-1674676471417-07f613528a94?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=1145",
-    },
-    {
-      title: "ห้องใหญ่",
-      desc: "ห้องขนาด 60 ตร.ม. เหมาะสำหรับ 4–6 คน",
-      price: 21000,
-      available: 2,
-      image:
-        "https://plus.unsplash.com/premium_photo-1663126298656-33616be83c32?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=1170",
-    },
-  ];
+export default function RoomTypes({ dashboard, rooms }) {
+  if (!dashboard) return null;
+
+  const slugMap = {
+    RT01: "small",
+    RT02: "medium",
+    RT03: "large",
+  };
+
+  const roomTypes = dashboard.roomTypes || [];
+
+  // ฟังก์ชันนับจำนวนห้องว่างตาม roomTypeId
+  const countAvailable = (typeId) => {
+    if (!rooms) return "-";
+    return rooms.filter(
+      (r) => r.roomTypeId === typeId && r.status === "available"
+    ).length;
+  };
 
   return (
     <section className="section section--soft">
       <div className="container">
         <h3 className="section__title">ประเภทห้องพัก</h3>
         <p className="section__sub">เลือกห้องที่เข้ากับไลฟ์สไตล์ของคุณ</p>
+
         <div className="rooms">
-          {rooms.map((r, i) => (
-            <RoomCard key={i} {...r} />
+          {roomTypes.map((t) => (
+            <RoomCard
+              key={t.roomTypeId}
+              title={t.name}
+              desc={t.description}
+              price={t.price}
+              available={countAvailable(t.roomTypeId)}
+              image={t.room_image}
+              type={slugMap[t.roomTypeId]}
+            />
           ))}
         </div>
       </div>
