@@ -1,18 +1,18 @@
 describe('Homepage Room Type Selection', () => {
-  it('ควร redirect ไปที่ /rooms/undefined เมื่อเลือกประเภทห้องพัก', () => {
-    // viste homepage
+  it('ควร redirect ไปยัง path ของประเภทห้อง ตาม card ที่คลิก', () => {
+    // เปิดหน้าแรก
     cy.visit('/')
 
-    // check heading 
-    cy.contains('ประเภทห้องพัก').should('be.visible') // heading
+    // ตรวจ heading
+    cy.contains('ประเภทห้องพัก').should('be.visible')
 
-    // คลิกที่ห้องเล็ก
-    cy.contains('ห้องเล็ก').click()
+    // คลิก card ห้อง Standard Studio (small)
+    cy.contains('Standard Studio').click()
 
-    // check redirect to /rooms/undefined
-    cy.url().should('include', '/rooms/undefined') // URL
+    // เช็ค redirect => /rooms/small
+    cy.url().should('include', '/rooms/small')
 
-    // check heading ห้องพักขนาดเล็ก 
-    cy.contains('ห้องพักขนาดเล็ก').should('be.visible') // heading
+    // เช็ค heading ของหน้า rooms/small
+    cy.contains(/Standard Studio|ห้องพักขนาดเล็ก/i).should('be.visible')
   })
 })
