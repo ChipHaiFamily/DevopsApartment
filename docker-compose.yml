@@ -69,6 +69,48 @@ services:
     networks:
       - app-net
 
+  otel-collector:
+    image: otel/opentelemetry-collector:latest
+    container_name: otel-collector
+    volumes:
+      - ./monitoring/otel-collector-config.yaml:/otel-local-config.yaml
+    command: ["--config=/otel-local-config.yaml"]
+    ports:
+      - "4318:4318"     # OTLP HTTP
+      - "4317:4317"     # OTLP gRPC
+      - "9464:9464"     # Prometheus scrape endpoint
+    networks:
+      - app-net
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: apartment-prometheus
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+    networks:
+      - app-net
+    depends_on:
+      - otel-collector
+
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    ports:
+      - "16686:16686"   # Jaeger UI
+    networks:
+      - app-net
+
+  grafana:
+    image: grafana/grafana
+    container_name: apartment-grafana
+    ports:
+      - "3001:3000"
+    networks:
+      - app-net
+    depends_on:
+      - prometheus
+
 
 volumes:
   postgres_data:

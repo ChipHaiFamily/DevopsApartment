@@ -39,6 +39,19 @@ dependencies {
     testImplementation 'com.h2database:h2'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
     implementation 'org.apache.commons:commons-csv:1.10.0'
+
+    // Prometheus Micrometer
+    implementation 'io.micrometer:micrometer-registry-prometheus'
+
+    // Micrometer Tracing
+    implementation 'io.micrometer:micrometer-tracing:1.2.4'
+    implementation 'io.micrometer:micrometer-tracing-bridge-otel'
+
+    // OpenTelemetry OTLP Exporter
+    implementation 'io.opentelemetry:opentelemetry-exporter-otlp'
+
+    // Loki Logback Appender
+    implementation 'com.github.loki4j:loki-logback-appender:2.0.0'
 }
 
 tasks.named('test') {
