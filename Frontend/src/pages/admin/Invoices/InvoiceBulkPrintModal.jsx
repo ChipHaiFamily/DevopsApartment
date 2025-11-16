@@ -116,6 +116,7 @@ export default function InvoiceBulkPrintModal({ open, onClose }) {
     else if (inv.status === "Overdue") statusText = "เกินกำหนด";
     else if (inv.status === "Pending") statusText = "รอดำเนินการ";
     else if (inv.status === "Partial") statusText = "แบ่งจ่ายบางส่วน";
+    else if (inv.status === "Carry_forward") statusText = "ทบยอด";
 
     return {
       label: `${inv.invoiceId} (ห้อง ${
