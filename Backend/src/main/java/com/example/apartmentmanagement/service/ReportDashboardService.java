@@ -73,7 +73,8 @@ public class ReportDashboardService {
                     .findFirst()
                     .orElse(null);
 
-            MeterInvoiceDto meterData = meterService.getLatestMetersWithRoomPrice(roomNum);
+            MeterInvoiceDto meterData = meterService.getMetersForRoomAndMonth(roomNum, month);
+
             BigDecimal waterUsage = BigDecimal.ZERO;
             BigDecimal electricityUsage = BigDecimal.ZERO;
 

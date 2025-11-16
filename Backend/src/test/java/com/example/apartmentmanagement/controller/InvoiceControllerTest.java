@@ -42,12 +42,12 @@ class InvoiceControllerTest {
     void getById_returnsInvoice() {
         Invoice invoice = new Invoice();
         when(invoiceService.findById("INV-001")).thenReturn(Optional.of(invoice));
+        when(invoiceService.getInvoiceById("INV-001")).thenReturn(invoice);
 
-        Optional<Invoice> result = controller.getById("INV-001");
+        Invoice result = controller.getById("INV-001");
 
-        assertTrue(result.isPresent());
-        assertEquals(invoice, result.get());
-        verify(invoiceService).findById("INV-001");
+        assertEquals(invoice, result);
+        verify(invoiceService).getInvoiceById("INV-001");
     }
 
     @Test

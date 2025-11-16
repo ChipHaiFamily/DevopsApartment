@@ -1,7 +1,6 @@
 package com.example.apartmentmanagement.repository;
 
 import com.example.apartmentmanagement.model.Reservation;
-import com.example.apartmentmanagement.model.Room;
 import com.example.apartmentmanagement.model.RoomType;
 import com.example.apartmentmanagement.model.User;
 import jakarta.persistence.EntityManager;
@@ -20,7 +19,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @DataJpaTest
 @ActiveProfiles("test")
-class ReservationRepositoryIntegrationTest {
+class ReservationRepositoryTest {
 
     @Autowired
     private ReservationRepository reservationRepository;

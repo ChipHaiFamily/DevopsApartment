@@ -1,4 +1,5 @@
 package com.example.apartmentmanagement.controller;
+
 import com.example.apartmentmanagement.dto.*;
 import com.example.apartmentmanagement.model.*;
 import com.example.apartmentmanagement.service.*;
@@ -8,6 +9,7 @@ import org.mockito.*;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -23,7 +25,11 @@ class DashboardControllerTest {
     @Mock
     private InvoiceService invoiceService;
     @Mock
+    private PaymentService paymentService;
+    @Mock
     private MaintenanceLogService maintenanceService;
+    @Mock
+    private MaintenanceScheduleService maintenanceScheduleService;
     @Mock
     private TenantService tenantService;
     @Mock
@@ -42,7 +48,12 @@ class DashboardControllerTest {
         when(roomService.countRooms()).thenReturn(10);
         when(roomService.countRentedRooms()).thenReturn(6);
         when(tenantService.countTenants()).thenReturn(8);
-        RoomType type = RoomType.builder().name("Deluxe").price(BigDecimal.valueOf(1000)).build();
+
+        RoomType type = RoomType.builder()
+                .name("Deluxe")
+                .price(BigDecimal.valueOf(1000))
+                .build();
+
         when(roomTypeService.findAll()).thenReturn(List.of(type));
 
         var response = controller.getHomeDashboard();
@@ -81,9 +92,11 @@ class DashboardControllerTest {
     @Test
     void getMaintenanceLogs_returnsList() {
         MaintenanceLog log = new MaintenanceLog();
-        when(dashboardService.getMaintenanceLogsByRoom("R101")).thenReturn(List.of(log));
+        when(dashboardService.getMaintenanceLogsByRoom("R101"))
+                .thenReturn(List.of(log));
 
         var response = controller.getMaintenanceLogs("R101");
+
         assertEquals(1, response.getBody().size());
         assertEquals(log, response.getBody().get(0));
     }
@@ -96,10 +109,17 @@ class DashboardControllerTest {
         when(maintenanceService.countOpenTasks()).thenReturn(2);
         when(roomService.getRoomStatuses()).thenReturn(List.of());
         when(invoiceService.getRevenueThisMonth()).thenReturn(BigDecimal.valueOf(5000));
-        when(maintenanceService.getOpenTasks()).thenReturn(List.of());
-        when(invoiceService.getOutstandingInvoices()).thenReturn(List.of());
+        when(invoiceService.countPaidRoomsThisMonth()).thenReturn(4);
 
-        var response = controller.getDashboardAdmin();
+        when(maintenanceService.getRecentTasks()).thenReturn(List.of());
+        when(invoiceService.getOutstandingInvoices()).thenReturn(List.of());
+        when(maintenanceScheduleService.getUpcomingSchedule()).thenReturn(List.of());
+        when(dashboardService.getAllSupplies()).thenReturn(List.of());
+
+        when(dashboardService.getElectricityUsageByMonth()).thenReturn(Map.of());
+        when(dashboardService.getWaterUsageByMonth()).thenReturn(Map.of());
+
+        var response = controller.getDashboardAdmin(null, null, "all");
         DashboardDto dto = response.getBody();
 
         assertEquals(10, dto.getTotalRooms());
@@ -111,11 +131,40 @@ class DashboardControllerTest {
     }
 
     @Test
+    void getDashboardAdmin_withFilters_callsFilteredServices() {
+        when(roomService.countRooms()).thenReturn(10);
+        when(roomService.countRentedRooms()).thenReturn(5);
+        when(invoiceService.countOutstandingInvoices()).thenReturn(2);
+        when(maintenanceService.countOpenTasks()).thenReturn(1);
+        when(roomService.getRoomStatuses()).thenReturn(List.of());
+
+        when(invoiceService.getRevenueThisMonth()).thenReturn(BigDecimal.valueOf(3000));
+        when(invoiceService.countPaidRoomsThisMonth()).thenReturn(3);
+
+        when(dashboardService.getElectricityUsageByMonth("2025-01", "2025-02", "2"))
+                .thenReturn(Map.of("2025-01", BigDecimal.TEN));
+
+        when(dashboardService.getWaterUsageByMonth("2025-01", "2025-02", "2"))
+                .thenReturn(Map.of("2025-01", BigDecimal.ONE));
+
+        when(maintenanceService.getRecentTasks()).thenReturn(List.of());
+        when(invoiceService.getOutstandingInvoices()).thenReturn(List.of());
+        when(maintenanceScheduleService.getUpcomingSchedule()).thenReturn(List.of());
+        when(dashboardService.getAllSupplies()).thenReturn(List.of());
+
+        controller.getDashboardAdmin("2025-01", "2025-02", "2");
+
+        verify(dashboardService).getElectricityUsageByMonth("2025-01", "2025-02", "2");
+        verify(dashboardService).getWaterUsageByMonth("2025-01", "2025-02", "2");
+    }
+
+    @Test
     void getAllRooms_returnsList() {
         RoomDto r = RoomDto.builder().roomNum("101").build();
         when(roomService.findAll()).thenReturn(List.of(r));
 
         var response = controller.getAllRooms();
+
         assertEquals(1, response.getBody().size());
         assertEquals("101", response.getBody().get(0).getRoomNum());
     }
@@ -135,6 +184,7 @@ class DashboardControllerTest {
         when(dashboardService.getAllTenants()).thenReturn(List.of(t));
 
         var list = controller.getAllTenants();
+
         assertEquals(1, list.size());
         assertEquals(t, list.get(0));
     }
@@ -145,6 +195,7 @@ class DashboardControllerTest {
         when(dashboardService.getTenantDetail("T001")).thenReturn(t);
 
         var tenant = controller.getTenant("T001");
+
         assertEquals(t, tenant);
     }
 
@@ -152,10 +203,12 @@ class DashboardControllerTest {
     void getAllInvoices_returnsInvoiceDetailDtoList() {
         Invoice inv = new Invoice();
         InvoiceDetailDto dto = new InvoiceDetailDto();
+
         when(invoiceService.getAllInvoices()).thenReturn(List.of(inv));
         when(invoiceService.toInvoiceDetailDto(inv)).thenReturn(dto);
 
         var response = controller.getAllInvoices();
+
         assertEquals(1, response.getBody().size());
         assertEquals(dto, response.getBody().get(0));
     }
@@ -164,55 +217,71 @@ class DashboardControllerTest {
     void getInvoiceById_returnsInvoiceDetailDto() {
         Invoice inv = new Invoice();
         InvoiceDetailDto dto = new InvoiceDetailDto();
+
         when(invoiceService.getInvoiceById("I001")).thenReturn(inv);
         when(invoiceService.toInvoiceDetailDto(inv)).thenReturn(dto);
 
         var response = controller.getInvoiceById("I001");
+
         assertEquals(dto, response.getBody());
     }
 
     @Test
-    void getReport_returnsReportDashboardDto() {
-        ReportDashboardDto report = new ReportDashboardDto();
-        when(reportDashboardService.getReportDashboard(anyString())).thenReturn(report);
+    void getAllPayments_returnsPaymentDashboardList() {
+        PaymentDashboardDto dto = new PaymentDashboardDto();
 
-        var response = controller.getReport(null); // test default month
-        assertEquals(report, response.getBody());
+        when(paymentService.getAllPayments()).thenReturn(List.of(dto));
+
+        var response = controller.getAllPayments();
+
+        assertEquals(1, response.getBody().size());
+        assertEquals(dto, response.getBody().get(0));
+    }
+
+    @Test
+    void getPaymentById_returnsPaymentDashboardDto() {
+        PaymentDashboardDto dto = new PaymentDashboardDto();
+
+        when(paymentService.getPaymentById("P01")).thenReturn(dto);
+
+        var response = controller.getPaymentById("P01");
+
+        assertEquals(dto, response.getBody());
     }
 
     @Test
     void getReport_withNullMonth_usesCurrentMonth() {
-        ReportDashboardDto report = new ReportDashboardDto();
-        when(reportDashboardService.getReportDashboard(anyString())).thenReturn(report);
+        ReportDashboardDto report = ReportDashboardDto.builder().build();
 
-        // month = null
+        when(reportDashboardService.getReport(anyString())).thenReturn(report);
+
         var response = controller.getReport(null);
 
-        verify(reportDashboardService).getReportDashboard(anyString());
+        verify(reportDashboardService).getReport(anyString());
         assertEquals(report, response.getBody());
     }
 
     @Test
     void getReport_withEmptyMonth_usesCurrentMonth() {
-        ReportDashboardDto report = new ReportDashboardDto();
-        when(reportDashboardService.getReportDashboard(anyString())).thenReturn(report);
+        ReportDashboardDto report = ReportDashboardDto.builder().build();
 
-        // month = empty string
+        when(reportDashboardService.getReport(anyString())).thenReturn(report);
+
         var response = controller.getReport("");
 
-        verify(reportDashboardService).getReportDashboard(anyString());
+        verify(reportDashboardService).getReport(anyString());
         assertEquals(report, response.getBody());
     }
 
     @Test
     void getReport_withValidMonth_passesMonth() {
-        ReportDashboardDto report = new ReportDashboardDto();
-        when(reportDashboardService.getReportDashboard("2025-10")).thenReturn(report);
+        ReportDashboardDto report = ReportDashboardDto.builder().build();
+
+        when(reportDashboardService.getReport("2025-10")).thenReturn(report);
 
         var response = controller.getReport("2025-10");
 
-        verify(reportDashboardService).getReportDashboard("2025-10");
+        verify(reportDashboardService).getReport("2025-10");
         assertEquals(report, response.getBody());
     }
-
 }

@@ -42,4 +42,9 @@ public class GlobalExceptionHandler {
                         "Unexpected error: " + ex.getMessage(), // ส่ง message ออกไปด้วย
                         null));
     }
+
+    @ExceptionHandler(RuntimeException.class)
+    public ResponseEntity<String> handleRuntime(RuntimeException ex) {
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ex.getMessage());
+    }
 }

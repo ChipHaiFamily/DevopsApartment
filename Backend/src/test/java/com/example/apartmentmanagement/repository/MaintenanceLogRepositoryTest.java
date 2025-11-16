@@ -20,7 +20,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @DataJpaTest
 @ActiveProfiles("test")
-class MaintenanceLogRepositoryIntegrationTest {
+class MaintenanceLogRepositoryTest {
 
     @Autowired
     private MaintenanceLogRepository maintenanceLogRepository;
@@ -30,13 +30,14 @@ class MaintenanceLogRepositoryIntegrationTest {
 
     private RoomType deluxeType;
     private Room room101;
+    private Room room102;
     private MaintenanceLog log1;
     private MaintenanceLog log2;
     private MaintenanceLog log3;
 
     @BeforeEach
     void setUp() {
-        // RoomType
+        // RoomTypes
         deluxeType = RoomType.builder()
                 .roomTypeId("RT01")
                 .name("Deluxe")
@@ -46,13 +47,19 @@ class MaintenanceLogRepositoryIntegrationTest {
                 .build();
         entityManager.persist(deluxeType);
 
-        // Room
+        // Rooms
         room101 = Room.builder()
                 .roomNum("101")
                 .roomType(deluxeType)
                 .status("available")
                 .build();
+        room102 = Room.builder()
+                .roomNum("102")
+                .roomType(deluxeType)
+                .status("available")
+                .build();
         entityManager.persist(room101);
+        entityManager.persist(room102);
 
         // Maintenance Logs
         log1 = MaintenanceLog.builder()
@@ -79,10 +86,10 @@ class MaintenanceLogRepositoryIntegrationTest {
                 .cost(150)
                 .requestDate(LocalDate.now().minusDays(1))
                 .build();
-
         entityManager.persist(log1);
         entityManager.persist(log2);
         entityManager.persist(log3);
+
         entityManager.flush();
     }
 
@@ -95,13 +102,15 @@ class MaintenanceLogRepositoryIntegrationTest {
     }
 
     @Test
-    @DisplayName("Should count logs by room number and status")
+    @DisplayName("Should count maintenance logs by room number and status")
     void testCountByRoomRoomNumAndStatus() {
-        Long countDone = maintenanceLogRepository.countByRoomRoomNum("101");
-        Long countPending = maintenanceLogRepository.countByRoomRoomNum("101");
+        Long doneCount = maintenanceLogRepository.countByRoomRoomNumAndStatus("101", "done");
+        Long pendingCount = maintenanceLogRepository.countByRoomRoomNumAndStatus("101", "pending");
+        Long noneCount = maintenanceLogRepository.countByRoomRoomNumAndStatus("102", "done");
 
-        assertEquals(2L, countDone);
-        assertEquals(1L, countPending);
+        assertEquals(2L, doneCount);
+        assertEquals(1L, pendingCount);
+        assertEquals(0L, noneCount);
     }
 
     @Test
@@ -121,7 +130,18 @@ class MaintenanceLogRepositoryIntegrationTest {
                 LocalDate.now().minusDays(4),
                 LocalDate.now()
         );
+        // log2 + log3 = 200 + 150
         assertEquals(BigDecimal.valueOf(350.0), sum);
+    }
+
+    @Test
+    @DisplayName("Should return 0 if no logs in date range")
+    void testSumCostByDateBetweenNoMatch() {
+        BigDecimal sum = maintenanceLogRepository.sumCostByDateBetween(
+                LocalDate.of(2020, 1, 1),
+                LocalDate.of(2020, 12, 31)
+        );
+        assertEquals(0, sum.compareTo(BigDecimal.ZERO));
     }
 
     @Test
@@ -149,5 +169,15 @@ class MaintenanceLogRepositoryIntegrationTest {
                 fail("Unexpected log type: " + type);
             }
         }
+    }
+
+    @Test
+    @DisplayName("Should return empty summary if no logs in date range")
+    void testFindMaintenanceSummaryByDateBetweenNoMatch() {
+        List<Object[]> summary = maintenanceLogRepository.findMaintenanceSummaryByDateBetween(
+                LocalDate.of(2020, 1, 1),
+                LocalDate.of(2020, 12, 31)
+        );
+        assertTrue(summary.isEmpty());
     }
 }
