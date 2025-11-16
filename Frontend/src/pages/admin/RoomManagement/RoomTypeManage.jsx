@@ -113,7 +113,7 @@ export default function RoomTypeManage({ onClose }) {
   return (
     <div
       className="container py-4"
-     style={{ fontFamily: "Kanit, system-ui, sans-serif", maxWidth: "100%" }}
+      style={{ fontFamily: "Kanit, system-ui, sans-serif", maxWidth: "100%" }}
     >
       {/* Toast Notification */}
       {toast.show && (
@@ -255,7 +255,7 @@ export default function RoomTypeManage({ onClose }) {
             role="dialog"
             aria-modal="true"
           >
-            <div className="modal-dialog modal-fullscreen modal-dialog-centered">
+            <div className="modal-dialog modal-dialog-centered modal-md">
               <div className="modal-content border-0 shadow">
                 <div className="modal-header">
                   <h5 className="modal-title fw-bold text-danger">
