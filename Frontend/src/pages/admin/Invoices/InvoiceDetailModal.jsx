@@ -43,9 +43,9 @@ export default function InvoiceDetailModal({ open, onClose, invoice, onEdit }) {
       body:
         invoice.items?.map((item) => [
           item.description,
-          `$${item.amount.toLocaleString()}`,
+          `THB ${item.amount.toLocaleString()}`,
         ]) || [],
-      foot: [["Total", `$${invoice.totalAmount.toLocaleString()}`]],
+      foot: [["Total", `THB ${invoice.totalAmount.toLocaleString()}`]],
       styles: { font: "helvetica", fontSize: 11 },
       headStyles: { fillColor: [41, 128, 185] },
     });
@@ -58,7 +58,7 @@ export default function InvoiceDetailModal({ open, onClose, invoice, onEdit }) {
         body: invoice.payments.map((p) => [
           p.paymentDate,
           p.method,
-          `$${p.amount.toLocaleString()}`,
+          `THB ${p.amount.toLocaleString()}`,
         ]),
         styles: { font: "helvetica", fontSize: 11 },
         headStyles: { fillColor: [39, 174, 96] },
