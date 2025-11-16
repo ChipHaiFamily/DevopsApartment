@@ -46,7 +46,6 @@ class ReportDashboardServiceTest {
     void testGetReport_basicScenario() {
         String month = "2025-11";
 
-        // Mock rooms
         Room room1 = new Room();
         room1.setRoomNum("R101");
         room1.setStatus("Occupied");
@@ -57,10 +56,8 @@ class ReportDashboardServiceTest {
 
         when(roomRepository.findAll()).thenReturn(List.of(room1, room2));
 
-        // Mock audit logs (empty)
         when(auditLogService.getByPeriod(month)).thenReturn(Collections.emptyList());
 
-        // Mock contracts
         Contract contract1 = new Contract();
         contract1.setContractNum("C001");
         contract1.setRoom(room1);
@@ -73,29 +70,30 @@ class ReportDashboardServiceTest {
 
         when(contractRepository.findAll()).thenReturn(List.of(contract1));
 
-        // --- Mock MeterService & MeterInvoiceDto ---
-        MeterInvoiceDto.MeterDetail water = mock(MeterInvoiceDto.MeterDetail.class);
-        when(water.getType()).thenReturn("water");
-        when(water.getUnit()).thenReturn(10);
+        MeterInvoiceDto.MeterDetail water = MeterInvoiceDto.MeterDetail.builder()
+                .type("water")
+                .unit(10)
+                .build();
 
-        MeterInvoiceDto.MeterDetail electricity = mock(MeterInvoiceDto.MeterDetail.class);
-        when(electricity.getType()).thenReturn("electricity");
-        when(electricity.getUnit()).thenReturn(20);
+        MeterInvoiceDto.MeterDetail electricity = MeterInvoiceDto.MeterDetail.builder()
+                .type("electricity")
+                .unit(20)
+                .build();
 
-        MeterInvoiceDto meterData = mock(MeterInvoiceDto.class);
-        when(meterData.getLatestMeters()).thenReturn(List.of(water, electricity));
+        MeterInvoiceDto meterData = MeterInvoiceDto.builder()
+                .room("R101")
+                .latestMeters(List.of(water, electricity))
+                .build();
 
-        when(meterService.getLatestMetersWithRoomPrice("R101")).thenReturn(meterData);
-        when(meterService.getLatestMetersWithRoomPrice("R102")).thenReturn(null);
+        when(meterService.getMetersForRoomAndMonth("R101", month)).thenReturn(meterData);
+        when(meterService.getMetersForRoomAndMonth("R102", month)).thenReturn(null);
 
-        // Mock invoices
         Invoice invoice1 = new Invoice();
         invoice1.setInvoiceId("INV001");
         invoice1.setTotalAmount(BigDecimal.valueOf(1000));
 
         when(invoiceRepository.findAllById(anySet())).thenReturn(List.of(invoice1));
 
-        // Mock maintenances
         MaintenanceLog log1 = new MaintenanceLog();
         log1.setLogId("M001");
         log1.setRoom(room1);
@@ -103,12 +101,9 @@ class ReportDashboardServiceTest {
 
         when(maintenanceRepository.findAllById(anySet())).thenReturn(List.of(log1));
 
-        // Mock AuditLog
         AuditLog invoiceLog = new AuditLog();
         invoiceLog.setTableName("invoice");
         invoiceLog.setRecordId("INV001");
-
-        when(auditLogService.getByPeriod(month)).thenReturn(List.of(invoiceLog));
 
         AuditLog maintenanceLog = new AuditLog();
         maintenanceLog.setTableName("maintenance_log");
@@ -116,10 +111,8 @@ class ReportDashboardServiceTest {
 
         when(auditLogService.getByPeriod(month)).thenReturn(List.of(invoiceLog, maintenanceLog));
 
-        // Call service
         ReportDashboardDto result = reportDashboardService.getReport(month);
 
-        // Assertions
         assertEquals(50.0, result.getOccupancyRate());
         assertEquals(1000.0, result.getTotalIncome());
         assertEquals(100.0, result.getMaintenanceCost());

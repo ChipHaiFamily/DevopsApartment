@@ -21,6 +21,7 @@ import java.io.InputStreamReader;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
+import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -37,6 +38,27 @@ public class MeterService {
 
     public List<Meter> getAllMeters() {
         return repository.findAll();
+    }
+
+    public MeterInvoiceDto getMetersForRoomAndMonth(String roomNum, String month) {
+        YearMonth ym = YearMonth.parse(month); // format: "yyyy-MM"
+        LocalDate startDate = ym.atDay(1);
+        LocalDate endDate = ym.atEndOfMonth();
+
+        List<Meter> meters = repository.findByRoomAndRecordDateBetween(roomNum, startDate, endDate);
+        if (meters.isEmpty()) return null;
+
+        List<MeterInvoiceDto.MeterDetail> meterDetails = meters.stream()
+                .map(m -> MeterInvoiceDto.MeterDetail.builder()
+                        .type(m.getType())
+                        .unit(m.getUnit())
+                        .build())
+                .toList();
+
+        return MeterInvoiceDto.builder()
+                .room(roomNum)
+                .latestMeters(meterDetails)
+                .build();
     }
 
     public MeterInvoiceDto getLatestMetersWithRoomPrice(String room) {

@@ -211,7 +211,6 @@ class MeterServiceTest {
 
         service.importMetersFromCsv(file);
 
-        // Should not save anything
         verify(repository, never()).save(any());
     }
 
@@ -225,6 +224,51 @@ class MeterServiceTest {
         );
 
         assertThrows(Exception.class, () -> service.importMetersFromCsv(file));
+    }
+
+    @Test
+    void testGetMetersForRoomAndMonth_returnsData() {
+        String roomNum = "101";
+        String month = "2025-11";
+
+        LocalDate startDate = LocalDate.of(2025, 11, 1);
+        LocalDate endDate = LocalDate.of(2025, 11, 30);
+
+        Meter m1 = new Meter();
+        m1.setType("water");
+        m1.setUnit(10);
+        m1.setRecordDate(LocalDate.of(2025, 11, 5));
+
+        Meter m2 = new Meter();
+        m2.setType("electricity");
+        m2.setUnit(50);
+        m2.setRecordDate(LocalDate.of(2025, 11, 10));
+
+        when(repository.findByRoomAndRecordDateBetween(roomNum, startDate, endDate))
+                .thenReturn(List.of(m1, m2));
+
+        MeterInvoiceDto dto = service.getMetersForRoomAndMonth(roomNum, month);
+
+        assertNotNull(dto);
+        assertEquals(roomNum, dto.getRoom());
+        assertEquals(2, dto.getLatestMeters().size());
+        assertEquals("water", dto.getLatestMeters().get(0).getType());
+        assertEquals(10, dto.getLatestMeters().get(0).getUnit());
+    }
+
+    @Test
+    void testGetMetersForRoomAndMonth_returnsNullIfNoData() {
+        String roomNum = "101";
+        String month = "2025-11";
+
+        LocalDate startDate = LocalDate.of(2025, 11, 1);
+        LocalDate endDate = LocalDate.of(2025, 11, 30);
+
+        when(repository.findByRoomAndRecordDateBetween(roomNum, startDate, endDate))
+                .thenReturn(List.of());
+
+        MeterInvoiceDto dto = service.getMetersForRoomAndMonth(roomNum, month);
+        assertNull(dto);
     }
 
 }
