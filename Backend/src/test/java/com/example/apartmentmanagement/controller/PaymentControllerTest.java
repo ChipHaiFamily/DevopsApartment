@@ -1,5 +1,6 @@
 package com.example.apartmentmanagement.controller;
 
+import com.example.apartmentmanagement.model.Invoice;
 import com.example.apartmentmanagement.model.Payment;
 import com.example.apartmentmanagement.service.PaymentService;
 import org.junit.jupiter.api.BeforeEach;
@@ -51,13 +52,24 @@ class PaymentControllerTest {
 
     @Test
     void create_savesPayment() {
+        // สร้าง Payment และ Invoice
         Payment p = new Payment();
-        when(service.save(p)).thenReturn(p);
+        Invoice invoice = new Invoice();
+        invoice.setInvoiceId("INV-001");
+        p.setInvoice(invoice);
+
+        when(service.create(any(Payment.class))).thenAnswer(invocation -> {
+            Payment arg = invocation.getArgument(0);
+            arg.setPaymentId("PAY-001");
+            return arg;
+        });
 
         Payment result = controller.create(p);
 
-        assertEquals(p, result);
-        verify(service).save(p);
+        assertNotNull(result.getPaymentId());
+        assertEquals(p.getInvoice(), result.getInvoice());
+
+        verify(service).create(p);
     }
 
     @Test

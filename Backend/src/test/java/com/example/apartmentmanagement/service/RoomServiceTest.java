@@ -5,6 +5,7 @@ import com.example.apartmentmanagement.exception.ResourceNotFoundException;
 import com.example.apartmentmanagement.model.*;
 import com.example.apartmentmanagement.repository.ContractRepository;
 import com.example.apartmentmanagement.repository.RoomRepository;
+import com.example.apartmentmanagement.repository.RoomTypeRepository;
 import com.example.apartmentmanagement.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -21,6 +22,8 @@ class RoomServiceTest {
 
     @Mock
     private RoomRepository roomRepo;
+    @Mock
+    private RoomTypeRepository roomTypeRepo;
     @Mock
     private ContractRepository contractRepo;
     @Mock
@@ -60,16 +63,62 @@ class RoomServiceTest {
     }
 
     @Test
-    void create_savesAndReturnsDto() {
-        RoomDto input = RoomDto.builder().roomNum("111").floor(2).status("available").build();
-        Room saved = Room.builder().roomNum("111").floor(2).status("available").build();
+    void create_successful() {
+        RoomDto dto = RoomDto.builder()
+                .roomNum("501")
+                .floor(5)
+                .status("available")
+                .roomTypeId("RT1")
+                .build();
 
-        when(roomRepo.save(any(Room.class))).thenReturn(saved);
-        when(contractRepo.findByRoom_RoomNum("111")).thenReturn(List.of());
+        Room savedRoom = Room.builder().roomNum("501").floor(5).status("available").build();
 
-        RoomDto dto = roomService.create(input);
-        assertEquals("111", dto.getRoomNum());
-        assertEquals("available", dto.getStatus());
+        when(roomRepo.save(any(Room.class))).thenReturn(savedRoom);
+        when(contractRepo.findByRoom_RoomNum(anyString())).thenReturn(List.of());
+
+        RoomDto result = roomService.create(dto);
+
+        assertEquals("501", result.getRoomNum());
+        assertEquals("available", result.getStatus());
+    }
+
+    @Test
+    void create_missingRoomNum_throwsException() {
+        RoomDto dto = RoomDto.builder().roomTypeId("RT1").build();
+        assertThrows(IllegalArgumentException.class, () -> roomService.create(dto));
+    }
+
+    @Test
+    void create_missingRoomTypeId_throwsException() {
+        RoomDto dto = RoomDto.builder().roomNum("502").build();
+        assertThrows(IllegalArgumentException.class, () -> roomService.create(dto));
+    }
+
+    @Test
+    void update_roomTypeNotFound_throwsException() {
+        Room room = Room.builder().roomNum("601").floor(6).status("available").build();
+        RoomDto dto = RoomDto.builder().roomTypeId("RT999").build();
+
+        when(roomRepo.findById("601")).thenReturn(Optional.of(room));
+        when(roomTypeRepo.findById("RT999")).thenReturn(Optional.empty());
+
+        assertThrows(ResourceNotFoundException.class, () -> roomService.update("601", dto));
+    }
+
+    @Test
+    void deleteById_existingRoom_deletesSuccessfully() {
+        Room room = Room.builder().roomNum("701").build();
+        when(roomRepo.findById("701")).thenReturn(Optional.of(room));
+
+        roomService.deleteById("701");
+
+        verify(roomRepo, times(1)).delete(room);
+    }
+
+    @Test
+    void deleteById_notFound_throwsException() {
+        when(roomRepo.findById("999")).thenReturn(Optional.empty());
+        assertThrows(ResourceNotFoundException.class, () -> roomService.deleteById("999"));
     }
 
     @Test

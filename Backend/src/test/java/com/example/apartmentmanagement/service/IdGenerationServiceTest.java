@@ -31,6 +31,11 @@ class IdGenerationServiceTest {
     private MaintenanceLogRepository mtncLogRepository;
     @Mock
     private ContractRepository contractRepository;
+    @Mock
+    private SuppliesRepository suppliesRepository;
+    @Mock
+    private SuppliesHistoryRepository suppliesHistoryRepository;
+
 
     @InjectMocks
     private IdGenerationService idGenerationService;
@@ -203,4 +208,78 @@ class IdGenerationServiceTest {
         String id = idGenerationService.generateContractId();
         assertEquals(String.format("CTR-%d-005", year), id);
     }
+
+    @Test
+    void generateSupplyId_firstId() {
+        when(suppliesRepository.findTopByOrderByItemIdDesc()).thenReturn(Optional.empty());
+        String id = idGenerationService.generateSupplyId();
+        assertEquals("ITM-001", id);
+    }
+
+    @Test
+    void generateSupplyId_nextId() {
+        Supplies last = new Supplies();
+        last.setItemId("ITM-007");
+        when(suppliesRepository.findTopByOrderByItemIdDesc()).thenReturn(Optional.of(last));
+        String id = idGenerationService.generateSupplyId();
+        assertEquals("ITM-008", id);
+    }
+
+    @Test
+    void generateSupplyHistoryId_firstId() {
+        when(suppliesHistoryRepository.findTopByOrderByHistoryIdDesc()).thenReturn(Optional.empty());
+        LocalDate now = LocalDate.now();
+        String id = idGenerationService.generateSupplyHistoryId();
+        assertEquals(String.format("HIT-%d-%02d-001", now.getYear(), now.getMonthValue()), id);
+    }
+
+    @Test
+    void generateSupplyHistoryId_nextId() {
+        LocalDate now = LocalDate.now();
+        SuppliesHistory last = new SuppliesHistory();
+        last.setHistoryId(String.format("HIT-%d-%02d-004", now.getYear(), now.getMonthValue()));
+        when(suppliesHistoryRepository.findTopByOrderByHistoryIdDesc()).thenReturn(Optional.of(last));
+        String id = idGenerationService.generateSupplyHistoryId();
+        assertEquals(String.format("HIT-%d-%02d-005", now.getYear(), now.getMonthValue()), id);
+    }
+
+    @Test
+    void generateMeterId_firstId() {
+        String room = "R101";
+        String period = "2025-11";
+
+        // lastId = null => เริ่มต้น 01
+        String id = idGenerationService.generateMeterId(room, period, null);
+        assertEquals("MTR-2025-11-R101-01", id);
+    }
+
+    @Test
+    void generateMeterId_nextId() {
+        String room = "R101";
+        String period = "2025-11";
+        String lastId = "MTR-2025-11-R101-05";
+
+        String id = idGenerationService.generateMeterId(room, period, lastId);
+        assertEquals("MTR-2025-11-R101-06", id);
+    }
+
+    @Test
+    void generateMeterId_rollsCorrectlyOverDigits() {
+        String room = "R102";
+        String period = "2025-11";
+        String lastId = "MTR-2025-11-R102-09";
+
+        String id = idGenerationService.generateMeterId(room, period, lastId);
+        assertEquals("MTR-2025-11-R102-10", id);
+    }
+
+    @Test
+    void generateMeterId_differentRoomsAndPeriods() {
+        String id1 = idGenerationService.generateMeterId("R201", "2025-10", null);
+        String id2 = idGenerationService.generateMeterId("R202", "2025-12", "MTR-2025-12-R202-03");
+
+        assertEquals("MTR-2025-10-R201-01", id1);
+        assertEquals("MTR-2025-12-R202-04", id2);
+    }
+
 }

@@ -17,7 +17,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @DataJpaTest
 @ActiveProfiles("test")
-class RoomRepositoryIntegrationTest {
+class RoomRepositoryTest {
 
     @Autowired
     private RoomRepository roomRepository;
@@ -86,8 +86,11 @@ class RoomRepositoryIntegrationTest {
     void testCountByTypeName() {
         int deluxeCount = roomRepository.countByTypeName("Deluxe");
         int suiteCount = roomRepository.countByTypeName("Suite");
+        int unknownCount = roomRepository.countByTypeName("Unknown"); // edge case
+
         assertEquals(2, deluxeCount);
         assertEquals(1, suiteCount);
+        assertEquals(0, unknownCount); // should return 0 if type not exist
     }
 
     @Test
@@ -97,5 +100,21 @@ class RoomRepositoryIntegrationTest {
         assertEquals(2, typeNames.size());
         assertTrue(typeNames.contains("Deluxe"));
         assertTrue(typeNames.contains("Suite"));
+    }
+
+    @Test
+    @DisplayName("Should return empty list if no room types exist")
+    void testFindAllRoomTypeNamesEmpty() {
+        roomRepository.deleteAll(); // remove all rooms
+        List<String> typeNames = roomRepository.findAllRoomTypeNames();
+        assertTrue(typeNames.isEmpty());
+    }
+
+    @Test
+    @DisplayName("Should return 0 if no rooms exist for countAllRooms")
+    void testCountAllRoomsEmpty() {
+        roomRepository.deleteAll();
+        int totalRooms = roomRepository.countAllRooms();
+        assertEquals(0, totalRooms);
     }
 }

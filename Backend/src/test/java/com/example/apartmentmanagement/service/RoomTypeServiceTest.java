@@ -67,4 +67,67 @@ class RoomTypeServiceTest {
         roomTypeService.deleteById("RT02");
         verify(repository, times(1)).deleteById("RT02");
     }
+
+    @Test
+    void save_generatesId_whenIdIsNull_andNoExistingRoomType() {
+        RoomType rt = new RoomType();
+        rt.setName("Standard");
+
+        when(repository.findTopByOrderByRoomTypeIdDesc()).thenReturn(Optional.empty());
+        when(repository.save(any(RoomType.class))).thenAnswer(i -> i.getArgument(0));
+
+        RoomType result = roomTypeService.save(rt);
+
+        assertEquals("RT01", result.getRoomTypeId());
+        assertEquals("Standard", result.getName());
+    }
+
+    @Test
+    void save_generatesId_whenIdIsNull_andLastIdValid() {
+        RoomType rt = new RoomType();
+        rt.setName("Executive");
+
+        RoomType last = new RoomType();
+        last.setRoomTypeId("RT05");
+
+        when(repository.findTopByOrderByRoomTypeIdDesc()).thenReturn(Optional.of(last));
+        when(repository.save(any(RoomType.class))).thenAnswer(i -> i.getArgument(0));
+
+        RoomType result = roomTypeService.save(rt);
+
+        assertEquals("RT06", result.getRoomTypeId());
+        assertEquals("Executive", result.getName());
+    }
+
+    @Test
+    void save_generatesId_whenIdIsNull_andLastIdInvalidFormat() {
+        RoomType rt = new RoomType();
+        rt.setName("Penthouse");
+
+        RoomType last = new RoomType();
+        last.setRoomTypeId("INVALID");
+
+        when(repository.findTopByOrderByRoomTypeIdDesc()).thenReturn(Optional.of(last));
+        when(repository.save(any(RoomType.class))).thenAnswer(i -> i.getArgument(0));
+
+        RoomType result = roomTypeService.save(rt);
+
+        assertEquals("RT01", result.getRoomTypeId());
+        assertEquals("Penthouse", result.getName());
+    }
+
+    @Test
+    void save_usesExistingId_whenIdIsNotNull() {
+        RoomType rt = new RoomType();
+        rt.setRoomTypeId("RT10");
+        rt.setName("Premium");
+
+        when(repository.save(rt)).thenReturn(rt);
+
+        RoomType result = roomTypeService.save(rt);
+
+        assertEquals("RT10", result.getRoomTypeId());
+        assertEquals("Premium", result.getName());
+    }
+
 }

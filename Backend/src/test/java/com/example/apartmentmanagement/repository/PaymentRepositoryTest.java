@@ -10,12 +10,13 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 @DataJpaTest
-class PaymentRepositoryIntegrationTest {
+class PaymentRepositoryTest {
 
     @Autowired
     private PaymentRepository paymentRepository;
@@ -51,6 +52,15 @@ class PaymentRepositoryIntegrationTest {
     }
 
     @Test
+    @DisplayName("Should find all payments ordered by payment date descending")
+    void testFindAllByOrderByPaymentDateDesc() {
+        List<Payment> payments = paymentRepository.findAllByOrderByPaymentDateDesc();
+        assertEquals(2, payments.size());
+        assertEquals("PAY-002", payments.get(0).getPaymentId());
+        assertEquals("PAY-001", payments.get(1).getPaymentId());
+    }
+
+    @Test
     @DisplayName("Should sum revenue between dates")
     void testSumRevenueByDateBetween() {
         BigDecimal sum = paymentRepository.sumRevenueByDateBetween(
@@ -58,5 +68,31 @@ class PaymentRepositoryIntegrationTest {
                 LocalDate.now()
         );
         assertTrue(sum.compareTo(BigDecimal.valueOf(2500)) == 0, "Sum should be 2500"); // 1000 + 1500
+    }
+
+    @Test
+    @DisplayName("Should return 0 when summing revenue if no payments in range")
+    void testSumRevenueByDateBetweenNoPayments() {
+        BigDecimal sum = paymentRepository.sumRevenueByDateBetween(
+                LocalDate.of(2020, 1, 1),
+                LocalDate.of(2020, 12, 31)
+        );
+        assertTrue(sum.compareTo(BigDecimal.ZERO) == 0, "Sum should be 0");
+    }
+
+    @Test
+    @DisplayName("Should return empty list when no payments exist")
+    void testFindAllByOrderByPaymentDateDescNoPayments() {
+        paymentRepository.deleteAll();
+        List<Payment> payments = paymentRepository.findAllByOrderByPaymentDateDesc();
+        assertTrue(payments.isEmpty());
+    }
+
+    @Test
+    @DisplayName("Should return empty optional when no payments exist for topBy")
+    void testFindTopByOrderByPaymentIdDescNoPayments() {
+        paymentRepository.deleteAll();
+        Optional<Payment> latest = paymentRepository.findTopByOrderByPaymentIdDesc();
+        assertFalse(latest.isPresent());
     }
 }

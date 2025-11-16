@@ -80,4 +80,19 @@ class RoomControllerTest {
         assertEquals("occupied", response.getBody().getData().getStatus());
         verify(service).update("103", input);
     }
+
+    @Test
+    void delete_removesRoomSuccessfully() {
+        String id = "103";
+        doNothing().when(service).deleteById(id);
+
+        ResponseEntity<ApiResponse<Void>> response = controller.delete(id);
+
+        assertTrue(response.getBody().isSuccess());
+        assertEquals("Room deleted", response.getBody().getMessage());
+        assertNull(response.getBody().getData());
+
+        verify(service).deleteById(id);
+    }
+
 }

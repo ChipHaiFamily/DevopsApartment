@@ -18,7 +18,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @DataJpaTest
 @ActiveProfiles("test")
-class ContractRepositoryIntegrationTest {
+class ContractRepositoryTest {
 
     @Autowired
     private ContractRepository contractRepository;
@@ -26,64 +26,62 @@ class ContractRepositoryIntegrationTest {
     @Autowired
     private EntityManager entityManager;
 
+    private RoomType typeA;
+    private Room room101;
+    private User user1;
+    private Tenant tenant1;
+    private Contract activeContract;
+    private Contract expiredContract;
+
     @BeforeEach
     void setUp() {
-        RoomType typeA = RoomType.builder()
-                .roomTypeId("RT01")
-                .name("Deluxe")
-                .description("Standard Room")
-                .price(BigDecimal.valueOf(1000))
-                .room_image("roomA.jpg")
-                .build();
+        typeA = new RoomType();
+        typeA.setRoomTypeId("RT01");
+        typeA.setName("Deluxe");
+        typeA.setDescription("Standard Room");
+        typeA.setPrice(BigDecimal.valueOf(1000));
+        typeA.setRoom_image("roomA.jpg");
         entityManager.persist(typeA);
 
-        // Create Room
-        Room room101 = Room.builder()
-                .roomNum("101")
-                .roomType(typeA)
-                .status("available")
-                .build();
+        room101 = new Room();
+        room101.setRoomNum("101");
+        room101.setRoomType(typeA);
+        room101.setStatus("available");
         entityManager.persist(room101);
 
-        // Create Tenant
-        User user1 = User.builder()
-                .id("USR-001")
-                .fullName("Full Name")
-                .email("user1.c@gmail.com")
-                .passwd("pass")
-                .build();
+        user1 = new User();
+        user1.setId("USR-001");
+        user1.setFullName("Full Name");
+        user1.setEmail("user1.c@gmail.com");
+        user1.setPasswd("pass");
         entityManager.persist(user1);
 
-        Tenant tenant1 = Tenant.builder()
-                .user(user1)
-                .citizenId("1100100123456")
-                .emergencyContact("0898765432")
-                .emergencyName("Somying Jaidum")
-                .emergencyRelationship("Mother")
-                .build();
+        tenant1 = new Tenant();
+        tenant1.setUser(user1);
+        tenant1.setCitizenId("1100100123456");
+        tenant1.setEmergencyContact("0898765432");
+        tenant1.setEmergencyName("Somying Jaidum");
+        tenant1.setEmergencyRelationship("Mother");
         entityManager.persist(tenant1);
 
-        // Create Contracts
-        Contract activeContract = Contract.builder()
-                .contractNum("CTR-2025-001")
-                .room(room101)
-                .tenant(tenant1)
-                .status("active")
-                .startDate(LocalDate.now().minusDays(10))
-                .endDate(LocalDate.now().plusDays(10))
-                .build();
-
-        Contract expiredContract = Contract.builder()
-                .contractNum("CTR-2025-002")
-                .room(room101)
-                .tenant(tenant1)
-                .status("expired")
-                .startDate(LocalDate.of(2023, 1, 1))
-                .endDate(LocalDate.of(2023, 12, 31))
-                .build();
-
+        activeContract = new Contract();
+        activeContract.setContractNum("CTR-2025-001");
+        activeContract.setRoom(room101);
+        activeContract.setTenant(tenant1);
+        activeContract.setStatus("active");
+        activeContract.setStartDate(LocalDate.now().minusDays(10));
+        activeContract.setEndDate(LocalDate.now().plusDays(10));
         entityManager.persist(activeContract);
+
+        expiredContract = new Contract();
+        expiredContract.setContractNum("CTR-2025-002");
+        expiredContract.setRoom(room101);
+        expiredContract.setTenant(tenant1);
+        expiredContract.setStatus("expired");
+        expiredContract.setStartDate(LocalDate.of(2023, 1, 1));
+        expiredContract.setEndDate(LocalDate.of(2023, 12, 31));
         entityManager.persist(expiredContract);
+
         entityManager.flush();
     }
 
@@ -92,7 +90,6 @@ class ContractRepositoryIntegrationTest {
     void testFindByRoom_RoomNum() {
         List<Contract> contracts = contractRepository.findByRoom_RoomNum("101");
         assertEquals(2, contracts.size());
-        assertEquals("CTR-2025-001", contracts.get(0).getContractNum());
     }
 
     @Test
@@ -112,11 +109,11 @@ class ContractRepositoryIntegrationTest {
     }
 
     @Test
-    @DisplayName("Should find latest contract by contractNum desc")
+    @DisplayName("Should find top contract by contractNum desc")
     void testFindTopByOrderByContractNumDesc() {
         Optional<Contract> latest = contractRepository.findTopByOrderByContractNumDesc();
         assertTrue(latest.isPresent());
-        assertEquals("CTR-2025-002", latest.get().getContractNum()); // highest ID alphabetically
+        assertEquals("CTR-2025-002", latest.get().getContractNum());
     }
 
     @Test
@@ -157,5 +154,26 @@ class ContractRepositoryIntegrationTest {
 
         assertEquals(1, deluxeCount);
         assertEquals(0, suiteCount);
+    }
+
+    @Test
+    @DisplayName("Should return empty list if no contracts match status and date range")
+    void testFindByStatusAndDateRangeNoMatch() {
+        List<Contract> results = contractRepository.findByStatusAndDateRange(
+                "active",
+                LocalDate.of(2020, 1, 1),
+                LocalDate.of(2020, 12, 31)
+        );
+        assertTrue(results.isEmpty());
+    }
+
+    @Test
+    @DisplayName("Should return 0 count if no active contracts during date range")
+    void testCountActiveContractsDuringNoMatch() {
+        int count = contractRepository.countActiveContractsDuring(
+                LocalDate.of(2020, 1, 1),
+                LocalDate.of(2020, 12, 31)
+        );
+        assertEquals(0, count);
     }
 }

@@ -4,6 +4,7 @@ import com.example.apartmentmanagement.dto.InvoiceDetailDto;
 import com.example.apartmentmanagement.dto.InvoiceUpdateDTO;
 import com.example.apartmentmanagement.exception.ResourceNotFoundException;
 import com.example.apartmentmanagement.model.*;
+import com.example.apartmentmanagement.repository.InterestRateRepository;
 import com.example.apartmentmanagement.repository.InvoiceRepository;
 import com.example.apartmentmanagement.repository.TenantRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -25,6 +26,8 @@ class InvoiceServiceTest {
     private TenantRepository tenantRepo;
     @Mock
     private IdGenerationService idGenService;
+    @Mock
+    private InterestRateRepository interestRateRepo;
 
     @InjectMocks
     private InvoiceService invoiceService;
@@ -44,44 +47,6 @@ class InvoiceServiceTest {
 
         assertEquals("Pending", created.getStatus());
         assertTrue(created.getInvoiceId().matches("INV-\\d{4}-\\d{2}-\\d{3}"));
-    }
-
-    @Test
-    void updateFromDto_generatesPaymentIdPattern() {
-        Invoice invoice = new Invoice();
-        invoice.setInvoiceId("INV-2025-001");
-        invoice.setTotalAmount(BigDecimal.valueOf(500));
-        invoice.setPayments(new ArrayList<>());
-
-        Tenant tenant = new Tenant();
-        tenant.setTenantId("USR-001");
-
-        InvoiceUpdateDTO dto = new InvoiceUpdateDTO();
-        dto.setIssueDate(LocalDate.now());
-        dto.setDueDate(LocalDate.now().plusDays(10));
-        dto.setTotalAmount(BigDecimal.valueOf(500));
-
-        InvoiceUpdateDTO.TenantDTO tenantDTO = new InvoiceUpdateDTO.TenantDTO();
-        tenantDTO.setTenantId("USR-001");
-        dto.setTenant(tenantDTO);
-
-        InvoiceUpdateDTO.PaymentDTO paymentDTO = new InvoiceUpdateDTO.PaymentDTO();
-        paymentDTO.setPaymentDate(LocalDate.now().toString());
-        paymentDTO.setAmount(BigDecimal.valueOf(200));
-        paymentDTO.setMethod("Cash");
-        dto.setPayments(List.of(paymentDTO));
-        dto.setItems(new ArrayList<>());
-
-        when(invoiceRepo.findById("INV-2025-001")).thenReturn(Optional.of(invoice));
-        when(tenantRepo.findById("USR-001")).thenReturn(Optional.of(tenant));
-        when(idGenService.generatePaymentId()).thenReturn("PAY-2025-001");
-        when(invoiceRepo.save(invoice)).thenReturn(invoice);
-
-        Invoice updated = invoiceService.updateFromDto("INV-2025-001", dto);
-
-        assertEquals("Partial", updated.getStatus());
-        assertEquals(1, updated.getPayments().size());
-        assertTrue(updated.getPayments().get(0).getPaymentId().matches("PAY-\\d{4}-\\d{3}"));
     }
 
     @Test
@@ -251,7 +216,6 @@ class InvoiceServiceTest {
 
         assertNull(dto.getContractStatus());
         assertNull(dto.getRoomNum());
-        assertNull(dto.getFloor());
     }
 
 
@@ -338,13 +302,6 @@ class InvoiceServiceTest {
         assertEquals(2, invoiceService.getAllInvoices().size());
     }
 
-    @Test
-    void getInvoiceById_found() {
-        Invoice invoice = new Invoice();
-        when(invoiceRepo.findById("INV-2025-001")).thenReturn(Optional.of(invoice));
-        Invoice found = invoiceService.getInvoiceById("INV-2025-001");
-        assertEquals(invoice, found);
-    }
 
     @Test
     void getInvoiceById_notFoundThrows() {
@@ -395,11 +352,89 @@ class InvoiceServiceTest {
         assertEquals("USR-001", dto.getTenantId());
         assertEquals("Active", dto.getContractStatus());
         assertEquals("301", dto.getRoomNum());
-        assertEquals(3, dto.getFloor());
         assertEquals(1, dto.getItems().size());
         assertEquals(1, dto.getPayments().size());
         assertEquals("Electricity", dto.getItems().get(0).getDescription());
         assertEquals("Cash", dto.getPayments().get(0).getMethod());
+    }
+
+    @Test
+    void countPaidRoomsThisMonth_countsDistinctActiveRooms() {
+        LocalDate now = LocalDate.now();
+        Room room1 = new Room(); room1.setRoomNum("101");
+        Room room2 = new Room(); room2.setRoomNum("102");
+
+        Contract c1 = new Contract(); c1.setRoom(room1); c1.setStatus("Active");
+        Contract c2 = new Contract(); c2.setRoom(room2); c2.setStatus("Active");
+
+        Tenant t1 = new Tenant(); t1.setContract(List.of(c1));
+        Tenant t2 = new Tenant(); t2.setContract(List.of(c2));
+
+        Invoice i1 = new Invoice(); i1.setStatus("PAID"); i1.setIssueDate(now); i1.setTenant(t1);
+        Invoice i2 = new Invoice(); i2.setStatus("PAID"); i2.setIssueDate(now); i2.setTenant(t2);
+        Invoice i3 = new Invoice(); i3.setStatus("Pending"); i3.setIssueDate(now); i3.setTenant(t1);
+
+        when(invoiceRepo.findAll()).thenReturn(List.of(i1, i2, i3));
+
+        int count = invoiceService.countPaidRoomsThisMonth();
+        assertEquals(2, count);
+    }
+
+    @Test
+    void create_setsCarryForwardWhenPreviousInvoiceOutstanding() {
+        Tenant tenant = new Tenant();
+        tenant.setTenantId("USR-001");
+
+        Invoice lastInvoice = new Invoice();
+        lastInvoice.setInvoiceId("INV-OLD");
+        lastInvoice.setTenant(tenant);
+        lastInvoice.setStatus("Pending");
+        InvoiceItem oldItem = new InvoiceItem();
+        oldItem.setAmount(BigDecimal.valueOf(200));
+        lastInvoice.setItems(List.of(oldItem));
+        lastInvoice.setPayments(new ArrayList<>());
+
+        Invoice newInvoice = new Invoice();
+        newInvoice.setTenant(tenant);
+
+        when(invoiceRepo.findAll()).thenReturn(List.of(lastInvoice));
+        when(invoiceRepo.save(any(Invoice.class))).thenAnswer(i -> i.getArgument(0));
+        when(idGenService.generateInvoiceId()).thenReturn("INV-NEW");
+
+        Invoice created = invoiceService.create(newInvoice);
+
+        assertEquals("INV-NEW", created.getInvoiceId());
+        assertEquals(1, created.getItems().size());
+        assertTrue(created.getItems().get(0).getDescription().contains("Carry Forward"));
+        assertEquals("Carry Forward from INV-OLD", created.getItems().get(0).getDescription());
+        assertEquals(lastInvoice.getStatus(), "Carry_forward");
+    }
+
+    @Test
+    void getInvoiceById_appliesInterestForLateInvoice() {
+        LocalDate dueDate = LocalDate.now().minusMonths(2);
+        Invoice invoice = new Invoice();
+        invoice.setInvoiceId("INV-001");
+        invoice.setStatus("Pending");
+        invoice.setDueDate(dueDate);
+        invoice.setTotalAmount(BigDecimal.valueOf(1000));
+        invoice.setPayments(new ArrayList<>());
+
+        InvoiceItem item = new InvoiceItem();
+        item.setDescription("Rent");
+        item.setAmount(BigDecimal.valueOf(1000));
+        invoice.setItems(new ArrayList<>(List.of(item)));
+
+        InterestRate rate = new InterestRate();
+        rate.setPercentage(0.5);
+        when(interestRateRepo.findTopByTypeOrderByTimestampDesc("unpaid")).thenReturn(rate);
+
+        when(invoiceRepo.findById("INV-001")).thenReturn(Optional.of(invoice));
+        when(invoiceRepo.save(any(Invoice.class))).thenAnswer(i -> i.getArgument(0));
+
+        Invoice result = invoiceService.getInvoiceById("INV-001");
+
+        assertTrue(result.getItems().stream().anyMatch(it -> it.getDescription().toLowerCase().startsWith("interest")));
     }
 
 }

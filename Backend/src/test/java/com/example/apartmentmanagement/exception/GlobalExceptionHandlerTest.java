@@ -5,6 +5,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.server.ResponseStatusException;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -88,5 +89,27 @@ class GlobalExceptionHandlerTest {
         assertFalse(body.isSuccess());
         assertTrue(body.getMessage().contains("Unexpected error"));
         assertTrue(body.getMessage().contains("Something went wrong"));
+    }
+
+    @Test
+    void handleRuntime_ReturnsInternalServerError() {
+        RuntimeException ex = new RuntimeException("Test exception");
+
+        ResponseEntity<String> response = handler.handleRuntime(ex);
+
+        assertNotNull(response);
+        assertEquals(500, response.getStatusCodeValue());
+        assertEquals("Test exception", response.getBody());
+    }
+
+    @Test
+    void handleRuntime_EmptyMessage() {
+        RuntimeException ex = new RuntimeException();
+
+        ResponseEntity<String> response = handler.handleRuntime(ex);
+
+        assertNotNull(response);
+        assertEquals(500, response.getStatusCodeValue());
+        assertNull(response.getBody()); // เพราะไม่มี message
     }
 }

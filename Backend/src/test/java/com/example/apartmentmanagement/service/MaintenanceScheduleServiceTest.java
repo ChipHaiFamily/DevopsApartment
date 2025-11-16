@@ -1,11 +1,13 @@
 package com.example.apartmentmanagement.service;
 
+import com.example.apartmentmanagement.dto.DashboardDto;
 import com.example.apartmentmanagement.model.MaintenanceSchedule;
 import com.example.apartmentmanagement.repository.MaintenanceScheduleRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.*;
 
+import java.time.LocalDate;
 import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -73,4 +75,32 @@ class MaintenanceScheduleServiceTest {
         assertNotNull(created.getScheduleId());
         assertTrue(created.getScheduleId().matches("MS-\\d{4}-\\d{3}")); // ตรวจ pattern
     }
+
+    @Test
+    void getUpcomingSchedule_returnsFilteredSortedLimitedSchedules() {
+        MaintenanceSchedule s1 = new MaintenanceSchedule();
+        s1.setScheduleId("S1");
+        s1.setTaskName("Task 1");
+        s1.setNextDue(LocalDate.now().plusDays(5));
+
+        MaintenanceSchedule s2 = new MaintenanceSchedule();
+        s2.setScheduleId("S2");
+        s2.setTaskName("Task 2");
+        s2.setNextDue(LocalDate.now().plusDays(15));
+
+        MaintenanceSchedule s3 = new MaintenanceSchedule();
+        s3.setScheduleId("S3");
+        s3.setTaskName("Task 3");
+        s3.setNextDue(LocalDate.now().plusDays(40)); // เกิน 30 วัน -> should be filtered out
+
+        when(scheduleRepo.findAll()).thenReturn(List.of(s2, s3, s1));
+
+        List<DashboardDto.ScheduleDto> result = scheduleService.getUpcomingSchedule();
+
+        assertEquals(2, result.size());
+        assertEquals("Task 1", result.get(0).getTaskName());
+        assertEquals("Task 2", result.get(1).getTaskName());
+        assertEquals("S1", result.get(0).getScheduleId());
+    }
+
 }

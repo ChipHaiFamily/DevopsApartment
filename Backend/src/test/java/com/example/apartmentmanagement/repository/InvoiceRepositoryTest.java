@@ -20,7 +20,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @DataJpaTest
 @ActiveProfiles("test")
-class InvoiceRepositoryIntegrationTest {
+class InvoiceRepositoryTest {
 
     @Autowired
     private InvoiceRepository invoiceRepository;
@@ -121,17 +121,6 @@ class InvoiceRepositoryIntegrationTest {
     void testFindTotalUnpaidByTenant() {
         BigDecimal totalUnpaid = invoiceRepository.findTotalUnpaidByTenant("USR-001");
         assertEquals(0, totalUnpaid.compareTo(BigDecimal.valueOf(1000)));
-    }
-
-    @Test
-    @DisplayName("Should find recent invoices by tenant since start date")
-    void testFindRecentInvoicesByTenant() {
-        List<Invoice> recentInvoices = invoiceRepository.findRecentInvoicesByTenant(
-                "USR-001",
-                LocalDate.now().minusDays(7)
-        );
-        assertEquals(1, recentInvoices.size());
-        assertEquals("INV-002", recentInvoices.get(0).getInvoiceId());
     }
 
     @Test

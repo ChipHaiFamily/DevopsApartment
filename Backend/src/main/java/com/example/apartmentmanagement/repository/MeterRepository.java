@@ -10,6 +10,7 @@ import java.util.Optional;
 
 @Repository
 public interface MeterRepository extends JpaRepository<Meter, String> {
+    List<Meter> findByRoomAndPeriod(String room, String period);
     List<Meter> findByRoomAndRecordDateBetween(String room, LocalDate startDate, LocalDate endDate);
     Meter findTopByPeriodAndRoomOrderByMeterIdDesc(String period, String room);
     Meter findByRoomAndPeriodAndTypeAndRecordDate(String room, String period, String type, LocalDate recordDate);
