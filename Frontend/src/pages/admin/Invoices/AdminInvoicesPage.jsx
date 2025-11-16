@@ -100,7 +100,7 @@ export default function AdminInvoicesPage() {
         { value: "Paid", label: "ชำระแล้ว" },
         { value: "Pending", label: "รอดำเนินการ" },
         { value: "Overdue", label: "เกินกำหนด" },
-        { value: "Partial", label: "เกินกำหนด" },
+        { value: "Partial", label: "แบ่งจ่าย" },
         { value: "Carry_forward", label: "ทบยอด" },
       ],
     },
