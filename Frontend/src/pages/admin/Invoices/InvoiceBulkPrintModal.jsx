@@ -11,7 +11,6 @@ import { saveAs } from "file-saver"; // สำหรับดาวน์โห�
 export default function InvoiceBulkPrintModal({ open, onClose }) {
   const [invoices, setInvoices] = useState([]);
   const [selectedList, setSelectedList] = useState([{ invoice: null }]);
-  const baseURL = import.meta.env.VITE_API_BASE_URL;
 
   useEffect(() => {
     if (open) {
@@ -88,9 +87,9 @@ export default function InvoiceBulkPrintModal({ open, onClose }) {
         body:
           inv.items?.map((it) => [
             it.description,
-            `฿${it.amount.toLocaleString()}`,
+            `THB ${it.amount.toLocaleString()}`,
           ]) || [],
-        foot: [["Total", `฿${inv.totalAmount.toLocaleString()}`]],
+        foot: [["Total", `THB ${inv.totalAmount.toLocaleString()}`]],
         styles: { font: "helvetica", fontSize: 11 },
         tableLineColor: [220, 220, 220],
         tableLineWidth: 0.1,
