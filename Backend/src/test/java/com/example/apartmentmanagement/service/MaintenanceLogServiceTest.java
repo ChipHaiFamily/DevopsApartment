@@ -6,6 +6,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.*;
 
+import java.time.LocalDate;
 import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -103,4 +104,55 @@ class MaintenanceLogServiceTest {
         assertNotNull(created.getLogId());
         assertTrue(created.getLogId().matches("ML-\\d{4}-\\d{3}"));
     }
+
+    @Test
+    void getRecentTasks_returnsTop5SortedByRequestDate() {
+        LocalDate now = LocalDate.now();
+        List<MaintenanceLog> logs = new ArrayList<>();
+        for (int i = 0; i < 7; i++) {
+            MaintenanceLog log = new MaintenanceLog();
+            log.setRequestDate(now.minusDays(i));
+            logs.add(log);
+        }
+        when(logRepo.findAll()).thenReturn(logs);
+
+        List<MaintenanceLog> recent = logService.getRecentTasks();
+        assertEquals(5, recent.size());
+        for (int i = 0; i < recent.size() - 1; i++) {
+            assertTrue(!recent.get(i).getRequestDate().isBefore(recent.get(i + 1).getRequestDate()));
+        }
+    }
+
+    @Test
+    void getRecentTasks_ignoresLogsOlderThan30Days() {
+        LocalDate now = LocalDate.now();
+        MaintenanceLog oldLog = new MaintenanceLog();
+        oldLog.setRequestDate(now.minusDays(40));
+
+        MaintenanceLog recentLog = new MaintenanceLog();
+        recentLog.setRequestDate(now.minusDays(5));
+
+        when(logRepo.findAll()).thenReturn(List.of(oldLog, recentLog));
+
+        List<MaintenanceLog> recent = logService.getRecentTasks();
+        assertEquals(1, recent.size());
+        assertEquals(recentLog, recent.get(0));
+    }
+
+    @Test
+    void getOpenTasks_returnsEmptyWhenAllCompleted() {
+        MaintenanceLog log1 = new MaintenanceLog(); log1.setStatus("COMPLETED");
+        MaintenanceLog log2 = new MaintenanceLog(); log2.setStatus("COMPLETED");
+        when(logRepo.findAll()).thenReturn(List.of(log1, log2));
+
+        List<MaintenanceLog> openTasks = logService.getOpenTasks();
+        assertTrue(openTasks.isEmpty());
+    }
+
+    @Test
+    void countOpenTasks_returnsZeroWhenNoLogs() {
+        when(logRepo.findAll()).thenReturn(Collections.emptyList());
+        assertEquals(0, logService.countOpenTasks());
+    }
+
 }

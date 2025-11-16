@@ -15,7 +15,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @DataJpaTest
 @ActiveProfiles("test")
-class UserRepositoryIntegrationTest {
+class UserRepositoryTest {
 
     @Autowired
     private UserRepository userRepository;
