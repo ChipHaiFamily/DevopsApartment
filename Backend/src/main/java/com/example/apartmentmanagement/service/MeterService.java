@@ -41,11 +41,7 @@ public class MeterService {
     }
 
     public MeterInvoiceDto getMetersForRoomAndMonth(String roomNum, String month) {
-        YearMonth ym = YearMonth.parse(month); // format: "yyyy-MM"
-        LocalDate startDate = ym.atDay(1);
-        LocalDate endDate = ym.atEndOfMonth();
-
-        List<Meter> meters = repository.findByRoomAndRecordDateBetween(roomNum, startDate, endDate);
+        List<Meter> meters = repository.findByRoomAndPeriod(roomNum, month);
         if (meters.isEmpty()) return null;
 
         List<MeterInvoiceDto.MeterDetail> meterDetails = meters.stream()

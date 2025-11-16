@@ -231,30 +231,34 @@ class MeterServiceTest {
         String roomNum = "101";
         String month = "2025-11";
 
-        LocalDate startDate = LocalDate.of(2025, 11, 1);
-        LocalDate endDate = LocalDate.of(2025, 11, 30);
-
+        // สร้าง mock Meter
         Meter m1 = new Meter();
         m1.setType("water");
         m1.setUnit(10);
-        m1.setRecordDate(LocalDate.of(2025, 11, 5));
+        m1.setPeriod(month);
 
         Meter m2 = new Meter();
         m2.setType("electricity");
         m2.setUnit(50);
-        m2.setRecordDate(LocalDate.of(2025, 11, 10));
+        m2.setPeriod(month);
 
-        when(repository.findByRoomAndRecordDateBetween(roomNum, startDate, endDate))
+        // Mock repository method ใหม่ตาม period
+        when(repository.findByRoomAndPeriod(roomNum, month))
                 .thenReturn(List.of(m1, m2));
 
+        // เรียก service
         MeterInvoiceDto dto = service.getMetersForRoomAndMonth(roomNum, month);
 
+        // Assertions
         assertNotNull(dto);
         assertEquals(roomNum, dto.getRoom());
         assertEquals(2, dto.getLatestMeters().size());
         assertEquals("water", dto.getLatestMeters().get(0).getType());
         assertEquals(10, dto.getLatestMeters().get(0).getUnit());
+        assertEquals("electricity", dto.getLatestMeters().get(1).getType());
+        assertEquals(50, dto.getLatestMeters().get(1).getUnit());
     }
+
 
     @Test
     void testGetMetersForRoomAndMonth_returnsNullIfNoData() {
