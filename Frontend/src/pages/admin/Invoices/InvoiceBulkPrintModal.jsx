@@ -163,13 +163,15 @@ export default function InvoiceBulkPrintModal({ open, onClose }) {
                         statusText = "รอดำเนินการ";
                       else if (inv.status === "Partial")
                         statusText = "แบ่งจ่ายบางส่วน";
+                      else if (inv.status === "Carry_forward")
+                        statusText = "ทบยอด";
 
                       return {
                         label: `${inv.invoiceId} (ห้อง ${
                           inv.tenant?.contract?.[0]?.room?.roomNum || "-"
                         }) — ${statusText}`,
                         value: inv,
-                        isDisabled: alreadySelected, // ✅ ปิด option ที่เลือกซ้ำในช่องอื่น
+                        isDisabled: alreadySelected, // ปิด option ที่เลือกซ้ำในช่องอื่น
                       };
                     })}
                     placeholder="พิมพ์เพื่อค้นหาใบแจ้งหนี้..."
