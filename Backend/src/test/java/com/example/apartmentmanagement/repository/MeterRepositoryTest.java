@@ -117,4 +117,22 @@ class MeterRepositoryTest {
         List<Meter> meters = meterRepository.findByRoomOrderByRecordDateDesc("102");
         assertTrue(meters.isEmpty());
     }
+
+    @Test
+    @DisplayName("Should find meters by room and period")
+    void testFindByRoomAndPeriod() {
+        List<Meter> meters = meterRepository.findByRoomAndPeriod("101", "2025-01");
+
+        assertEquals(2, meters.size());
+        assertTrue(meters.stream().anyMatch(m -> m.getMeterId().equals("MTR-001")));
+        assertTrue(meters.stream().anyMatch(m -> m.getMeterId().equals("MTR-002")));
+
+        meters = meterRepository.findByRoomAndPeriod("101", "2025-02");
+        assertEquals(1, meters.size());
+        assertEquals("MTR-003", meters.get(0).getMeterId());
+
+        meters = meterRepository.findByRoomAndPeriod("101", "2025-03");
+        assertTrue(meters.isEmpty());
+    }
+
 }
