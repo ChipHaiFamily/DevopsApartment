@@ -12,6 +12,13 @@ DROP TABLE IF EXISTS rooms CASCADE;
 DROP TABLE IF EXISTS room_types CASCADE;
 DROP TABLE IF EXISTS tenants CASCADE;
 DROP TABLE IF EXISTS users CASCADE;
+DROP TABLE IF EXISTS supplies CASCADE;
+DROP TABLE IF EXISTS supplies_history CASCADE;
+DROP TABLE IF EXISTS meters CASCADE;
+DROP TABLE IF EXISTS meter_rate CASCADE;
+DROP TABLE IF EXISTS interest_rate CASCADE;
+DROP TABLE IF EXISTS contract_images CASCADE;
+DROP TABLE IF EXISTS payment_slips CASCADE;
 
 -- ============================
 -- CREATE TABLES
@@ -282,3 +289,177 @@ INSERT INTO reservations VALUES
 UPDATE invoices SET status = 'Paid' WHERE status = 'paid';
 UPDATE invoices SET status = 'Pending' WHERE status = 'pending';
 UPDATE invoices SET status = 'Overdue' WHERE status = 'overdue';
+
+-- Supply
+CREATE TABLE supplies (
+    itemId VARCHAR(20) PRIMARY KEY,
+    item_name VARCHAR(20),
+    quantity INT,
+    status VARCHAR(20)
+);
+
+INSERT INTO supplies VALUES
+('ITM-001', 'Light bulb', 0, 'Out of Stock'),
+('ITM-002', 'Pen', 120, 'In Stock'),
+('ITM-003', 'Water Pipe', 7, 'Low Stock'),
+('ITM-004', 'Toilet', NULL, 'Out of Service');
+
+CREATE TABLE supplies_history (
+    history_id VARCHAR(20) PRIMARY KEY,
+    item_id VARCHAR(20) NOT NULL REFERENCES supplies(itemId),
+    item_Name VARCHAR(100),
+    quantity INT,
+    history_date DATE NOT NULL,
+    operator VARCHAR(50),
+    action VARCHAR(50)
+);
+
+INSERT INTO supplies_history (history_id, item_id, item_Name, quantity, history_date, operator, action) VALUES
+('HIT-2025-08-001', 'ITM-001', 'Light bulb', 100, '2025-08-25', 'Kbtr', 'return'),
+('HIT-2025-08-002', 'ITM-002', 'Pen', 120, '2025-08-25', 'PJ', 'restock'),
+('HIT-2025-08-003', 'ITM-003', 'Water Pipe', 7, '2025-08-25', 'Sukol', 'withdraw'),
+('HIT-2025-08-004', 'ITM-004', 'Toilet', NULL, '2025-08-25', 'PJ', 'restock');
+
+-- Meters
+CREATE TABLE meters (
+    meter_id VARCHAR(30) PRIMARY KEY,
+    room VARCHAR(10) NOT NULL,
+    period VARCHAR(7) NOT NULL,
+    type VARCHAR(20) NOT NULL,
+    unit INT NOT NULL,
+    record_date DATE NOT NULL
+);
+
+INSERT INTO meters (meter_id, room, period, type, unit, record_date) VALUES
+('MTR-2025-08-107-01', '107', '2025-08', 'water', 10, '2025-08-25'),
+('MTR-2025-08-107-02', '107', '2025-08', 'electricity', 150, '2025-08-25'),
+('MTR-2025-08-108-01', '108', '2025-08', 'water', 30, '2025-08-25'),
+('MTR-2025-08-108-02', '108', '2025-08', 'electricity', 20, '2025-08-25');
+
+CREATE TABLE meter_rate (
+    id SERIAL PRIMARY KEY,
+    type VARCHAR(20) NOT NULL,
+    rate DECIMAL(10,2) NOT NULL,
+    timestamp TIMESTAMP NOT NULL
+);
+
+
+INSERT INTO meter_rate (type, rate, timestamp)
+VALUES 
+('water', 4, '2025-06-02 17:32:11'),
+('electricity', 7, '2025-06-02 17:32:11');
+
+CREATE TABLE interest_rate (
+    id SERIAL PRIMARY KEY,
+    type VARCHAR(20) NOT NULL,
+    percentage DECIMAL(10,2) NOT NULL,
+    timestamp TIMESTAMP NOT NULL
+);
+
+
+INSERT INTO interest_rate (type, percentage, timestamp)
+VALUES 
+('partial', 0.5, '2025-06-02 17:32:11'),
+('unpaid', 1.1, '2025-06-02 17:32:11');
+
+CREATE TABLE contract_images (
+    image_id SERIAL PRIMARY KEY,
+    contract_num VARCHAR(20) REFERENCES contracts(contract_num) ON DELETE CASCADE,
+    image_type VARCHAR(50) NOT NULL,  
+    image_data BYTEA NOT NULL,        
+    file_name VARCHAR(200),
+    mime_type VARCHAR(100),           
+    uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE payment_slips (
+    slip_id SERIAL PRIMARY KEY,
+    payment_id VARCHAR(20) REFERENCES payments(payment_id) ON DELETE CASCADE,
+    slip_data BYTEA NOT NULL,
+    file_name VARCHAR(200),
+    mime_type VARCHAR(100),
+    uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+DROP TABLE IF EXISTS audit_log CASCADE;
+CREATE TABLE audit_log (
+    id SERIAL PRIMARY KEY,
+    action TEXT,             
+    table_name TEXT,
+    record_id TEXT,          
+    action_time TIMESTAMP DEFAULT NOW()
+);
+
+CREATE OR REPLACE FUNCTION fn_audit_log()
+RETURNS TRIGGER AS $$
+DECLARE
+    pk_column TEXT;
+    pk_value TEXT;
+BEGIN
+    SELECT a.attname INTO pk_column
+    FROM pg_index i
+    JOIN pg_attribute a 
+        ON a.attrelid = i.indrelid 
+       AND a.attnum = ANY(i.indkey)
+    WHERE i.indrelid = TG_RELID
+      AND i.indisprimary
+    LIMIT 1;
+
+    IF pk_column IS NULL THEN
+        pk_value := NULL;
+    ELSE
+        BEGIN
+            IF TG_OP = 'INSERT' THEN
+                EXECUTE format('SELECT ($1).%I::text', pk_column) INTO pk_value USING NEW;
+            ELSIF TG_OP = 'UPDATE' THEN
+                EXECUTE format('SELECT ($1).%I::text', pk_column) INTO pk_value USING NEW;
+            ELSIF TG_OP = 'DELETE' THEN
+                EXECUTE format('SELECT ($1).%I::text', pk_column) INTO pk_value USING OLD;
+            END IF;
+        EXCEPTION WHEN OTHERS THEN
+            pk_value := NULL;
+        END;
+    END IF;
+
+    INSERT INTO audit_log(action, table_name, record_id, action_time)
+    VALUES (TG_OP, TG_TABLE_NAME, pk_value, NOW());
+
+    RETURN NULL;
+END;
+$$ LANGUAGE plpgsql;
+
+DO $$
+DECLARE
+    tbl TEXT;
+    tbl_list TEXT[] := ARRAY[
+        'invoice_items',
+        'payments',
+        'invoices',
+        'contracts',
+        'reservations',
+        'maintenance_logs',
+        'maintenance_schedule',
+        'rooms',
+        'room_types',
+        'tenants',
+        'users',
+        'supplies',
+        'supplies_history',
+        'meters',
+        'meter_rate',
+        'interest_rate',
+        'contract_images',
+        'payment_slips'
+    ];
+BEGIN
+    FOREACH tbl IN ARRAY tbl_list LOOP
+        EXECUTE format('
+            DROP TRIGGER IF EXISTS tr_audit_%1$I ON %1$I;
+            CREATE TRIGGER tr_audit_%1$I
+            AFTER INSERT OR UPDATE OR DELETE
+            ON %1$I
+            FOR EACH ROW
+            EXECUTE FUNCTION fn_audit_log();
+        ', tbl);
+    END LOOP;
+END $$;
