@@ -81,6 +81,7 @@ services:
       - "9464:9464"     # Prometheus scrape endpoint
     networks:
       - app-net
+      
 
   prometheus:
     image: prom/prometheus:latest
