@@ -83,7 +83,7 @@ const router = createBrowserRouter(
     },
   ],
   {
-    basename: "/chiphai-family-frontend",
+    basename: "/chiphaifamily-frontend",
   }
 );
 
