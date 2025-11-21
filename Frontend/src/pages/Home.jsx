@@ -33,7 +33,7 @@ export default function Home() {
 
   const logout = () => {
     localStorage.clear();
-    window.location.href = "/login";
+    window.location.href = import.meta.env.VITE_PUBLIC_URL;
   };
 
   return (
