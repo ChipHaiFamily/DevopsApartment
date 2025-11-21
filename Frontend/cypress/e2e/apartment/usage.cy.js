@@ -81,31 +81,66 @@ const openModal = () =>
         cy.get('select.form-select').eq(2).should('have.value', '');
       });
   
-    it('3 เปิด "ตั้งค่าราคาต่อหน่วย" แล้วลองแก้ไขค่าและคืนกลับเดิม', () => {
-      cy.contains('button', 'ตั้งค่าราคาต่อหน่วย').click();
-      openModal().as('settingModal');
-  
-      cy.get('@settingModal').should('contain.text', 'แก้ไขค่าน้ำ/ค่าไฟต่อหน่วย');
-  
-      // เก็บและเปลี่ยนราคาน้ำ
-      cy.get('@settingModal').find('input[type="number"]').first().invoke('val').then((waterRate) => {
-        cy.log(' ราคาน้ำเดิม: ' + waterRate);
-        cy.get('@settingModal').find('input[type="number"]').first().clear().type('9');
-        cy.wait(300);
-        cy.get('@settingModal').find('input[type="number"]').first().clear().type(waterRate);
-      });
-  
-      // ⚡ เก็บและเปลี่ยนราคาไฟ
-      cy.get('@settingModal').find('input[type="number"]').eq(1).invoke('val').then((electricRate) => {
-        cy.log('⚡ ค่าไฟเดิม: ' + electricRate);
-        cy.get('@settingModal').find('input[type="number"]').eq(1).clear().type('15');
-        cy.wait(300);
-        // cy.get('@settingModal').find('input[type="number"]').eq(1).clear().type(electricRate);
-      });
-  
-      // ปิด modal โดยไม่บันทึกจริง
-      closeModal('@settingModal');
-    });
+			it('3 เปิด "ตั้งค่าราคาต่อหน่วย" แล้วลองแก้ไขค่าและคืนกลับเดิม', () => {
+			  cy.contains('button', 'ตั้งค่าราคาต่อหน่วย').click();
+			  openModal().as('settingModal');
+			
+			  cy.get('@settingModal').should('contain.text', 'แก้ไขค่าน้ำ/ค่าไฟต่อหน่วย');
+			
+			  // ฟังก์ชันช่วยจัดการ "ค่าที่เป็นค่าว่าง"
+			  const safeValue = (val) => {
+			    if (!val || val.trim() === "") {
+			      cy.log("⚠ ค่าที่อ่านได้เป็นค่าว่าง → ใช้ค่า fallback 10 แทน");
+			      return "10"; // fallback เพื่อไม่ให้ type("")
+			    }
+			    return val;
+			  };
+			
+			  // ======================
+			  // ราคาน้ำต่อหน่วย
+			  // ======================
+			  cy.get('@settingModal')
+			    .find('input[type="number"]')
+			    .first()
+			    .should('exist')               // input ต้องมี
+			    .invoke('val')
+			    .then((waterRate) => {
+			
+			      const originalWater = safeValue(waterRate);
+			      cy.log("ค่าน้ำเดิมที่อ่านได้ = " + originalWater);
+			
+			      // เปลี่ยนเป็น 9
+			      cy.get('@settingModal').find('input[type="number"]').first().clear().type('9');
+			      cy.wait(250);
+			
+			      // คืนค่าเดิม (ไม่ว่าจะว่างหรือไม่)
+			      cy.get('@settingModal').find('input[type="number"]').first().clear().type(originalWater);
+			    });
+			
+			  // ======================
+			  // ⚡ ราคาไฟต่อหน่วย
+			  // ======================
+			  cy.get('@settingModal')
+			    .find('input[type="number"]')
+			    .eq(1)
+			    .should('exist')
+			    .invoke('val')
+			    .then((electricRate) => {
+			
+			      const originalElectric = safeValue(electricRate);
+			      cy.log("⚡ ค่าไฟเดิมที่อ่านได้ = " + originalElectric);
+			
+			      // เปลี่ยนเป็น 15
+			      cy.get('@settingModal').find('input[type="number"]').eq(1).clear().type('15');
+			      cy.wait(250);
+			
+			      // คืนค่าเดิม
+			      cy.get('@settingModal').find('input[type="number"]').eq(1).clear().type(originalElectric);
+			    });
+			
+			  // ปิด modal
+			  closeModal('@settingModal');
+			});
   
     it('4 เปิด "สร้างบันทึกใหม่" แล้วกรอกค่าทดลอง + คืนค่าเดิม', () => {
       cy.contains('button', '+ สร้างบันทึกใหม่').click();
