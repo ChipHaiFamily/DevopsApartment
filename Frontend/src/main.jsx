@@ -36,50 +36,56 @@ import TenantMaintainPage from "./pages/tenant/TenantMaintainPage.jsx";
 
 import ProtectedRoute from "./components/ProtectedRoute";
 
-const router = createBrowserRouter([
-  { path: "/", element: <Home /> },
-  { path: "/login", element: <Login /> },
-  { path: "/register", element: <Register /> },
-  { path: "/rooms/:type?", element: <Room /> }, // /rooms, /rooms/small, /rooms/medium, /rooms/large
-  {
-    path: "/tenant/:roomId",
-    element: (
-      <ProtectedRoute role="USER">
-        <TenantLayout />
-      </ProtectedRoute>
-    ),
-    children: [
-      { index: true, element: <TenantOverviewPage /> },
-      { path: "invoices", element: <TenantInvoicePage /> },
-      { path: "maintain", element: <TenantMaintainPage /> },
-    ],
-  },
+const router = createBrowserRouter(
+  [
+    { path: "/", element: <Home /> },
+    { path: "/login", element: <Login /> },
+    { path: "/register", element: <Register /> },
+    { path: "/rooms/:type?", element: <Room /> },
 
+    {
+      path: "/tenant/:roomId",
+      element: (
+        <ProtectedRoute role="USER">
+          <TenantLayout />
+        </ProtectedRoute>
+      ),
+      children: [
+        { index: true, element: <TenantOverviewPage /> },
+        { path: "invoices", element: <TenantInvoicePage /> },
+        { path: "maintain", element: <TenantMaintainPage /> },
+      ],
+    },
+
+    {
+      path: "/admin",
+      element: (
+        <ProtectedRoute role="ADMIN">
+          <AdminLayout />
+        </ProtectedRoute>
+      ),
+      children: [
+        { index: true, element: <DashboardBS /> },
+        { path: "invoices", element: <AdminInvoicesPage /> },
+        { path: "maintenance", element: <MaintenancePage /> },
+        { path: "settings", element: <SettingPage /> },
+        { path: "requests", element: <RequestPage /> },
+        { path: "requests/:id", element: <RequestDetailPage /> },
+        { path: "rooms", element: <RoomsManage /> },
+        { path: "rooms/:roomId", element: <RoomDetailBS /> },
+        { path: "leases", element: <AdminLeasesPage /> },
+        { path: "tenants", element: <AdminTenantsPage /> },
+        { path: "reports", element: <AdminReportsPage /> },
+        { path: "payments", element: <AdminPaymentPage /> },
+        { path: "usage", element: <AdminUsagePage /> },
+        { path: "supply", element: <AdminSupplyPage /> },
+      ],
+    },
+  ],
   {
-    path: "/admin",
-    element: (
-      <ProtectedRoute role="ADMIN">
-        <AdminLayout />
-      </ProtectedRoute>
-    ),
-    children: [
-      { index: true, element: <DashboardBS /> },
-      { path: "invoices", element: <AdminInvoicesPage /> },
-      { path: "maintenance", element: <MaintenancePage /> },
-      { path: "settings", element: <SettingPage /> },
-      { path: "requests", element: <RequestPage /> },
-      { path: "requests/:id", element: <RequestDetailPage /> },
-      { path: "rooms", element: <RoomsManage /> },
-      { path: "rooms/:roomId", element: <RoomDetailBS /> },
-      { path: "leases", element: <AdminLeasesPage /> },
-      { path: "tenants", element: <AdminTenantsPage /> },
-      { path: "reports", element: <AdminReportsPage /> },
-      { path: "payments", element: <AdminPaymentPage />},
-      { path: "usage", element: <AdminUsagePage />},
-      { path: "supply", element: <AdminSupplyPage />},
-    ],
-  },
-]);
+    basename: "/chiphaifamily-frontend",
+  }
+);
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
