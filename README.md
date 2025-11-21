@@ -142,6 +142,7 @@ docker-compose up -d
 project/
 │── Backend/
 │── Frontend/
+│── k8s/
 │── monitoring/
 │── docker-compose.yml
 │── README.md
