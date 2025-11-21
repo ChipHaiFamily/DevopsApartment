@@ -15,10 +15,10 @@
 # Team Members ChipHaiFamily (Ready)
 
 1. **Yatavee Wariyot 6687013** 
-2. 2. **Sukollapat Pisuchpen 6687052** 
-3. 3. **Ploy Jomboon 6687066**
+2. **Sukollapat Pisuchpen 6687052** 
+3. **Ploy Jomboon 6687066**
 
-# Overview English
+# Overview
 
 A web-based **Apartment Management System** designed for administrators to manage tenants, room assignments, maintenance tasks, billing, and operational workflows. The system supports 24 rooms (configurable), 2 floors, and includes real-world DevOps implementations such as CI/CD pipelines, monitoring, logging, and Kubernetes-based deployment.
 
@@ -31,7 +31,7 @@ This project is part of the course **ITDS323 Practical DevOps and Applications**
 - Cluster deployment (Kubernetes)
 - Observability (Prometheus, Grafana, OTEL)
 
-# Core Features (English)
+# Core Features
 
 ### Room & Tenant Management
 
@@ -69,12 +69,6 @@ This project is part of the course **ITDS323 Practical DevOps and Applications**
 - Unpaid bill accumulation + configurable interest rate
 - Extra charge per room
 - Bulk printing receipt
-
-### Bonus
-
-- Predict next maintenance schedule
-- Smart fuzzy search for tenant name
-- Local OCR for scanned contract
 - RBAC (Manager / Maintenance / Accountant)
 
 # Tech Stack
