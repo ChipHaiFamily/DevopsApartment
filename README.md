@@ -12,7 +12,7 @@
 
 **GitHub Repository (Private):** https://github.com/ChipHaiFamily/DevopsApartment
 
-# Team Members ChipHaiFamily (Ready)
+# Team Members ChipHaiFamily
 
 1. **Yatavee Wariyot 6687013** 
 2. **Sukollapat Pisuchpen 6687052** 
@@ -76,7 +76,7 @@ This project is part of the course **ITDS323 Practical DevOps and Applications**
 ### **Frontend**
 
 - React + Vite
-- TailwindCSS
+- Bootstrap CSS
 
 ### **Backend**
 
